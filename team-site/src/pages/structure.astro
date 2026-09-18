@@ -1,0 +1,142 @@
+---
+// Server-rendered on every request — same pattern as Urban Wolf Studio's
+// /funds page. Roster lives in a Google Sheet (File > Share > Publish to
+// web > CSV), fetched fresh on every load. No database, no redeploy needed
+// when Jeremy edits the sheet.
+export const prerender = false;
+
+import Layout from '../layouts/Layout.astro';
+
+// Override via STARDUST_ROSTER_CSV_URL once Jeremy publishes his real sheet.
+// Until then this falls through to the hardcoded starter taxonomy below so
+// the page is never empty.
+const SHEET_CSV_URL = import.meta.env.STARDUST_ROSTER_CSV_URL ?? '';
+
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field); field = '';
+    } else if (c === '\n') {
+      row.push(field); field = '';
+      rows.push(row); row = [];
+    } else if (c === '\r') {
+      // skip
+    } else {
+      field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows.filter((r) => r.some((cell) => cell.trim() !== ''));
+}
+
+async function fetchRoster(): Promise<{ headers: string[]; rows: string[][] }> {
+  if (!SHEET_CSV_URL) return { headers: [], rows: [] };
+  try {
+    const res = await fetch(SHEET_CSV_URL);
+    if (!res.ok) return { headers: [], rows: [] };
+    const parsed = parseCsv(await res.text());
+    if (parsed.length === 0) return { headers: [], rows: [] };
+    const [headers, ...rows] = parsed;
+    return { headers, rows };
+  } catch {
+    return { headers: [], rows: [] };
+  }
+}
+
+const { headers, rows } = await fetchRoster();
+
+// Starter taxonomy — shown until Jeremy's real roster sheet is wired up.
+// He edits the sheet directly once it exists; this is just seed content.
+const starterRoster = [
+  { division: 'Technology', role: 'Backend (Supabase / schema)', status: 'Open', who: '—' },
+  { division: 'Technology', role: 'Frontend (Next.js / UI)', status: 'Open', who: '—' },
+  { division: 'Technology', role: 'Sage AI (Claude integration)', status: 'Open', who: '—' },
+  { division: 'Dictionaries', role: 'Content / lexicography', status: 'Open', who: '—' },
+  { division: 'Design', role: 'Product / UI', status: 'Open', who: '—' },
+  { division: 'Design', role: 'Brand', status: 'Open', who: '—' },
+  { division: 'Marketing / Growth', role: 'Content & partnerships', status: 'Open', who: '—' },
+  { division: 'Legal / Compliance', role: 'Founding legal help', status: 'Open', who: '—' },
+  { division: 'Operations / Finance', role: 'Cap table & bookkeeping', status: 'Open', who: '—' },
+];
+---
+<Layout title="Structure" description="Stardust DS divisions and roles — who's on the team, and what's open.">
+  <h1>Structure</h1>
+  <p class="lede">The divisions, the roles, who holds them, and what's still open.</p>
+
+  {headers.length > 0 && rows.length > 0 ? (
+    <div class="table-wrap">
+      <table class="ledger">
+        <thead>
+          <tr>{headers.map((h) => <th>{h}</th>)}</tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr>{r.map((cell) => <td>{cell}</td>)}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <>
+      <p class="desc" style="margin-bottom: 1rem;">
+        Live roster isn't wired up yet. This is the starting taxonomy. Every
+        slot below is open.
+      </p>
+      <div class="table-wrap">
+        <table class="ledger">
+          <thead>
+            <tr><th>Division</th><th>Role</th><th>Status</th><th>Who</th></tr>
+          </thead>
+          <tbody>
+            {starterRoster.map((r) => (
+              <tr>
+                <td>{r.division}</td>
+                <td>{r.role}</td>
+                <td><span class={`status ${r.status === 'Open' ? 'open' : ''}`}>{r.status}</span></td>
+                <td>{r.who}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )}
+
+  <p style="margin-top: 2rem;">Want one of these? <a href="/join">See how joining works →</a></p>
+</Layout>
+
+<style>
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table.ledger {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  table.ledger th,
+  table.ledger td {
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--line);
+  }
+  table.ledger th {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+  }
+</style>

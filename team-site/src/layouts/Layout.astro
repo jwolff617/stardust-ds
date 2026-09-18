@@ -1,0 +1,157 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = 'Stardust DS. A universal, self-describing dictionary system, and the team building it.' } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Stardust DS</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✨</text></svg>" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a class="brand" href="/">Stardust DS</a>
+        <div class="links">
+          <a href="/structure">Structure</a>
+          <a href="/join">Join</a>
+        </div>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <p>&copy; {new Date().getFullYear()} Stardust DS. Built by <a href="https://urbanwolfstudio.net">Urban Wolf Studio</a>.</p>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  :root {
+    color-scheme: light dark;
+    --bg: #0d0d14;
+    --fg: #f0efe9;
+    --muted: #9c9caa;
+    --line: #26263a;
+    --accent: #b98cf0;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #faf9ff;
+      --fg: #17171f;
+      --muted: #5c5c6e;
+      --line: #e2e0f0;
+      --accent: #6d3fbf;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: ui-serif, Georgia, 'Times New Roman', serif;
+    line-height: 1.6;
+  }
+  header {
+    border-bottom: 1px solid var(--line);
+  }
+  nav {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.5rem;
+  }
+  .brand {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--fg);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+  .links {
+    display: flex;
+    gap: 1.25rem;
+  }
+  .links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .links a:hover {
+    color: var(--accent);
+  }
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem;
+    min-height: 60vh;
+  }
+  h1 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+  }
+  h2 {
+    font-size: 1.3rem;
+    margin: 0 0 0.25rem;
+  }
+  p.lede {
+    color: var(--muted);
+    font-size: 1.1rem;
+  }
+  .track-list {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 2.5rem;
+  }
+  .track {
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+  }
+  .track a {
+    color: var(--accent);
+  }
+  .status {
+    display: inline-block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin-left: 0.5rem;
+  }
+  .status.open {
+    color: var(--accent);
+  }
+  ul.plain {
+    padding-left: 1.1rem;
+  }
+  ul.outline {
+    padding-left: 1.3rem;
+    margin: 0 0 1.75rem;
+  }
+  ul.outline li {
+    margin-bottom: 0.5rem;
+  }
+  ul.outline li::marker {
+    color: var(--accent);
+  }
+  footer {
+    border-top: 1px solid var(--line);
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    padding: 2rem 1.5rem;
+  }
+  a { color: var(--accent); }
+</style>

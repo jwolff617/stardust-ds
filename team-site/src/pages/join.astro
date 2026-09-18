@@ -1,0 +1,47 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Swap in the real Google Form once Jeremy creates it.
+const FORM_URL = import.meta.env.STARDUST_JOIN_FORM_URL ?? '#';
+---
+<Layout title="Join" description="How founding-contributor commitment works, and how to sign up.">
+  <h1>Join</h1>
+  <p class="lede">Stardust DS is early. That's exactly why the ground floor is worth something.</p>
+
+  <h2>What Stardust DS is</h2>
+  <ul class="outline">
+    <li>A universal, self-describing dictionary system.</li>
+    <li>Infrastructure meant to sit underneath every dictionary project we build, starting with Stardust, Urban Wolf, and Evolve.</li>
+    <li>A small team right now. Built to grow.</li>
+  </ul>
+
+  <h2>How compensation works right now</h2>
+  <ul class="outline">
+    <li>Stardust DS isn't incorporated yet. Nobody signing up today is getting real stock. Anyone who tells you otherwise before there's an actual company isn't being straight with you.</li>
+    <li>Your contribution gets tracked as a documented <strong>founding-contributor commitment</strong>: a percentage, recorded and dated. Not a legal stock grant.</li>
+    <li>When Stardust DS incorporates, that commitment is the basis for converting into real equity.</li>
+    <li>No contract is being signed today.</li>
+    <li>This is early stage and volunteer driven. Not a paying job yet.</li>
+  </ul>
+
+  <h2>How we work together</h2>
+  <ul class="outline">
+    <li>Technical contributors need a <strong>GitHub account</strong>. The code lives in a GitHub org, and that's the real shared workspace: everyone with a role sees the same repo, same issues, same history. Free at <a href="https://github.com/join">github.com/join</a> if you don't have one.</li>
+    <li>We don't share one Claude login around the team. Claude access is per person, not a thing you hand out.</li>
+    <li>If your role involves working with Claude (Sage AI, most Technology roles), you use your own account, working against the shared code in the GitHub org rather than a shared AI workspace. We'll walk you through this once you're assigned a role.</li>
+  </ul>
+
+  <h2>Sign up</h2>
+  <ul class="outline">
+    <li>Tell us your name, email, which division and role interests you, what you'd bring, and for technical roles, your GitHub username.</li>
+  </ul>
+  <p><a href={FORM_URL}>Fill out the form →</a></p>
+  <p class="desc">We read every response by hand. When a role fits, you'll hear from us directly before anything is posted to the <a href="/structure">Structure</a> page.</p>
+</Layout>
+
+<style>
+  .desc {
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+</style>
