@@ -33,3 +33,7 @@ Pulled out of the old STARDUST master dictionary file on 2026-08-10, content unc
 **The Orgasm Book** — A short standalone companion to WACK. Instructions only. No lecture. The golden glow as proof of concept. More details about amazing orgasms — because people aren't having them, and the reason is they don't have the golden glow. Can be WACK Part II or a separate book entirely. The most practical guide ever written.
 
 **City Co** — A comedy TV show. The premise: people think they are living on a boy alien in a coma. They are actually aliens on a different planet, in a different star system — not Earth. The planet has one world government. Three different resources instead of water, wood, and steel. The joke is stock markets. People doing jobs. Typing on computers. It is hilarious. The real world underneath: electricity, dreams, the origin, the DNA.
+
+**After-School Sports** — A business teaching emotions through games. YMCA class or party format: scatter dodgeball, capture the flag, hockey. Good, bold refs who keep the game moving. Kids will get emotional; talk it out, embrace the tears. Take notes on the lessons the kids are learning and teach them back the next day, building blocks, until they can name their own spark moments.
+
+**Talking Settings** — The Stardust DS idea: the model is Stardust, the difference is Sage. Settings are words defined in human language. Define friend, define lover, and those definitions ARE the settings. Nobody scrolls a contacts menu; you say "fuck my friend X, block him from everything" and it happens.
