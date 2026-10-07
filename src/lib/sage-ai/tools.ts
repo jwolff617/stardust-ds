@@ -92,7 +92,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "dictionary_remove",
     description:
-      "Opt this user out of a dictionary by name or address. Fails for locked dictionaries (Core).",
+      "Opt this user out of a dictionary by name or address. Fails for locked dictionaries (Core, Stardust).",
     input_schema: {
       type: "object",
       properties: {

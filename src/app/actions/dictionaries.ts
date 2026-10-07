@@ -19,7 +19,7 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
     .single();
 
   if (dictionary?.locked) {
-    throw new Error("Core is always on and can't be removed.");
+    throw new Error("This dictionary is always on and can't be removed.");
   }
 
   // Instance-template dictionaries (e.g. Night DS) have no user_dictionaries

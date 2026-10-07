@@ -218,7 +218,7 @@ export async function executeTool(
       const name = String(input.dictionary ?? "").trim();
       const dictionary = await findDictionary(supabase, name);
       if (!dictionary) return { ok: false, error: `No dictionary matches "${name}".` };
-      if (dictionary.locked) return { ok: false, error: "Core is always on and can't be removed." };
+      if (dictionary.locked) return { ok: false, error: `${dictionary.name} is always on and can't be removed.` };
 
       let dictionaryId = dictionary.id;
       if (dictionary.kind === "instance_template") {
