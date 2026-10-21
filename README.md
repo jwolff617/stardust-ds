@@ -82,4 +82,4 @@ Notes on where Stardust DS could go. Nothing here exists yet.
 - **Start with the spectrum.** Love, God, community.
 - **The thesis.** An AI of stories, of imagination. Just connection. What people want is a date.
 
-**A tension to resolve.** The thesis says no buying, no selling, no ads. Core still carries Buy, Sell, Trade, and Give, and the Private Profile holds a payment customer id. Choose one: drop Buy and Sell from Core (keeping Trade and Give, which are gifts and swaps between sparks), or keep them and narrow the thesis to "no ads and no selling your attention."
+**Buying and selling.** Sparks can buy, sell, trade, and give with each other, so Buy, Sell, Trade, and Give stay in Core. Stardust DS itself sells nothing to its users and runs no ads or paid promotion. It is a simple system to help people: a marketplace like an AI Craigslist, joined with profiles like Facebook, with an AI that understands you.
