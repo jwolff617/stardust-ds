@@ -1,12 +1,13 @@
 import type Anthropic from "@anthropic-ai/sdk";
 
-// One tool per Core/Night DS verb Sage AI is allowed to execute in v1.
-// Buy/Sell/Give/Receive are real Core words but have no processor behind
-// them yet, so they're deliberately left out of this list.
+// Each tool is one Core verb (Add, Remove, Edit, Delete, Find, Share,
+// Label) applied to one noun. Verbs that need someone on the other end
+// (Connect, Match, Message, Email, Call, Vote) or money (Buy, Sell, Trade,
+// Give) have no tool yet.
 export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "note_write",
-    description: "Create a new personal Note under Night DS. Notes have no title -- just content.",
+    description: "Add: write a new Note in the user's Night DS. Notes have no title, only content.",
     input_schema: {
       type: "object",
       properties: {
@@ -18,7 +19,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "note_edit",
     description:
-      "Replace the content of an existing personal Note, found by its number (its position in the user's active note list, 1-based).",
+      "Edit: replace the content of a Note, found by its number (its position in the user's active note list, 1-based).",
     input_schema: {
       type: "object",
       properties: {
@@ -31,7 +32,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "note_search",
     description:
-      "Search this user's personal Notes by content. Archived notes are excluded unless includeArchived is true.",
+      "Find: look through this user's Notes by content. Archived notes are left out unless includeArchived is true.",
     input_schema: {
       type: "object",
       properties: {
@@ -44,7 +45,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "note_delete",
     description:
-      "Permanently delete a personal Note, found by its number (its position in the user's active note list, 1-based). Archiving is whole-dictionary only (done from Display View), so this is the only way to remove a single note.",
+      "Delete: erase a Note for good, found by its number (its position in the user's active note list, 1-based).",
     input_schema: {
       type: "object",
       properties: {
@@ -56,7 +57,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "note_share",
     description:
-      "Set a personal Note's visibility to public or private, found by its number (its position in the user's active note list, 1-based). Public notes can be read by other users.",
+      "Share: set a Note to public or private, found by its number (its position in the user's active note list, 1-based). Public notes can be read by other users.",
     input_schema: {
       type: "object",
       properties: {
@@ -69,7 +70,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "info_search",
     description:
-      "Search the terms and definitions of every dictionary this user currently has opted into (shared and personal).",
+      "Find: look up terms and definitions across every dictionary this user has on.",
     input_schema: {
       type: "object",
       properties: {
@@ -80,7 +81,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "dictionary_add",
-    description: "Opt this user into a dictionary by name or address, adding its vocabulary.",
+    description: "Add: turn a dictionary on for this user, by name or address.",
     input_schema: {
       type: "object",
       properties: {
@@ -92,13 +93,57 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
   {
     name: "dictionary_remove",
     description:
-      "Opt this user out of a dictionary by name or address. Fails for locked dictionaries (Core, Stardust).",
+      "Remove: turn a dictionary off for this user, by name or address. Locked dictionaries (Core, Stardust, both Profiles) always stay on.",
     input_schema: {
       type: "object",
       properties: {
         dictionary: { type: "string", description: "The dictionary's name or address." },
       },
       required: ["dictionary"],
+    },
+  },
+  {
+    name: "dictionary_find",
+    description:
+      "Find: look for dictionaries by name, description, or label (e.g. 'match', 'marketplace', 'seattle'). Also finds other sparks' Public Profiles.",
+    input_schema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "A word to look for." },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "dictionary_label",
+    description:
+      "Label: add or remove a label on a dictionary this user owns, including their own Public Profile, Night DS, and other personal dictionaries. Labels help people find the dictionary.",
+    input_schema: {
+      type: "object",
+      properties: {
+        dictionary: {
+          type: "string",
+          description: "The dictionary's name or address, e.g. 'Public Profile' or 'Night DS'.",
+        },
+        label: { type: "string", description: "One short word or phrase." },
+        action: { type: "string", enum: ["add", "remove"] },
+      },
+      required: ["dictionary", "label", "action"],
+    },
+  },
+  {
+    name: "profile_edit",
+    description:
+      "Edit: change a field on this user's Private or Public Profile, and optionally whether a Public Profile field is public. Never accepts card numbers.",
+    input_schema: {
+      type: "object",
+      properties: {
+        profile: { type: "string", enum: ["private", "public"] },
+        field: { type: "string", description: "The field's name, e.g. 'Neighborhood' or 'City'." },
+        value: { type: "string", description: "The new value. Leave out to only change visibility." },
+        visibility: { type: "string", enum: ["public", "private"] },
+      },
+      required: ["profile", "field"],
     },
   },
 ];

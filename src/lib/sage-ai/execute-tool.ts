@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-instance";
 import { fetchDefinitions, getOptedInDictionaries } from "@/lib/dictionary";
+import { addDictionaryLabel, removeDictionaryLabel } from "@/lib/dictionary-labels";
+import { searchDictionaries } from "@/lib/dictionary-search";
 
 const NIGHT_DS_ADDRESS = "night-ds";
 
@@ -29,7 +31,7 @@ async function getNightDsInstanceId(
 async function findDictionary(supabase: SupabaseClient, nameOrAddress: string) {
   const { data } = await supabase
     .from("dictionaries")
-    .select("id, name, address, locked, kind")
+    .select("id, name, address, locked, kind, owner_user_id")
     .or(`name.ilike.${nameOrAddress},address.ilike.${nameOrAddress}`)
     .neq("kind", "instance")
     .limit(1)
@@ -236,6 +238,89 @@ export async function executeTool(
       if (error) return { ok: false, error: error.message };
 
       return { ok: true, message: `Removed "${dictionary.name}".` };
+    }
+
+    case "dictionary_find": {
+      const query = String(input.query ?? "").trim();
+      if (!query) return { ok: false, error: "Need something to look for." };
+
+      const results = await searchDictionaries(supabase, query, userId);
+      return {
+        ok: true,
+        message: `Found ${results.length} dictionar${results.length === 1 ? "y" : "ies"}.`,
+        data: results.map((d) => ({
+          name: d.instance?.name ?? d.name,
+          description: d.isOtherProfile ? null : d.description,
+          labels: [...d.labels, ...d.ownLabels],
+          on: d.optedIn,
+          publicProfile: d.isOtherProfile,
+        })),
+      };
+    }
+
+    case "dictionary_label": {
+      const name = String(input.dictionary ?? "").trim();
+      const label = String(input.label ?? "");
+      const action = String(input.action ?? "");
+      if (action !== "add" && action !== "remove") {
+        return { ok: false, error: "Action must be 'add' or 'remove'." };
+      }
+
+      const dictionary = await findDictionary(supabase, name);
+      if (!dictionary) return { ok: false, error: `No dictionary matches "${name}".` };
+
+      // Labeling a template labels the caller's own instance of it.
+      let dictionaryId: string | null = null;
+      if (dictionary.kind === "instance_template") {
+        const instance = await findPersonalInstance(supabase, userId, dictionary.id);
+        if (!instance) return { ok: false, error: `Add "${dictionary.name}" first, then label it.` };
+        dictionaryId = instance.id;
+      } else if (dictionary.owner_user_id === userId) {
+        dictionaryId = dictionary.id;
+      }
+      if (!dictionaryId) return { ok: false, error: `You can only label dictionaries you own.` };
+
+      const result =
+        action === "add"
+          ? await addDictionaryLabel(supabase, dictionaryId, label)
+          : await removeDictionaryLabel(supabase, dictionaryId, label);
+      if (!result.ok) return result;
+
+      return {
+        ok: true,
+        message:
+          action === "add"
+            ? `Labeled "${dictionary.name}" with "${result.label}".`
+            : `Removed "${result.label}" from "${dictionary.name}".`,
+      };
+    }
+
+    case "profile_edit": {
+      const profile = String(input.profile ?? "");
+      const field = String(input.field ?? "").trim();
+      if ((profile !== "private" && profile !== "public") || !field) {
+        return { ok: false, error: "Need the profile (private or public) and a field name." };
+      }
+
+      const update: { value?: string; visibility?: string } = {};
+      if (typeof input.value === "string") update.value = input.value.trim();
+      if (input.visibility === "public" || input.visibility === "private") update.visibility = input.visibility;
+      if (Object.keys(update).length === 0) return { ok: false, error: "Need a new value or visibility." };
+
+      const templateId = await getDictionaryId(supabase, `${profile}-profile`);
+      const instance = await findPersonalInstance(supabase, userId, templateId);
+      if (!instance) return { ok: false, error: "Your profile isn't set up yet." };
+
+      const { data, error } = await supabase
+        .from("profile_fields")
+        .update(update)
+        .eq("dictionary_id", instance.id)
+        .ilike("name", field)
+        .select("name, visibility");
+      if (error) return { ok: false, error: error.message };
+      if (!data || data.length === 0) return { ok: false, error: `No field named "${field}".` };
+
+      return { ok: true, message: `Updated ${data[0].name} (${data[0].visibility}).` };
     }
 
     default:
