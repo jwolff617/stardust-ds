@@ -85,7 +85,7 @@ export async function executeTool(
       const body = String(input.body ?? "").trim();
       if (!body) return { ok: false, error: "A note needs content." };
 
-      const timeFrame: TimeFrame = isTimeFrame(input.time_frame) ? input.time_frame : "life";
+      const timeFrame: TimeFrame = isTimeFrame(input.time_frame) ? input.time_frame : "day";
       const label = normalizeNoteLabel(input.label);
 
       const instanceId = await getNightDsInstanceId(supabase, userId, displayName);

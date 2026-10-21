@@ -82,4 +82,4 @@ Notes on where Stardust DS could go. Nothing here exists yet.
 - **Start with the spectrum.** Love, God, community.
 - **The thesis.** An AI of stories, of imagination. Just connection. What people want is a date.
 
-**Buying and selling.** Sparks can buy, sell, trade, and give with each other, so Buy, Sell, Trade, and Give stay in Core. Stardust DS itself sells nothing to its users and runs no ads or paid promotion. It is a simple system to help people: a marketplace like an AI Craigslist, joined with profiles like Facebook, with an AI that understands you.
+**Buying and selling.** Sparks can buy, sell, trade, and give with each other, so Buy, Sell, Trade, and Give stay in Core. Stardust DS itself never sells to users, and there is no advertising or paid promotion. Think of it as an AI version of Craigslist for the marketplace, combined with Facebook-style profiles, in its own product.
