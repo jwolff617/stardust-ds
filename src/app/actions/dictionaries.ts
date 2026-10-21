@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-instance";
+import { addDictionaryLabel, removeDictionaryLabel } from "@/lib/dictionary-labels";
 
 export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
   const supabase = await createClient();
@@ -14,11 +15,15 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
 
   const { data: dictionary } = await supabase
     .from("dictionaries")
-    .select("locked, kind")
+    .select("locked, kind, owner_user_id")
     .eq("id", dictionaryId)
     .single();
 
-  if (dictionary?.locked) {
+  // A lock keeps your own always-on dictionaries on. Another spark's
+  // Public Profile is yours to add or remove.
+  const isOtherProfile = dictionary?.kind === "instance" && dictionary.owner_user_id !== user.id;
+
+  if (dictionary?.locked && !isOtherProfile) {
     throw new Error("This dictionary is always on and can't be removed.");
   }
 
@@ -61,4 +66,23 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
   }
 
   revalidatePath("/");
+}
+
+export async function addLabel(dictionaryId: string, label: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Log in to label dictionaries.");
+
+  const result = await addDictionaryLabel(supabase, dictionaryId, label);
+  if (!result.ok) throw new Error(result.error);
+  return result.label;
+}
+
+export async function removeLabel(dictionaryId: string, label: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Log in to label dictionaries.");
+
+  const result = await removeDictionaryLabel(supabase, dictionaryId, label);
+  if (!result.ok) throw new Error(result.error);
 }
