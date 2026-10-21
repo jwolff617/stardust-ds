@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { ProfileFields } from "./ProfileFields";
 import { NightNotes } from "./NightNotes";
+import { AccountsView } from "./AccountsView";
 
 type SelectedDictionary = { id: string; name: string; displayKind: string };
 type PartOfSpeech = "verb" | "noun" | "more";
@@ -22,7 +23,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list"];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts"];
 
 export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDictionary[] }) {
   // Everything opted-in is active by default; track what's unchecked so
@@ -45,6 +46,7 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
   const ofKind = (kind: string) => displayable.filter((d) => d.displayKind === kind);
   const profileDictionaries = ofKind("profile");
   const notesDictionaries = ofKind("notes_list");
+  const accountsDictionaries = ofKind("accounts");
 
   // Display View is the landing view when a personal dictionary other than
   // the always-on profiles is active. Computed during render so there's no
@@ -250,6 +252,9 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
             {notesDictionaries.length > 0 && (
               <NightNotes dictionaries={notesDictionaries.map((d) => ({ id: d.id, name: d.name }))} />
             )}
+            {accountsDictionaries.map((d) => (
+              <AccountsView key={d.id} dictionary={{ id: d.id, name: d.name }} />
+            ))}
             {profileDictionaries.length > 0 && (
               <ProfileFields dictionaries={profileDictionaries.map((d) => ({ id: d.id, name: d.name }))} />
             )}
