@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { ProfileFields } from "./ProfileFields";
 
 type SelectedDictionary = { id: string; name: string; displayKind: string };
 type PartOfSpeech = "verb" | "noun" | "more";
@@ -79,6 +80,13 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
   );
   const hasDisplayCapable = displayCapable.length > 0;
 
+  // Profile dictionaries also have a Display View (their fields). Notes
+  // still decide the default view, so profiles never change the landing.
+  const profileDictionaries = dictionaries.filter(
+    (d) => d.displayKind === "profile" && !deselectedIds.includes(d.id),
+  );
+  const hasProfiles = profileDictionaries.length > 0;
+
   const [viewMode, setViewMode] = useState<"term" | "display">(
     dictionaries.some((d) => d.displayKind === "notes_list") ? "display" : "term",
   );
@@ -110,6 +118,7 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
   }
 
   const noFilters = activeDictionaryIds.length === 0 || activeTabs.length === 0;
+  const showDisplay = viewMode === "display" && (hasDisplayCapable || hasProfiles);
 
   useEffect(() => {
     if (viewMode !== "term" || noFilters) return;
@@ -387,7 +396,7 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
       </aside>
 
       <div className="flex flex-1 flex-col gap-4">
-        {hasDisplayCapable && (
+        {(hasDisplayCapable || hasProfiles) && (
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -414,7 +423,7 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
           </div>
         )}
 
-        {viewMode === "term" ? (
+        {!showDisplay ? (
           <>
             <div className="flex items-center gap-2">
               {TABS.map((tab) => (
@@ -487,273 +496,280 @@ export function Module2Definitions({ dictionaries }: { dictionaries: SelectedDic
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2 text-sm">
-              <label className="text-xs text-neutral-500">Per page</label>
-              <select
-                value={notePageSize}
-                onChange={(e) => setNotePageSize(Number(e.target.value))}
-                className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-              >
-                {NOTE_PAGE_SIZES.map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
-                ))}
-              </select>
-              {hasDisplayCapable && !archiveMode && !showArchives && (
-                <>
-                  <button
-                    type="button"
-                    onClick={openArchiveMode}
-                    className="ml-2 rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
-                  >
-                    Archive all
-                  </button>
-                  <button
-                    type="button"
-                    onClick={openArchiveBrowser}
-                    className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
-                  >
-                    View archives
-                  </button>
-                </>
-              )}
-            </div>
-
-            {hasDisplayCapable && !archiveMode && !showArchives && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Add a note..."
-                  value={newNoteBody}
-                  onChange={(e) => setNewNoteBody(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") createNote();
-                  }}
-                  className="flex-1 rounded-md border border-neutral-300 px-2 py-1 text-sm"
-                />
-                <button
-                  type="button"
-                  disabled={isAddingNote || !newNoteBody.trim()}
-                  onClick={createNote}
-                  className="shrink-0 rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
-                >
-                  Add
-                </button>
-              </div>
+            {hasProfiles && (
+              <ProfileFields dictionaries={profileDictionaries.map((d) => ({ id: d.id, name: d.name }))} />
             )}
-
-            {!hasDisplayCapable ? (
-              <p className="text-sm text-neutral-400">
-                Select at least one dictionary.
-              </p>
-            ) : archiveMode ? (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-neutral-500">
-                  Uncheck any notes you want to keep active. Everything checked will be archived
-                  together.
-                </p>
-                <input
-                  type="text"
-                  placeholder="Optional label for this archive"
-                  value={archiveLabel}
-                  onChange={(e) => setArchiveLabel(e.target.value)}
-                  className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-                />
-                <ul className="flex flex-col divide-y divide-neutral-100">
-                  {archiveCandidates.map((note, index) => (
-                    <li key={note.id} className="flex items-start gap-2 py-2">
-                      <input
-                        type="checkbox"
-                        className="mt-1"
-                        checked={!keepIds.has(note.id)}
-                        onChange={() => toggleKeep(note.id)}
-                      />
-                      <span className="w-6 shrink-0 text-right text-xs font-medium text-neutral-400">
-                        {index + 1}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-sm" title={note.body}>
-                        {note.body}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    disabled={isArchiving}
-                    onClick={confirmArchive}
-                    className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+            {hasDisplayCapable && (
+              <>
+                <div className="flex items-center gap-2 text-sm">
+                  <label className="text-xs text-neutral-500">Per page</label>
+                  <select
+                    value={notePageSize}
+                    onChange={(e) => setNotePageSize(Number(e.target.value))}
+                    className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
                   >
-                    Confirm archive
-                  </button>
-                  <button
-                    type="button"
-                    onClick={cancelArchiveMode}
-                    className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            ) : showArchives ? (
-              <div className="flex flex-col gap-3">
-                <button
-                  type="button"
-                  onClick={closeArchiveBrowser}
-                  className="self-start text-xs underline"
-                >
-                  Back to notes
-                </button>
-                {isLoadingArchives ? (
-                  <p className="text-sm text-neutral-400">Loading...</p>
-                ) : selectedArchiveId ? (
-                  <>
-                    <div className="flex items-center justify-between">
+                    {NOTE_PAGE_SIZES.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                  {hasDisplayCapable && !archiveMode && !showArchives && (
+                    <>
                       <button
                         type="button"
-                        onClick={() => setSelectedArchiveId(null)}
-                        className="text-xs underline"
+                        onClick={openArchiveMode}
+                        className="ml-2 rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
                       >
-                        Back to archives
+                        Archive all
                       </button>
                       <button
                         type="button"
-                        onClick={() => restoreAll(selectedArchiveId)}
+                        onClick={openArchiveBrowser}
                         className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
                       >
-                        Restore all
+                        View archives
                       </button>
-                    </div>
+                    </>
+                  )}
+                </div>
+
+                {hasDisplayCapable && !archiveMode && !showArchives && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Add a note..."
+                      value={newNoteBody}
+                      onChange={(e) => setNewNoteBody(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") createNote();
+                      }}
+                      className="flex-1 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                    />
+                    <button
+                      type="button"
+                      disabled={isAddingNote || !newNoteBody.trim()}
+                      onClick={createNote}
+                      className="shrink-0 rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+
+                {!hasDisplayCapable ? (
+                  <p className="text-sm text-neutral-400">
+                    Select at least one dictionary.
+                  </p>
+                ) : archiveMode ? (
+                  <div className="flex flex-col gap-3">
+                    <p className="text-sm text-neutral-500">
+                      Uncheck any notes you want to keep active. Everything checked will be archived
+                      together.
+                    </p>
+                    <input
+                      type="text"
+                      placeholder="Optional label for this archive"
+                      value={archiveLabel}
+                      onChange={(e) => setArchiveLabel(e.target.value)}
+                      className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                    />
                     <ul className="flex flex-col divide-y divide-neutral-100">
-                      {archiveNotes.map((note, index) => (
-                        <li key={note.id} className="flex items-center gap-2 py-2">
+                      {archiveCandidates.map((note, index) => (
+                        <li key={note.id} className="flex items-start gap-2 py-2">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={!keepIds.has(note.id)}
+                            onChange={() => toggleKeep(note.id)}
+                          />
                           <span className="w-6 shrink-0 text-right text-xs font-medium text-neutral-400">
                             {index + 1}
                           </span>
-                          <p
-                            className="min-w-0 flex-1 truncate text-sm text-neutral-700"
-                            title={note.body}
-                          >
+                          <span className="min-w-0 flex-1 truncate text-sm" title={note.body}>
                             {note.body}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => restoreNote(note.id)}
-                            className="shrink-0 text-xs underline"
-                          >
-                            Restore
-                          </button>
+                          </span>
                         </li>
                       ))}
                     </ul>
-                  </>
-                ) : archives.length === 0 ? (
-                  <p className="text-sm text-neutral-400">No archives yet.</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={isArchiving}
+                        onClick={confirmArchive}
+                        className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
+                      >
+                        Confirm archive
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelArchiveMode}
+                        className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : showArchives ? (
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={closeArchiveBrowser}
+                      className="self-start text-xs underline"
+                    >
+                      Back to notes
+                    </button>
+                    {isLoadingArchives ? (
+                      <p className="text-sm text-neutral-400">Loading...</p>
+                    ) : selectedArchiveId ? (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedArchiveId(null)}
+                            className="text-xs underline"
+                          >
+                            Back to archives
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => restoreAll(selectedArchiveId)}
+                            className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
+                          >
+                            Restore all
+                          </button>
+                        </div>
+                        <ul className="flex flex-col divide-y divide-neutral-100">
+                          {archiveNotes.map((note, index) => (
+                            <li key={note.id} className="flex items-center gap-2 py-2">
+                              <span className="w-6 shrink-0 text-right text-xs font-medium text-neutral-400">
+                                {index + 1}
+                              </span>
+                              <p
+                                className="min-w-0 flex-1 truncate text-sm text-neutral-700"
+                                title={note.body}
+                              >
+                                {note.body}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => restoreNote(note.id)}
+                                className="shrink-0 text-xs underline"
+                              >
+                                Restore
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : archives.length === 0 ? (
+                      <p className="text-sm text-neutral-400">No archives yet.</p>
+                    ) : (
+                      <ul className="flex flex-col divide-y divide-neutral-100">
+                        {archives.map((archive) => (
+                          <li key={archive.id} className="py-2">
+                            <button
+                              type="button"
+                              onClick={() => selectArchive(archive.id)}
+                              className="text-left text-sm"
+                            >
+                              <span className="font-medium">
+                                {archive.label || new Date(archive.createdAt).toLocaleString()}
+                              </span>
+                              <span className="ml-2 text-xs text-neutral-400">
+                                {archive.noteCount} note(s)
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ) : isLoadingNotes ? (
+                  <p className="text-sm text-neutral-400">Loading...</p>
+                ) : notes.length === 0 ? (
+                  <p className="text-sm text-neutral-400">No notes yet.</p>
                 ) : (
                   <ul className="flex flex-col divide-y divide-neutral-100">
-                    {archives.map((archive) => (
-                      <li key={archive.id} className="py-2">
-                        <button
-                          type="button"
-                          onClick={() => selectArchive(archive.id)}
-                          className="text-left text-sm"
+                    {notes.map((note, index) => (
+                      <li key={note.id} className="flex items-center gap-3 py-2">
+                        <span className="w-6 shrink-0 text-right text-xs font-medium text-neutral-400">
+                          {(notePage - 1) * notePageSize + index + 1}
+                        </span>
+                        <p
+                          className="min-w-0 flex-1 truncate text-sm text-neutral-700"
+                          title={note.body}
                         >
-                          <span className="font-medium">
-                            {archive.label || new Date(archive.createdAt).toLocaleString()}
-                          </span>
-                          <span className="ml-2 text-xs text-neutral-400">
-                            {archive.noteCount} note(s)
-                          </span>
-                        </button>
+                          {note.body}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-1">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => moveNote(note.id, "up")}
+                            className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
+                            aria-label="Move up"
+                          >
+                            ↑
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === notes.length - 1}
+                            onClick={() => moveNote(note.id, "down")}
+                            className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
+                            aria-label="Move down"
+                          >
+                            ↓
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleVisibility(note)}
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                              note.visibility === "public"
+                                ? "bg-neutral-900 text-white"
+                                : "border border-neutral-300 text-neutral-600"
+                            }`}
+                          >
+                            {note.visibility === "public" ? "Public" : "Private"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteNote(note.id)}
+                            className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-400 hover:border-red-300 hover:text-red-600"
+                            aria-label="Delete note"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>
                 )}
-              </div>
-            ) : isLoadingNotes ? (
-              <p className="text-sm text-neutral-400">Loading...</p>
-            ) : notes.length === 0 ? (
-              <p className="text-sm text-neutral-400">No notes yet.</p>
-            ) : (
-              <ul className="flex flex-col divide-y divide-neutral-100">
-                {notes.map((note, index) => (
-                  <li key={note.id} className="flex items-center gap-3 py-2">
-                    <span className="w-6 shrink-0 text-right text-xs font-medium text-neutral-400">
-                      {(notePage - 1) * notePageSize + index + 1}
-                    </span>
-                    <p
-                      className="min-w-0 flex-1 truncate text-sm text-neutral-700"
-                      title={note.body}
-                    >
-                      {note.body}
-                    </p>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        disabled={index === 0}
-                        onClick={() => moveNote(note.id, "up")}
-                        className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
-                        aria-label="Move up"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        disabled={index === notes.length - 1}
-                        onClick={() => moveNote(note.id, "down")}
-                        className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
-                        aria-label="Move down"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleVisibility(note)}
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          note.visibility === "public"
-                            ? "bg-neutral-900 text-white"
-                            : "border border-neutral-300 text-neutral-600"
-                        }`}
-                      >
-                        {note.visibility === "public" ? "Public" : "Private"}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => deleteNote(note.id)}
-                        className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs text-neutral-400 hover:border-red-300 hover:text-red-600"
-                        aria-label="Delete note"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
 
-            {!archiveMode && !showArchives && (
-              <div className="flex items-center gap-3 text-sm">
-                <button
-                  type="button"
-                  disabled={notePage <= 1}
-                  onClick={() => setNotePage((p) => p - 1)}
-                  className="disabled:opacity-40"
-                >
-                  Prev
-                </button>
-                <span className="text-neutral-500">
-                  Page {notePage} of {noteTotalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={notePage >= noteTotalPages}
-                  onClick={() => setNotePage((p) => p + 1)}
-                  className="disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
+                {!archiveMode && !showArchives && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <button
+                      type="button"
+                      disabled={notePage <= 1}
+                      onClick={() => setNotePage((p) => p - 1)}
+                      className="disabled:opacity-40"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-neutral-500">
+                      Page {notePage} of {noteTotalPages}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={notePage >= noteTotalPages}
+                      onClick={() => setNotePage((p) => p + 1)}
+                      className="disabled:opacity-40"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
