@@ -103,7 +103,11 @@ export function Module3SageAI({ isLoggedIn }: { isLoggedIn: boolean }) {
         const res = await fetch("/api/sage-ai", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: trimmed, conversationId }),
+          body: JSON.stringify({
+            message: trimmed,
+            conversationId,
+            timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
         });
 
         const newConversationId = res.headers.get("X-Conversation-Id");

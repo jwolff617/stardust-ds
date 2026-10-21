@@ -4,6 +4,7 @@ import { anthropic, MODEL_CAPABLE, MODEL_FAST } from "@/lib/anthropic";
 import { SAGE_AI_TOOLS } from "@/lib/sage-ai/tools";
 import { buildSystemPrompt } from "@/lib/sage-ai/system-prompt";
 import { executeTool } from "@/lib/sage-ai/execute-tool";
+import { safeTimeZone } from "@/lib/time-frames";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const prompt = String(body.message ?? "").trim();
   const conversationId: string | undefined = body.conversationId;
+  const timeZone = safeTimeZone(body.timeZone);
   if (!prompt) {
     return Response.json({ error: "Message can't be empty." }, { status: 400 });
   }
@@ -127,6 +129,7 @@ export async function POST(request: Request) {
               block.name,
               block.input as Record<string, unknown>,
               profile?.display_name ?? null,
+              timeZone,
             );
             toolResults.push({
               type: "tool_result",

@@ -3,6 +3,7 @@ import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-ins
 import { fetchDefinitions, getOptedInDictionaries } from "@/lib/dictionary";
 import { addDictionaryLabel, removeDictionaryLabel } from "@/lib/dictionary-labels";
 import { searchDictionaries } from "@/lib/dictionary-search";
+import { expiresAtFor, isTimeFrame, normalizeNoteLabel, type TimeFrame } from "@/lib/time-frames";
 
 const NIGHT_DS_ADDRESS = "night-ds";
 
@@ -42,13 +43,16 @@ async function findDictionary(supabase: SupabaseClient, nameOrAddress: string) {
 
 // Active notes ordered by position -- this order is what "note number" means
 // everywhere (Display View, Sage AI). Numbers are 1-based ranks, not stored.
+// Expired notes are swept first so numbers match what the user sees.
 async function findActiveNotes(supabase: SupabaseClient, userId: string, instanceId: string) {
+  await supabase.rpc("sweep_expired_notes");
   const { data } = await supabase
     .from("notes")
-    .select("id, body, archive_id, visibility")
+    .select("id, body, visibility")
     .eq("dictionary_id", instanceId)
     .eq("owner_user_id", userId)
-    .is("archive_id", null)
+    .is("archived_at", null)
+    .is("done_at", null)
     .order("position", { ascending: true });
 
   return data ?? [];
@@ -72,36 +76,54 @@ export async function executeTool(
   toolName: string,
   input: Record<string, unknown>,
   displayName: string | null,
+  timeZone = "UTC",
 ): Promise<ToolResult> {
+  const expiresFor = (tf: TimeFrame) => expiresAtFor(tf, new Date(), timeZone)?.toISOString() ?? null;
+
   switch (toolName) {
     case "note_write": {
       const body = String(input.body ?? "").trim();
       if (!body) return { ok: false, error: "A note needs content." };
 
+      const timeFrame: TimeFrame = isTimeFrame(input.time_frame) ? input.time_frame : "life";
+      const label = normalizeNoteLabel(input.label);
+
       const instanceId = await getNightDsInstanceId(supabase, userId, displayName);
-      const { error } = await supabase
-        .from("notes")
-        .insert({ dictionary_id: instanceId, owner_user_id: userId, body });
+      const { error } = await supabase.from("notes").insert({
+        dictionary_id: instanceId,
+        owner_user_id: userId,
+        body,
+        time_frame: timeFrame,
+        label,
+        expires_at: expiresFor(timeFrame),
+      });
       if (error) return { ok: false, error: error.message };
 
-      return { ok: true, message: "Wrote a new note." };
+      return { ok: true, message: `Wrote a new ${timeFrame} note${label ? ` labeled ${label}` : ""}.` };
     }
 
     case "note_edit": {
       const number = Number(input.number ?? NaN);
-      const body = String(input.body ?? "").trim();
-      if (!Number.isInteger(number) || number < 1 || !body) {
-        return { ok: false, error: "Need the note's number and its new content." };
+      if (!Number.isInteger(number) || number < 1) return { ok: false, error: "Need the note's number." };
+
+      const update: Record<string, string | null> = {};
+      if (typeof input.body === "string" && input.body.trim()) update.body = input.body.trim();
+      if (typeof input.label === "string") update.label = normalizeNoteLabel(input.label);
+      if (input.time_frame !== undefined) {
+        if (!isTimeFrame(input.time_frame)) return { ok: false, error: "Unknown time frame." };
+        update.time_frame = input.time_frame;
+        update.expires_at = expiresFor(input.time_frame);
       }
+      if (Object.keys(update).length === 0) {
+        return { ok: false, error: "Need new content, a label, or a time frame." };
+      }
+      update.updated_at = new Date().toISOString();
 
       const instanceId = await getNightDsInstanceId(supabase, userId, displayName);
       const note = await findNoteByNumber(supabase, userId, instanceId, number);
       if (!note) return { ok: false, error: `No active note numbered ${number}.` };
 
-      const { error } = await supabase
-        .from("notes")
-        .update({ body, updated_at: new Date().toISOString() })
-        .eq("id", note.id);
+      const { error } = await supabase.from("notes").update(update).eq("id", note.id);
       if (error) return { ok: false, error: error.message };
 
       return { ok: true, message: `Updated note #${number}.` };
@@ -109,7 +131,10 @@ export async function executeTool(
 
     case "note_search": {
       const query = String(input.query ?? "").trim();
-      const includeArchived = Boolean(input.includeArchived);
+      const state = ["active", "archived", "done", "all"].includes(String(input.state))
+        ? String(input.state)
+        : "active";
+      const label = normalizeNoteLabel(input.label);
 
       const instanceId = await getNightDsInstanceId(supabase, userId, displayName);
       const activeNotes = await findActiveNotes(supabase, userId, instanceId);
@@ -117,23 +142,71 @@ export async function executeTool(
 
       let q = supabase
         .from("notes")
-        .select("id, body, archive_id, visibility")
+        .select("id, body, visibility, time_frame, label, expires_at, archived_at, done_at")
         .eq("dictionary_id", instanceId)
         .eq("owner_user_id", userId);
-      if (!includeArchived) q = q.is("archive_id", null);
+      if (state === "active") q = q.is("archived_at", null).is("done_at", null);
+      else if (state === "archived") q = q.not("archived_at", "is", null).is("done_at", null);
+      else if (state === "done") q = q.not("done_at", "is", null);
+      if (isTimeFrame(input.time_frame)) q = q.eq("time_frame", input.time_frame);
+      if (label) q = q.eq("label", label);
       if (query) q = q.ilike("body", `%${query}%`);
 
-      const { data, error } = await q;
+      const { data, error } = await q.limit(100);
       if (error) return { ok: false, error: error.message };
 
-      const notes = (data ?? []).map((row) => ({
-        number: numberById.get(row.id) ?? null,
-        archived: row.archive_id !== null,
-        visibility: row.visibility,
-        body: row.body,
-      }));
+      // Active notes go by number; archived and done notes by id.
+      const notes = (data ?? []).map((row) => {
+        const number = numberById.get(row.id) ?? null;
+        return {
+          number,
+          id: number === null ? row.id : undefined,
+          state: row.done_at ? "done" : row.archived_at ? "archived" : "active",
+          time_frame: row.time_frame,
+          label: row.label,
+          expires_at: row.expires_at,
+          visibility: row.visibility,
+          body: row.body,
+        };
+      });
 
       return { ok: true, message: `Found ${notes.length} note(s).`, data: notes };
+    }
+
+    case "note_done":
+    case "note_archive": {
+      const number = Number(input.number ?? NaN);
+      if (!Number.isInteger(number) || number < 1) return { ok: false, error: "Need the note's number." };
+
+      const instanceId = await getNightDsInstanceId(supabase, userId, displayName);
+      const note = await findNoteByNumber(supabase, userId, instanceId, number);
+      if (!note) return { ok: false, error: `No active note numbered ${number}.` };
+
+      const now = new Date().toISOString();
+      const isDone = toolName === "note_done";
+      const { error } = await supabase
+        .from("notes")
+        .update(isDone ? { done_at: now, updated_at: now } : { archived_at: now, updated_at: now })
+        .eq("id", note.id);
+      if (error) return { ok: false, error: error.message };
+
+      return { ok: true, message: isDone ? `Note #${number} is done.` : `Archived note #${number}.` };
+    }
+
+    case "note_restore": {
+      const id = String(input.id ?? "").trim();
+      if (!id || !isTimeFrame(input.time_frame)) {
+        return { ok: false, error: "Need the note's id and a time frame." };
+      }
+
+      const { error } = await supabase.rpc("restore_note", {
+        p_note_id: id,
+        p_time_frame: input.time_frame,
+        p_expires_at: expiresFor(input.time_frame),
+      });
+      if (error) return { ok: false, error: error.message };
+
+      return { ok: true, message: `Restored the note as a ${input.time_frame} note.` };
     }
 
     case "note_delete": {
