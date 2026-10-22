@@ -30,6 +30,8 @@ Pulled out of the old STARDUST master dictionary file on 2026-08-10, content unc
 
 **Double Helix Market** — A market designed in a double helix pattern so that every vendor has equal access to foot traffic. No prime spots. No dead corners. Democratic market design.
 
+**Double Helix Building** — An architecture competition idea. Pods in a double helix, each connected to the nearby six levels, elevators to the different pods. Community built into the structure.
+
 **Build the Trails** — The first act of any community improvement. Before the buildings, before the plans — build the trails. Connect the people. Give them paths to find each other. Everything else follows.
 
 **Jungle Gym Design** — Public play structures designed not just for children but for all ages. Play is not age-limited. A neighborhood with good jungle gyms is a neighborhood where people stop and meet each other.
