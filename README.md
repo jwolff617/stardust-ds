@@ -83,6 +83,11 @@ Notes on where Stardust DS could go. Nothing here exists yet.
 - **The thesis.** An AI of stories, of imagination. Just connection. What people want is a date.
 - **Notes on the spectrum.** A note gets placed on the heaven-to-hell spectrum, up high or down low, so it reminds you how much it matters. The words work like floating clouds of priority: love, feeling, god, and sex up high; fear and hate down low. WACK's Map is the same idea drawn for a reader, a spectrum of feeling filled with the dictionary's own nouns.
 - **After School DS (2026-10-21).** A one-line generator for after-school staff: type "outdoor game, 2nd grade, 20 kids, no equipment" and get the exact activity card, ready to run. Sage defines the words (game, include, line, transition, cool-down, the include/exclude chart) and the AI builds from his dictionary, so output reads like someone who runs a Y program wrote it. Sold under the Wolffie name, kept apart from Sage Peace. Order: sell hand-made PDF game guides first to prove demand and build the dictionary, then sell the generator. Free competitors exist (MagicSchool, plain ChatGPT/Claude), so the edge has to be the after-school setting and his tested games. Each generation costs API money, so it needs a subscription, not a one-time price. No trademarked characters (no Star Wars pages).
+- **Fairness Index, for Worthy DS (2026-10-22).** While you watch a game, mark the teams and players who earn your rooting, for one of two reasons:
+  - **Unlucky:** they looked great but lost anyway. Root for them in their next games.
+  - **Dominant:** they looked so amazing that you want to keep rooting for them.
+
+  Each mark gets one line on what you saw. Over time, the index shows who you've been pulling for and why, and whether it held up in later games.
 - **More dictionaries past the profile.** The private profile dictionary is basically your settings. From there you can open any public dictionary you want: a review dictionary, a blog dictionary, a newsletter dictionary.
 
 **Buying and selling.** Sparks can buy, sell, trade, and give with each other, so Buy, Sell, Trade, and Give stay in Core. Stardust DS itself never sells to users, and there is no advertising or paid promotion. Think of it as an AI version of Craigslist for the marketplace, combined with Facebook-style profiles, in its own product.
