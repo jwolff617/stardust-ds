@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
 
   if (dictionaryIds.length === 0) {
-    return Response.json({ items: [], labels: [], page, totalPages: 1 });
+    return Response.json({ items: [], page, totalPages: 1 });
   }
 
   const supabase = await createClient();
@@ -62,13 +62,6 @@ export async function GET(request: Request) {
     return Response.json({ error: error.message }, { status: 500 });
   }
 
-  // Every label in use, so custom labels show up as filters too.
-  const { data: labelRows } = await supabase
-    .from("notes")
-    .select("label")
-    .in("dictionary_id", dictionaryIds)
-    .not("label", "is", null);
-  const labels = [...new Set((labelRows ?? []).map((r) => r.label as string))].sort();
 
   const items = (data ?? []).map((row) => ({
     id: row.id,
@@ -87,7 +80,6 @@ export async function GET(request: Request) {
   const total = count ?? 0;
   return Response.json({
     items,
-    labels,
     page,
     totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
   });

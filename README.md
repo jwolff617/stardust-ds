@@ -34,10 +34,9 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 
 | DS | Status | What it does |
 |---|---|---|
-| **Night DS** | Built | Notes that live in the now. Each note has a time frame (minute, hour, day, week, month, year, decade, life) and archives itself when its time is up, so you keep letting go and starting fresh. One label per note (goal, lesson, memory, idea, person, place, or your own word). Filter by time frame and label. Mark notes Done to keep a Done archive of what you finished. |
+| **Night DS** | Built | Notes that live in the now. Each note has a time frame (day, week, month, year, decade, life) and archives itself when its time is up, so you keep letting go and starting fresh. One label per note (goal, lesson, memory, idea, person, or place). Filter by time frame and label. Mark notes Done to keep a Done archive of what you finished. |
 | **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional amount and a note, and shows its balance. |
 | **Worthy DS** | Built | Urban Wolf Studio's betting system: save half of every win. Log deposits, wins, savings, and balance snapshots. See savings owed and saved, savings and balance as a share of deposits, and loss, over a day, week, month, year, decade, or life. Keep Bet Stories with the Worthy principles as labels. |
-| Goodnight DS | Planned | Rebuild of the old Night DS line. |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
 | Manifesto Match DS | Planned | Stub in `../manifesto-match/`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |

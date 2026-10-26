@@ -1,12 +1,10 @@
 // Time frames: how long a Night DS note lives, and the ranges Worthy DS
 // reports over. Pure functions, safe to import from client and server.
 
-export const TIME_FRAMES = ["minute", "hour", "day", "week", "month", "year", "decade", "life"] as const;
+export const TIME_FRAMES = ["day", "week", "month", "year", "decade", "life"] as const;
 export type TimeFrame = (typeof TIME_FRAMES)[number];
 
 export const TIME_FRAME_LABELS: Record<TimeFrame, string> = {
-  minute: "Minute",
-  hour: "Hour",
   day: "Day",
   week: "Week",
   month: "Month",
@@ -21,13 +19,13 @@ export function isTimeFrame(value: unknown): value is TimeFrame {
   return typeof value === "string" && (TIME_FRAMES as readonly string[]).includes(value);
 }
 
-// One label per note: a preset or any custom word, lowercase, 1 to 40
-// characters. Empty means no label.
-export function normalizeNoteLabel(raw: unknown): string | null {
+export type NoteLabel = (typeof NOTE_LABELS)[number];
+
+// One label per note, from the preset list only. Anything else means no label.
+export function normalizeNoteLabel(raw: unknown): NoteLabel | null {
   if (typeof raw !== "string") return null;
-  const label = raw.trim().toLowerCase().replace(/\s+/g, " ");
-  if (!label) return null;
-  return label.slice(0, 40);
+  const label = raw.trim().toLowerCase();
+  return (NOTE_LABELS as readonly string[]).includes(label) ? (label as NoteLabel) : null;
 }
 
 export function safeTimeZone(raw: unknown): string {
@@ -78,10 +76,6 @@ function addMonths(from: Date, months: number): Date {
 export function expiresAtFor(timeFrame: TimeFrame, from: Date, timeZone: string): Date | null {
   const t = from.getTime();
   switch (timeFrame) {
-    case "minute":
-      return new Date(t + 60_000);
-    case "hour":
-      return new Date(t + 3_600_000);
     case "day":
       return nextLocalMidnight(from, timeZone);
     case "week":
@@ -103,10 +97,6 @@ export function rangeStart(range: TimeFrame, now: Date): Date | null {
   if (range === "life") return null;
   const t = now.getTime();
   switch (range) {
-    case "minute":
-      return new Date(t - 60_000);
-    case "hour":
-      return new Date(t - 3_600_000);
     case "day":
       return new Date(t - 86_400_000);
     case "week":

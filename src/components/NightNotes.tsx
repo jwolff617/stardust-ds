@@ -54,7 +54,6 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
   const [labelFilter, setLabelFilter] = useState("");
   const [page, setPage] = useState(1);
   const [notes, setNotes] = useState<NoteRow[]>([]);
-  const [labelsInUse, setLabelsInUse] = useState<string[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [refreshToken, setRefreshToken] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +66,6 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
 
   const idsKey = dictionaries.map((d) => d.id).join(",");
   const primaryId = dictionaries[0]?.id ?? null;
-  const labelOptions = [...new Set([...NOTE_LABELS, ...labelsInUse])];
 
   // Back to page 1 whenever the list or a filter changes. Computed during
   // render so there's no extra commit.
@@ -90,7 +88,6 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
         const res = await fetch(`/api/notes?${params}`, { signal: controller.signal });
         const data = await res.json();
         setNotes(data.items ?? []);
-        setLabelsInUse(data.labels ?? []);
         setTotalPages(data.totalPages ?? 1);
       } catch (err) {
         if ((err as Error).name !== "AbortError") setNotes([]);
@@ -171,19 +168,13 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
           className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
         >
           <option value="">None</option>
-          {labelOptions.map((label) => (
+          {NOTE_LABELS.map((label) => (
             <option key={label} value={label}>
               {label}
             </option>
           ))}
         </select>
       </div>
-
-      <datalist id="night-ds-labels">
-        {labelOptions.map((option) => (
-          <option key={option} value={option} />
-        ))}
-      </datalist>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -198,7 +189,7 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
           />
           <div className="flex flex-wrap items-center gap-2">
             <TimeFrameSelect value={newTimeFrame} onChange={setNewTimeFrame} />
-            <LabelInput value={newLabel} onChange={setNewLabel} />
+            <LabelSelect value={newLabel} onChange={setNewLabel} />
             <button
               type="button"
               disabled={isAdding || !newBody.trim()}
@@ -345,13 +336,11 @@ function NoteItem({
           </>
         )}
 
-        <LabelInput
+        <LabelSelect
           value={label}
-          onChange={setLabel}
-          onCommit={(next) => {
-            if (next.trim().toLowerCase() !== (note.label ?? "")) {
-              onRun("/api/notes/update", { noteId: note.id, label: next });
-            }
+          onChange={(next) => {
+            setLabel(next);
+            onRun("/api/notes/update", { noteId: note.id, label: next });
           }}
         />
 
@@ -421,31 +410,21 @@ function TimeFrameSelect({ value, onChange }: { value: TimeFrame; onChange: (tf:
   );
 }
 
-// One label per note: pick goal, lesson, memory, idea, person, or place,
-// or type your own word.
-function LabelInput({
-  value,
-  onChange,
-  onCommit,
-}: {
-  value: string;
-  onChange: (label: string) => void;
-  onCommit?: (label: string) => void;
-}) {
+// One label per note: goal, lesson, memory, idea, person, place, or none.
+function LabelSelect({ value, onChange }: { value: string; onChange: (label: string) => void }) {
   return (
-    <input
-      type="text"
-      list="night-ds-labels"
+    <select
       value={value}
-      maxLength={40}
       onChange={(e) => onChange(e.target.value)}
-      onBlur={(e) => onCommit?.(e.target.value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") e.currentTarget.blur();
-      }}
-      placeholder="label"
       aria-label="Label"
-      className="w-24 rounded-full border border-dashed border-neutral-300 px-2 py-0.5 text-xs"
-    />
+      className="rounded-full border border-dashed border-neutral-300 px-2 py-0.5 text-xs"
+    >
+      <option value="">no label</option>
+      {NOTE_LABELS.map((label) => (
+        <option key={label} value={label}>
+          {label}
+        </option>
+      ))}
+    </select>
   );
 }

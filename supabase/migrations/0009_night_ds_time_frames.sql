@@ -1,13 +1,12 @@
 -- Night DS: time frames, labels, single-note archive, and Done.
 --
--- Every note now has a time frame, which is its life: minute, hour, day,
--- week, month, year, decade, or life. When expires_at passes, the note
+-- Every note now has a time frame, which is its life: day, week, month,
+-- year, decade, or life. Day is the smallest. When expires_at passes, the note
 -- archives itself, so notes go away and you start fresh. A day note expires
 -- at the user's local midnight; the app computes expires_at with the
 -- user's timezone. Life notes never expire.
 --
--- A note can carry one label: goal, lesson, memory, idea, person, place,
--- or any custom word.
+-- A note can carry one label: goal, lesson, memory, idea, person, or place.
 --
 -- A note's state:
 --   active    archived_at is null and done_at is null
@@ -20,9 +19,9 @@
 
 alter table notes
   add column if not exists time_frame text not null default 'life'
-    check (time_frame in ('minute', 'hour', 'day', 'week', 'month', 'year', 'decade', 'life')),
+    check (time_frame in ('day', 'week', 'month', 'year', 'decade', 'life')),
   add column if not exists label text
-    check (label is null or length(trim(label)) between 1 and 40),
+    check (label is null or label in ('goal', 'lesson', 'memory', 'idea', 'person', 'place')),
   add column if not exists expires_at timestamptz,
   add column if not exists archived_at timestamptz,
   add column if not exists done_at timestamptz;
@@ -156,7 +155,7 @@ insert into terms (name) values ('Done') on conflict (name) do nothing;
 insert into definitions (term_id, dictionary_id, body, part_of_speech)
 select t.id, d.id, v.body, v.pos
 from (values
-  ('Done', 'A note you finished. Done notes live in their own archive, so you can look back at what you did in a minute, a year, or a life.', 'more')
+  ('Done', 'A note you finished. Done notes live in their own archive, so you can look back at what you did in a day, a year, or a life.', 'more')
 ) as v(name, body, pos)
 join terms t on t.name = v.name
 join dictionaries d on d.address = 'night-ds'
@@ -168,7 +167,7 @@ where term_id = (select id from terms where name = 'Note Archive')
   and dictionary_id = (select id from dictionaries where address = 'night-ds');
 
 update dictionaries
-set description = 'Private notes that live for a time frame you choose, from a minute to a life. When the time is up, a note archives itself and you start fresh.'
+set description = 'Private notes that live for a time frame you choose, from a day to a life. When the time is up, a note archives itself and you start fresh.'
 where address = 'night-ds';
 
 insert into dictionary_labels (dictionary_id, label)

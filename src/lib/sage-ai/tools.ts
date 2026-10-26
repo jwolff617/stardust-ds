@@ -17,7 +17,7 @@ export const SAGE_AI_TOOLS: Anthropic.Tool[] = [
         time_frame: { type: "string", enum: [...TIME_FRAMES], description: "How long the note lives. Default day." },
         label: {
           type: "string",
-          description: "Optional single label: goal, lesson, memory, idea, person, place, or any custom word.",
+          description: "Optional single label: goal, lesson, memory, idea, person, or place. Nothing else.",
         },
       },
       required: ["body"],

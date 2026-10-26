@@ -75,7 +75,7 @@ from (values
   ('Price', 'What something costs.', 'noun'),
   ('Note', 'A short piece of writing you keep.', 'noun'),
   ('Account', 'A running record of what you save, spend, or track.', 'noun'),
-  ('Time Frame', 'How long something lasts, from a minute to a life.', 'noun'),
+  ('Time Frame', 'How long something lasts, from a day to a life.', 'noun'),
   ('Connection', 'A link between two sparks.', 'noun')
 ) as v(name, body, pos)
 join terms t on t.name = v.name
