@@ -88,7 +88,9 @@ export async function searchDictionaries(
     if (matchedIds.size > 0) filters.push(`id.in.(${[...matchedIds].join(",")})`);
     query = query.or(filters.join(","));
   } else {
-    query = query.neq("kind", "instance");
+    // Shared dictionaries and templates, plus groups you're in (RLS hides
+    // groups you aren't in).
+    query = query.or("kind.neq.instance,scope.eq.group");
   }
 
   const { data, error } = await query;
@@ -122,6 +124,7 @@ export async function searchDictionaries(
 
   const visible = [...rows, ...templateRows].filter((d) => {
     if (d.kind !== "instance") return true;
+    if (d.scope === "group") return true;
     return (
       Boolean(userId) &&
       d.owner_user_id !== userId &&
@@ -138,6 +141,7 @@ export async function searchDictionaries(
         .from("dictionaries")
         .select("id, name, display_kind, template_id")
         .eq("owner_user_id", userId)
+        .eq("scope", "personal")
         .in("template_id", templateIds);
       for (const i of instances ?? []) {
         instanceByTemplate.set(i.template_id, {
@@ -181,7 +185,7 @@ export async function searchDictionaries(
 
   return visible.map((d) => {
     const instance = instanceByTemplate.get(d.id) ?? null;
-    const isOtherProfile = d.kind === "instance";
+    const isOtherProfile = d.kind === "instance" && d.scope !== "group";
     const labelTargetId = instance?.id ?? (userId && d.owner_user_id === userId ? d.id : null);
     const ownLabels = labelTargetId ? labelsById.get(labelTargetId) ?? [] : [];
     const labels = labelTargetId === d.id ? [] : labelsById.get(d.id) ?? [];

@@ -19,9 +19,15 @@ Stardust DS starts in one city: Seattle.
 - Both: Label, View
 - Nouns: Spark, Person, Business, Nonprofit, Government, Dictionary, Term, Definition, Private Profile, Public Profile, Place, City, Neighborhood, Email Address, Phone Number, Hours, Price, Note, Account, Time Frame, Connection
 
+**Classes.** Every dictionary has one class, which sets who sees it by default:
+
+- **Shared** (public): one copy everyone reads. Core, Stardust.
+- **Personal** (private): a template each spark gets their own copy of. Night DS, Accounts DS, Worthy DS, the profiles. The Public Profile is personal but public.
+- **Group** (members only): a template anyone can copy into a group, like a Facebook page or a Slack channel. The owner adds members by email, and everything in the group is visible to every member. After School DS.
+
 **Labels.** Short words on a dictionary (idea, match, seattle) that power dictionary search. Owners label their own dictionaries.
 
-**Views.** Every dictionary has a Term View (its words and definitions). Personal dictionaries also have a Display View built for what they hold.
+**Views.** Every dictionary has a Term View (its words and definitions). Personal and group dictionaries also have a Display View built for what they hold.
 
 **Profile dictionaries.** Every spark gets two, locked on:
 
@@ -37,6 +43,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Night DS** | Built | Notes that live in the now. Each note has a time frame (day, week, month, year, decade, life) and archives itself when its time is up, so you keep letting go and starting fresh. One label per note (goal, lesson, memory, idea, person, or place). Filter by time frame and label. Mark notes Done to keep a Done archive of what you finished. |
 | **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional amount and a note, and shows its balance. |
 | **Worthy DS** | Built | Urban Wolf Studio's betting system: save half of every win. Log deposits, wins, savings, and balance snapshots. See savings owed and saved, savings and balance as a share of deposits, and loss, over a day, week, month, year, decade, or life. Keep Bet Stories with the Worthy principles as labels. |
+| **After School DS** | Built | A group dictionary for an after-school program. Make a group for your site and add staff by email. Lessons: a Monday-to-Friday template on top, copied into each new week, with five weeks shown at a time and a regenerate button that recopies the template into them. Calendar: weeks by month, each with a theme and five activities. |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
 | Manifesto Match DS | Planned | Stub in `../manifesto-match/`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |
@@ -56,7 +63,11 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0013 applied (2026-10-26). Nothing pending.
+**Live project:** 0001 to 0013 applied (2026-10-26).
+
+**Pending application to the live project** (written, not yet run):
+
+- `0014_group_dictionaries_after_school.sql`: the group class, visibility defaults, members, and After School DS
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 

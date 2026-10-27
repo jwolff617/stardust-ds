@@ -5,6 +5,7 @@ import { ProfileFields } from "./ProfileFields";
 import { NightNotes } from "./NightNotes";
 import { AccountsView } from "./AccountsView";
 import { WorthyView } from "./WorthyView";
+import { AfterSchoolView } from "./AfterSchoolView";
 
 type SelectedDictionary = { id: string; name: string; displayKind: string };
 type PartOfSpeech = "verb" | "noun" | "more";
@@ -24,7 +25,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy"];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school"];
 
 export function Module2Definitions({
   dictionaries,
@@ -57,6 +58,7 @@ export function Module2Definitions({
   const notesDictionaries = ofKind("notes_list");
   const accountsDictionaries = ofKind("accounts");
   const worthyDictionaries = ofKind("worthy");
+  const afterSchoolDictionaries = ofKind("after_school");
 
   // Display View is the landing view when a personal dictionary other than
   // the always-on profiles is active. Computed during render so there's no
@@ -267,6 +269,9 @@ export function Module2Definitions({
               )}
               {accountsDictionaries.map((d) => (
                 <AccountsView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
+              ))}
+              {afterSchoolDictionaries.map((d) => (
+                <AfterSchoolView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
               ))}
               {worthyDictionaries.map((d) => (
                 <WorthyView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />

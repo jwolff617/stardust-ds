@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { toggleDictionary } from "@/app/actions/dictionaries";
+import { createGroup, toggleDictionary } from "@/app/actions/dictionaries";
 
 type Instance = { id: string; name: string; displayKind: string };
 
@@ -85,6 +85,23 @@ export function Module1DictionarySelect({
       return;
     }
 
+    // A group template makes a new group, named here.
+    if (dictionary.kind === "instance_template" && dictionary.scope === "group") {
+      const name = window.prompt(`Name your new ${dictionary.name} group (for example, your site):`);
+      if (!name?.trim()) return;
+      setError(null);
+      startToggle(async () => {
+        try {
+          await createGroup(dictionary.id, name);
+          await runSearch();
+          onChange?.();
+        } catch (err) {
+          setError((err as Error).message || "Couldn't make that group.");
+        }
+      });
+      return;
+    }
+
     const nextOptedIn = !dictionary.optedIn;
     setDictionaries((prev) =>
       prev.map((d) => (d.id === dictionary.id ? { ...d, optedIn: nextOptedIn } : d)),
@@ -141,6 +158,7 @@ export function Module1DictionarySelect({
                   : "border border-neutral-300 text-neutral-600"
               } disabled:cursor-default`}
             >
+              {d.kind === "instance_template" && d.scope === "group" ? "+ " : ""}
               {d.instance?.name ?? d.name}
             </button>
           </li>

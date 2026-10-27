@@ -38,13 +38,10 @@ export async function fetchDefinitions(
   const displayFor = new Map<string, { id: string; name: string }>();
 
   for (const d of dictionaries ?? []) {
-    if (d.scope === "shared") {
-      sharedIds.push(d.id);
-      displayFor.set(d.id, { id: d.id, name: d.name });
-    } else if (d.template_id) {
-      sharedIds.push(d.template_id);
-      displayFor.set(d.template_id, { id: d.id, name: d.name });
-    }
+    // A copy (personal or group) reads its template's words.
+    const sourceId = d.template_id ?? d.id;
+    sharedIds.push(sourceId);
+    displayFor.set(sourceId, { id: d.id, name: d.name });
   }
 
   if (sharedIds.length === 0) return [];
@@ -74,11 +71,16 @@ export async function fetchDefinitions(
   return results;
 }
 
+// Every dictionary has one class. shared: one copy everyone reads (public).
+// personal: each person's own private copy of a template. group: a copy
+// of a template shared by its members.
+export type DictionaryScope = "shared" | "personal" | "group";
+
 export type OptedInDictionary = {
   id: string;
   address: string;
   name: string;
-  scope: "shared" | "personal";
+  scope: DictionaryScope;
   locked: boolean;
 };
 

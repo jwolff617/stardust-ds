@@ -15,7 +15,7 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
 
   const { data: dictionary } = await supabase
     .from("dictionaries")
-    .select("locked, kind, owner_user_id")
+    .select("locked, kind, scope, owner_user_id")
     .eq("id", dictionaryId)
     .single();
 
@@ -30,6 +30,10 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
   // Instance-template dictionaries (e.g. Night DS) have no user_dictionaries
   // row of their own -- opting in resolves/creates the caller's own personal
   // instance and opts them into that instead.
+  if (dictionary?.kind === "instance_template" && dictionary.scope === "group") {
+    throw new Error("A group template makes a new group. Name the group first.");
+  }
+
   if (dictionary?.kind === "instance_template") {
     if (optIn) {
       const { data: profile } = await supabase
@@ -85,4 +89,17 @@ export async function removeLabel(dictionaryId: string, label: string) {
 
   const result = await removeDictionaryLabel(supabase, dictionaryId, label);
   if (!result.ok) throw new Error(result.error);
+}
+
+// Makes a new group from a group template (After School DS) and turns it on.
+export async function createGroup(templateId: string, name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Log in to make a group.");
+
+  const { data, error } = await supabase.rpc("create_group", { p_template_id: templateId, p_name: name });
+  if (error || !data) throw new Error(error?.message ?? "Couldn't make that group.");
+
+  revalidatePath("/");
+  return data as string;
 }
