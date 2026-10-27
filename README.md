@@ -74,7 +74,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0017 applied (2026-10-27). Pending: 0018 (saving your arrangement to your account; until it runs, it saves in the browser only).
+**Live project:** 0001 to 0018 applied (2026-10-27). Nothing pending.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
