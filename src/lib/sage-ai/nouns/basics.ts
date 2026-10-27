@@ -23,6 +23,12 @@ async function attempt(work: () => Promise<VerbResult>): Promise<VerbResult> {
   }
 }
 
+// A record's name in a reply: its heading field, cut short for long notes.
+function nameOf(app: BasicApp, r: Record<string, unknown>): string {
+  const text = String(r[app.titleField] ?? "").split("\n")[0];
+  return text.length > 60 ? `${text.slice(0, 60)}...` : text;
+}
+
 function nounFor(app: BasicApp): NounDef {
   const what = app.noun.toLowerCase();
   const target = `the ${what}'s id from Find`;
@@ -36,7 +42,7 @@ function nounFor(app: BasicApp): NounDef {
         run: ({ ctx, dictionary, values }) =>
           attempt(async () => {
             const r = await addRecord(ctx.supabase, app, dictionary!.id, ctx.userId, values);
-            return { ok: true, message: `Added ${String(r[app.titleField])}.`, data: r };
+            return { ok: true, message: `Added ${nameOf(app, r)}.`, data: r };
           }),
       },
       Edit: {
@@ -46,7 +52,7 @@ function nounFor(app: BasicApp): NounDef {
         run: ({ ctx, dictionary, target: id, values }) =>
           attempt(async () => {
             const r = await editRecord(ctx.supabase, app, dictionary!.id, id!, values);
-            return { ok: true, message: `Updated ${String(r[app.titleField])}.`, data: r };
+            return { ok: true, message: `Updated ${nameOf(app, r)}.`, data: r };
           }),
       },
       Find: {

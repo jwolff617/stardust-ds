@@ -15,7 +15,7 @@ export type BasicField = {
   min?: number;
 };
 
-export type BasicRecord = { id: string; updatedAt: string } & Record<string, string | number | null>;
+export type BasicRecord = { id: string; createdAt: string; updatedAt: string } & Record<string, string | number | null>;
 
 export type BasicApp = {
   // The display_kind of the app's copies.
@@ -68,15 +68,12 @@ export const BASIC_APPS: BasicApp[] = [
     kind: "notepad",
     address: "notepad-ds",
     table: "notepad_pages",
-    noun: "Page",
-    nounDescription: "A Notepad page: a title and a body. Pages stay until deleted.",
-    fields: [
-      { key: "title", label: "Title", type: "text", required: true, max: 200 },
-      { key: "body", label: "Page", type: "longtext", max: 50000 },
-    ],
-    titleField: "title",
-    addLabel: "New page title",
-    sort: (a, b) => b.updatedAt.localeCompare(a.updatedAt),
+    noun: "Notepad Note",
+    nounDescription: "A note in Notepad: plain text, no title. Notes stay until deleted. Newest first.",
+    fields: [{ key: "body", label: "Note", type: "longtext", required: true, max: 50000 }],
+    titleField: "body",
+    addLabel: "New note",
+    sort: (a, b) => b.createdAt.localeCompare(a.createdAt),
   },
   {
     kind: "contacts",

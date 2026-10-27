@@ -5,12 +5,12 @@ import { cleanRecord, type BasicApp, type BasicRecord } from "./basics";
 // Sage AI. RLS keeps every record to its owner's own copy.
 
 function toRecord(app: BasicApp, row: Record<string, unknown>): BasicRecord {
-  const record: BasicRecord = { id: String(row.id), updatedAt: String(row.updated_at) };
+  const record: BasicRecord = { id: String(row.id), createdAt: String(row.created_at), updatedAt: String(row.updated_at) };
   for (const f of app.fields) record[f.key] = (row[f.key] ?? null) as string | number | null;
   return record;
 }
 
-const columns = (app: BasicApp) => ["id", "updated_at", ...app.fields.map((f) => f.key)].join(", ");
+const columns = (app: BasicApp) => ["id", "created_at", "updated_at", ...app.fields.map((f) => f.key)].join(", ");
 
 // Every record in the copy, in the app's order. `query` keeps records with
 // that text in any text field.

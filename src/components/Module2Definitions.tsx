@@ -9,6 +9,7 @@ import { AfterSchoolView } from "./AfterSchoolView";
 import { LockersView } from "./LockersView";
 import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
+import { NotepadView } from "./NotepadView";
 import { BASIC_APPS, basicApp } from "@/lib/basics";
 
 type SelectedDictionary = { id: string; name: string; displayKind: string };
@@ -82,7 +83,8 @@ export function Module2Definitions({
   const afterSchoolDictionaries = ofKind("after_school");
   const lockersDictionaries = ofKind("lockers");
   const lockersAdminDictionaries = ofKind("lockers_admin");
-  const basicDictionaries = displayable.filter((d) => basicApp(d.displayKind));
+  const notepadDictionaries = ofKind("notepad");
+  const basicDictionaries = displayable.filter((d) => d.displayKind !== "notepad" && basicApp(d.displayKind));
 
   // The view you last picked wins. Until you pick one, Display View is the
   // landing view when a dictionary other than the always-on profiles has one.
@@ -304,6 +306,9 @@ export function Module2Definitions({
               {lockersDictionaries.length > 0 && <LockersView reloadKey={reloadKey} />}
               {lockersAdminDictionaries.map((d) => (
                 <LockersAdminView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
+              ))}
+              {notepadDictionaries.map((d) => (
+                <NotepadView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
               ))}
               {basicDictionaries.map((d) => (
                 <BasicsView key={d.id} app={basicApp(d.displayKind)!} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
