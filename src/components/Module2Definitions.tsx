@@ -26,6 +26,22 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
   { key: "more", label: "More" },
 ];
 
+// Module 2 remembers what you had on (unchecked dictionaries, tabs, and
+// Term or Display View) in this browser, so a refresh or a new login opens
+// where you left off.
+const SAVED_VIEW_KEY = "stardust.module2";
+
+type SavedView = { deselectedIds?: string[]; activeTabs?: PartOfSpeech[]; viewMode?: "term" | "display" };
+
+function loadSavedView(): SavedView {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(SAVED_VIEW_KEY) ?? "{}") as SavedView;
+  } catch {
+    return {};
+  }
+}
+
 // Display kinds that have their own Display View.
 const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin"];
 
@@ -40,8 +56,9 @@ export function Module2Definitions({
 }) {
   // Everything opted-in is active by default; track what's unchecked so
   // newly opted-in dictionaries show up active with no effect needed.
-  const [deselectedIds, setDeselectedIds] = useState<string[]>([]);
-  const [activeTabs, setActiveTabs] = useState<PartOfSpeech[]>(["verb", "noun", "more"]);
+  const [saved] = useState(loadSavedView);
+  const [deselectedIds, setDeselectedIds] = useState<string[]>(saved.deselectedIds ?? []);
+  const [activeTabs, setActiveTabs] = useState<PartOfSpeech[]>(saved.activeTabs ?? ["verb", "noun", "more"]);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<DefinitionRow[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -64,16 +81,20 @@ export function Module2Definitions({
   const lockersDictionaries = ofKind("lockers");
   const lockersAdminDictionaries = ofKind("lockers_admin");
 
-  // Display View is the landing view when a personal dictionary other than
-  // the always-on profiles is active. Computed during render so there's no
-  // extra commit.
+  // The view you last picked wins. Until you pick one, Display View is the
+  // landing view when a dictionary other than the always-on profiles has one.
   const prefersDisplay = displayable.some((d) => d.displayKind !== "profile");
-  const [viewMode, setViewMode] = useState<"term" | "display">(prefersDisplay ? "display" : "term");
-  const [prevPrefersDisplay, setPrevPrefersDisplay] = useState(prefersDisplay);
-  if (prefersDisplay !== prevPrefersDisplay) {
-    setPrevPrefersDisplay(prefersDisplay);
-    setViewMode(prefersDisplay ? "display" : "term");
-  }
+  const [chosenView, setViewMode] = useState<"term" | "display" | undefined>(saved.viewMode);
+  const viewMode = chosenView ?? (prefersDisplay ? "display" : "term");
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SAVED_VIEW_KEY, JSON.stringify({ deselectedIds, activeTabs, viewMode: chosenView }));
+    } catch {
+      // Private windows can refuse storage; Module 2 still works, it just
+      // won't remember.
+    }
+  }, [deselectedIds, activeTabs, chosenView]);
 
   // Reset to page 1 whenever the effective filter changes.
   const filterKey = `${activeDictionaryIds.join(",")}|${activeTabs.join(",")}`;
