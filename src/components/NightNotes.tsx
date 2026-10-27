@@ -278,14 +278,25 @@ function NoteItem({
 
   return (
     <li className="flex flex-col gap-2 py-3">
-      <div className="flex items-start gap-2">
+      <textarea
+        defaultValue={note.body}
+        rows={Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
+        onBlur={(e) => {
+          const next = e.target.value.trim();
+          if (next && next !== note.body) onRun("/api/notes/update", { noteId: note.id, body: next });
+        }}
+        aria-label="Note"
+        className="resize-y rounded-md border border-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300"
+      />
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
         {isActive && (
-          <div className="flex flex-col gap-1">
+          <div className="flex items-center">
             <button
               type="button"
               disabled={isFirst}
               onClick={() => onRun("/api/notes/reorder", { noteId: note.id, direction: "up" })}
-              className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
+              className="px-1 text-neutral-500 hover:text-neutral-900 disabled:opacity-30"
               aria-label="Move up"
             >
               ↑
@@ -294,26 +305,13 @@ function NoteItem({
               type="button"
               disabled={isLast}
               onClick={() => onRun("/api/notes/reorder", { noteId: note.id, direction: "down" })}
-              className="rounded border border-neutral-300 px-1.5 py-0.5 text-xs disabled:opacity-30"
+              className="px-1 text-neutral-500 hover:text-neutral-900 disabled:opacity-30"
               aria-label="Move down"
             >
               ↓
             </button>
           </div>
         )}
-        <textarea
-          defaultValue={note.body}
-          rows={Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
-          onBlur={(e) => {
-            const next = e.target.value.trim();
-            if (next && next !== note.body) onRun("/api/notes/update", { noteId: note.id, body: next });
-          }}
-          aria-label="Note"
-          className="min-w-0 flex-1 resize-y rounded-md border border-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-xs">
         {isActive ? (
           <TimeFrameSelect
             value={note.timeFrame}
