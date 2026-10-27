@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { addLabel, removeLabel, toggleDictionary } from "@/app/actions/dictionaries";
+import { toggleDictionary } from "@/app/actions/dictionaries";
 
 type Instance = { id: string; name: string; displayKind: string };
 
@@ -103,157 +103,44 @@ export function Module1DictionarySelect({
     });
   }
 
-  function updateOwnLabels(dictionaryId: string, ownLabels: string[]) {
-    setDictionaries((prev) => prev.map((d) => (d.id === dictionaryId ? { ...d, ownLabels } : d)));
-  }
-
-  async function handleAddLabel(dictionary: Dictionary, raw: string) {
-    if (!dictionary.labelTargetId) return;
-    try {
-      const label = await addLabel(dictionary.labelTargetId, raw);
-      if (!dictionary.ownLabels.includes(label)) {
-        updateOwnLabels(dictionary.id, [...dictionary.ownLabels, label].sort());
-      }
-    } catch (err) {
-      setError((err as Error).message || "Couldn't add that label.");
-    }
-  }
-
-  async function handleRemoveLabel(dictionary: Dictionary, label: string) {
-    if (!dictionary.labelTargetId) return;
-    updateOwnLabels(dictionary.id, dictionary.ownLabels.filter((l) => l !== label));
-    try {
-      await removeLabel(dictionary.labelTargetId, label);
-    } catch {
-      updateOwnLabels(dictionary.id, dictionary.ownLabels);
-      setError("Couldn't remove that label. Try again.");
-    }
-  }
-
+  // One compact row: search, then every dictionary as an on/off chip.
+  // Labels still match in search; the description shows on hover.
   return (
-    <section className="flex flex-col gap-4 border-b border-neutral-200 px-6 py-6">
-      <h2 className="text-sm font-medium text-neutral-500">Dictionaries</h2>
-
-      <input
-        type="text"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Find dictionaries by name or label..."
-        className="w-full max-w-sm rounded-md border border-neutral-300 px-3 py-2 text-sm"
-      />
+    <section className="flex flex-col gap-2 border-b border-neutral-200 px-6 py-3">
+      <div className="flex items-center gap-3">
+        <h2 className="text-sm font-medium text-neutral-500">Dictionaries</h2>
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search..."
+          className="w-full max-w-xs rounded-md border border-neutral-300 px-2 py-1 text-sm"
+        />
+        {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {isSearching ? (
-        <p className="text-sm text-neutral-400">Loading...</p>
-      ) : (
-        <ul className="flex flex-col gap-2">
-          {dictionaries.map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center justify-between gap-4 rounded-md border border-neutral-200 px-4 py-3"
-            >
-              <div className="flex min-w-0 flex-col gap-1">
-                <p className="text-sm font-medium">
-                  {d.instance?.name ?? d.name}
-                  {d.locked && (
-                    <span className="ml-2 text-xs text-neutral-400">(locked)</span>
-                  )}
-                </p>
-                {d.description && !d.isOtherProfile && (
-                  <p className="text-xs text-neutral-500">{d.description}</p>
-                )}
-                <LabelList
-                  labels={d.labels}
-                  ownLabels={d.ownLabels}
-                  editable={isLoggedIn && Boolean(d.labelTargetId)}
-                  onAdd={(label) => handleAddLabel(d, label)}
-                  onRemove={(label) => handleRemoveLabel(d, label)}
-                />
-              </div>
-              <button
-                type="button"
-                disabled={d.locked || isToggling}
-                onClick={() => handleToggle(d)}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
-                  d.optedIn
-                    ? "bg-neutral-900 text-white"
-                    : "border border-neutral-300 text-neutral-600"
-                } disabled:opacity-50`}
-              >
-                {d.optedIn ? "On" : "Off"}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-function LabelList({
-  labels,
-  ownLabels,
-  editable,
-  onAdd,
-  onRemove,
-}: {
-  labels: string[];
-  ownLabels: string[];
-  editable: boolean;
-  onAdd: (label: string) => void;
-  onRemove: (label: string) => void;
-}) {
-  const [draft, setDraft] = useState("");
-
-  if (labels.length === 0 && ownLabels.length === 0 && !editable) return null;
-
-  function submit() {
-    const label = draft.trim();
-    if (!label) return;
-    onAdd(label);
-    setDraft("");
-  }
-
-  return (
-    <div className="flex flex-wrap items-center gap-1">
-      {labels.map((label) => (
-        <span key={`shared-${label}`} className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">
-          {label}
-        </span>
-      ))}
-      {ownLabels.map((label) => (
-        <span
-          key={`own-${label}`}
-          className="flex items-center gap-1 rounded-full border border-neutral-300 px-2 py-0.5 text-xs text-neutral-700"
-        >
-          {label}
-          {editable && (
+      <ul className="flex flex-wrap gap-1.5">
+        {dictionaries.map((d) => (
+          <li key={d.id}>
             <button
               type="button"
-              onClick={() => onRemove(label)}
-              className="text-neutral-400 hover:text-red-600"
-              aria-label={`Remove label ${label}`}
+              disabled={d.locked || isToggling}
+              onClick={() => handleToggle(d)}
+              title={d.isOtherProfile ? undefined : (d.description ?? undefined)}
+              aria-pressed={d.optedIn}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                d.optedIn
+                  ? "bg-neutral-900 text-white"
+                  : "border border-neutral-300 text-neutral-600"
+              } disabled:cursor-default`}
             >
-              ✕
+              {d.instance?.name ?? d.name}
             </button>
-          )}
-        </span>
-      ))}
-      {editable && (
-        <input
-          type="text"
-          value={draft}
-          maxLength={40}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
-          placeholder="+ label"
-          aria-label="Add a label"
-          className="w-24 rounded-full border border-dashed border-neutral-300 px-2 py-0.5 text-xs"
-        />
-      )}
-    </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
