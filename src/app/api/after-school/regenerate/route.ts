@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { isWeekStart } from "@/lib/after-school";
+import { regenerateWeeks } from "@/lib/after-school-db";
 
 // Copies the lesson template over every day of the given weeks.
 export async function POST(request: Request) {
@@ -16,24 +17,10 @@ export async function POST(request: Request) {
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
 
-  const { data: template, error: templateError } = await supabase
-    .from("after_school_lessons")
-    .select("weekday, body")
-    .eq("dictionary_id", dictionaryId)
-    .is("week_start", null);
-  if (templateError) return Response.json({ error: templateError.message }, { status: 500 });
-
-  const now = new Date().toISOString();
-  for (const weekday of [1, 2, 3, 4, 5]) {
-    const text = template?.find((t) => t.weekday === weekday)?.body ?? "";
-    const { error } = await supabase
-      .from("after_school_lessons")
-      .update({ body: text, updated_by: user.id, updated_at: now })
-      .eq("dictionary_id", dictionaryId)
-      .eq("weekday", weekday)
-      .in("week_start", weeks);
-    if (error) return Response.json({ error: error.message }, { status: 500 });
+  try {
+    await regenerateWeeks(supabase, dictionaryId, user.id, weeks);
+    return Response.json({ ok: true });
+  } catch (err) {
+    return Response.json({ error: (err as Error).message }, { status: 500 });
   }
-
-  return Response.json({ ok: true });
 }

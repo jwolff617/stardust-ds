@@ -1,9 +1,9 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 import { anthropic, MODEL_CAPABLE, MODEL_FAST } from "@/lib/anthropic";
-import { SAGE_AI_TOOLS } from "@/lib/sage-ai/tools";
 import { buildSystemPrompt } from "@/lib/sage-ai/system-prompt";
-import { executeTool } from "@/lib/sage-ai/execute-tool";
+import { availableNouns, buildTools, describeNouns, loadCopies, runTool, todayIn, type NounContext } from "@/lib/sage-ai/engine";
+import { NOUNS } from "@/lib/sage-ai/nouns";
 import { safeTimeZone } from "@/lib/time-frames";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,20 @@ export async function POST(request: Request) {
     content: prompt,
   });
 
-  const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null);
+  // Tools come from the nouns of the dictionaries the user has on.
+  const copies = await loadCopies(supabase);
+  const nouns = availableNouns(NOUNS, copies);
+  const tools = buildTools(nouns);
+  const today = todayIn(timeZone);
+  const nounContext: NounContext = {
+    supabase,
+    userId: user.id,
+    displayName: profile?.display_name ?? null,
+    timeZone,
+    today,
+    copies,
+  };
+  const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null, describeNouns(nouns, copies), today);
   const conversationIdForClosure = activeConversationId;
 
   const encoder = new TextEncoder();
@@ -88,7 +101,7 @@ export async function POST(request: Request) {
             model,
             max_tokens: 1024,
             system: systemPrompt,
-            tools: SAGE_AI_TOOLS,
+            tools,
             messages,
           });
 
@@ -123,14 +136,7 @@ export async function POST(request: Request) {
 
           const toolResults: Anthropic.ToolResultBlockParam[] = [];
           for (const block of toolBlocks) {
-            const result = await executeTool(
-              supabase,
-              user.id,
-              block.name,
-              block.input as Record<string, unknown>,
-              profile?.display_name ?? null,
-              timeZone,
-            );
+            const result = await runTool(nouns, nounContext, block.name, block.input as Record<string, unknown>);
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,
