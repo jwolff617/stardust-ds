@@ -15,7 +15,7 @@ type FieldRow = {
 // Display View for Private and Public Profile dictionaries: name/value
 // fields. Your own fields are editable; another spark's show only what
 // they made public.
-export function ProfileFields({ dictionaries }: { dictionaries: ProfileDictionary[] }) {
+export function ProfileFields({ dictionaries, reloadKey = 0 }: { dictionaries: ProfileDictionary[]; reloadKey?: number }) {
   const [fields, setFields] = useState<FieldRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, startLoading] = useTransition();
@@ -36,7 +36,7 @@ export function ProfileFields({ dictionaries }: { dictionaries: ProfileDictionar
     });
 
     return () => controller.abort();
-  }, [idsKey]);
+  }, [idsKey, reloadKey]);
 
   async function save(field: FieldRow, update: { value?: string; visibility?: "public" | "private" }) {
     const previous = fields;

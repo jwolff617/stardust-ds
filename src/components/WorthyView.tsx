@@ -48,7 +48,7 @@ async function post(path: string, body: Record<string, unknown>) {
 
 // Worthy DS Display View: save half of every win. Only new deposits or
 // the other half of wins get re-bet, so every win locks in savings.
-export function WorthyView({ dictionary }: { dictionary: WorthyDictionary }) {
+export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDictionary; reloadKey?: number }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [stories, setStories] = useState<Story[]>([]);
   const [loadedAt, setLoadedAt] = useState<Date | null>(null);
@@ -80,7 +80,7 @@ export function WorthyView({ dictionary }: { dictionary: WorthyDictionary }) {
       }
     });
     return () => controller.abort();
-  }, [dictionary.id, refreshToken]);
+  }, [dictionary.id, refreshToken, reloadKey]);
 
   const start = loadedAt ? rangeStart(range, loadedAt) : null;
   const summary = summarize(entries, start);

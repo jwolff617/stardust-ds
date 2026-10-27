@@ -48,7 +48,7 @@ function formatWhen(iso: string | null): string {
 
 // Night DS Display View. Every note lives for its time frame, then
 // archives itself, so you keep letting go and starting fresh.
-export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }) {
+export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: NotesDictionary[]; reloadKey?: number }) {
   const [state, setState] = useState<NoteState>("active");
   const [timeFrameFilter, setTimeFrameFilter] = useState<TimeFrame | "">("");
   const [labelFilter, setLabelFilter] = useState("");
@@ -95,7 +95,7 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
     });
 
     return () => controller.abort();
-  }, [idsKey, state, timeFrameFilter, labelFilter, page, refreshToken]);
+  }, [idsKey, state, timeFrameFilter, labelFilter, page, refreshToken, reloadKey]);
 
   async function run(path: string, body: Record<string, unknown>) {
     setError(null);
@@ -212,7 +212,7 @@ export function NightNotes({ dictionaries }: { dictionaries: NotesDictionary[] }
         <ul className="flex flex-col divide-y divide-neutral-100">
           {notes.map((note, index) => (
             <NoteItem
-              key={`${note.id}-${refreshToken}`}
+              key={`${note.id}-${refreshToken}-${reloadKey}`}
               note={note}
               state={state}
               isFirst={index === 0}

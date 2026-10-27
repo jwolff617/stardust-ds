@@ -30,7 +30,7 @@ function getSpeechSupportServerSnapshot() {
   return false;
 }
 
-export function Module3SageAI({ isLoggedIn }: { isLoggedIn: boolean }) {
+export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; onChange?: () => void }) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -130,6 +130,9 @@ export function Module3SageAI({ isLoggedIn }: { isLoggedIn: boolean }) {
             );
           }
         }
+
+        // Sage AI may have written, edited, or archived something.
+        onChange?.();
 
         const listRes = await fetch("/api/sage-ai/conversations");
         const listData = await listRes.json();

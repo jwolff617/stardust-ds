@@ -18,7 +18,7 @@ function formatAmount(n: number): string {
 
 // Accounts DS Display View: like a bank account that holds more than
 // money. Each account keeps dated entries and shows its balance.
-export function AccountsView({ dictionary }: { dictionary: AccountsDictionary }) {
+export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: AccountsDictionary; reloadKey?: number }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [selected, setSelected] = useState<AccountName>("Savings");
   const [amount, setAmount] = useState("");
@@ -40,7 +40,7 @@ export function AccountsView({ dictionary }: { dictionary: AccountsDictionary })
       }
     });
     return () => controller.abort();
-  }, [dictionary.id, refreshToken]);
+  }, [dictionary.id, refreshToken, reloadKey]);
 
   function balanceOf(account: AccountName) {
     const rows = entries.filter((e) => e.account === account);

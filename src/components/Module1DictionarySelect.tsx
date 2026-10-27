@@ -28,9 +28,13 @@ export type SelectedDictionary = { id: string; name: string; displayKind: string
 export function Module1DictionarySelect({
   isLoggedIn,
   onSelectionChange,
+  reloadKey = 0,
+  onChange,
 }: {
   isLoggedIn: boolean;
   onSelectionChange?: (dictionaries: SelectedDictionary[]) => void;
+  reloadKey?: number;
+  onChange?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
@@ -59,7 +63,7 @@ export function Module1DictionarySelect({
     });
 
     return () => controller.abort();
-  }, [runSearch]);
+  }, [runSearch, reloadKey]);
 
   useEffect(() => {
     onSelectionChange?.(
@@ -94,6 +98,7 @@ export function Module1DictionarySelect({
         if (dictionary.kind === "instance_template") {
           await runSearch();
         }
+        onChange?.();
       } catch {
         setDictionaries((prev) =>
           prev.map((d) => (d.id === dictionary.id ? { ...d, optedIn: !nextOptedIn } : d)),
