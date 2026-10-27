@@ -160,15 +160,15 @@ function Participants({ data, save }: { data: Data; save: Save }) {
         const overdue = p.renewedThru !== null && p.renewedThru < today();
         return (
           <div key={p.id} className="flex flex-col gap-2 border-b border-neutral-100 pb-2">
-            <button type="button" onClick={() => setOpenId(openId === p.id ? null : p.id)} className="flex flex-wrap items-center gap-2 text-left text-sm">
-              <span className="font-medium">{p.name}</span>
-              <span className="text-xs text-neutral-500">
-                {lockersOf(data, p.id).length > 0 ? `Locker ${lockersOf(data, p.id).join(", ")}` : "No locker"}
-              </span>
-              {barred && <span className="rounded-full bg-red-100 px-2 text-xs text-red-700">Barred</span>}
-              {overdue && <span className="rounded-full bg-yellow-100 px-2 text-xs text-yellow-800">Renewal due</span>}
-            </button>
-            {openId === p.id && <ParticipantForm participant={p} data={data} save={save} />}
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" onClick={() => setOpenId(openId === p.id ? null : p.id)} className="flex flex-wrap items-center gap-2 text-left text-sm">
+                <span className="font-medium">{p.name}</span>
+                {barred && <span className="rounded-full bg-red-100 px-2 text-xs text-red-700">Barred</span>}
+                {overdue && <span className="rounded-full bg-yellow-100 px-2 text-xs text-yellow-800">Renewal due</span>}
+              </button>
+              {!p.archived && <LockerAssigner participant={p} data={data} save={save} />}
+            </div>
+            {openId === p.id && <ParticipantForm participant={p} save={save} />}
           </div>
         );
       })}
@@ -176,11 +176,10 @@ function Participants({ data, save }: { data: Data; save: Save }) {
   );
 }
 
-function ParticipantForm({ participant: p, data, save }: { participant: Participant; data: Data; save: Save }) {
+function ParticipantForm({ participant: p, save }: { participant: Participant; save: Save }) {
   const field = (key: keyof Participant, value: unknown) => save("participant", { ...p, [key]: value });
   return (
     <div className="grid grid-cols-1 gap-2 rounded-md bg-neutral-50 p-3 text-xs sm:grid-cols-2">
-      {!p.archived && <LockerAssigner participant={p} data={data} save={save} />}
       <label className="flex flex-col gap-1">
         Name
         <input defaultValue={p.name} onBlur={(e) => e.target.value !== p.name && field("name", e.target.value)} className={input} />
@@ -221,8 +220,8 @@ function ParticipantForm({ participant: p, data, save }: { participant: Particip
   );
 }
 
-// A participant's lockers, each with Release, and a box to assign another
-// by number.
+// A participant's lockers, each with an ✕ to release it, and a box to
+// assign another by number. Shown on every row of the participant list.
 function LockerAssigner({ participant: p, data, save }: { participant: Participant; data: Data; save: Save }) {
   const [number, setNumber] = useState("");
   const nameOf = new Map(data.participants.map((x) => [x.id, x.name]));
@@ -239,9 +238,8 @@ function LockerAssigner({ participant: p, data, save }: { participant: Participa
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
-      <span className="font-medium">Lockers</span>
-      {theirs.length === 0 && <span className="text-neutral-400">None</span>}
+    <div className="flex flex-wrap items-center gap-1 text-xs">
+      {theirs.length === 0 && <span className="text-neutral-400">No locker</span>}
       {theirs.map((l) => (
         <span key={l.number} className="flex items-center gap-1 rounded-full border border-neutral-300 bg-white px-2 py-0.5">
           {l.number}
@@ -269,7 +267,7 @@ function LockerAssigner({ participant: p, data, save }: { participant: Participa
           value={number}
           onChange={(e) => setNumber(e.target.value)}
           placeholder="Locker #"
-          className={`${input} w-24`}
+          className={`${input} w-24 text-xs`}
         />
         <button type="submit" className="rounded-full border border-neutral-300 bg-white px-3 py-1 font-medium">
           Assign
