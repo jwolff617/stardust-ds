@@ -29,7 +29,7 @@ Stardust DS starts in one city: Seattle.
 
 **Views.** Every dictionary has a Term View (its words and definitions). Personal and group dictionaries also have a Display View built for what they hold.
 
-**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story.
+**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Page, Contact, Birthday.
 
 **Profile dictionaries.** Every spark gets two, locked on:
 
@@ -46,6 +46,9 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional amount and a note, and shows its balance. |
 | **Worthy DS** | Built | Urban Wolf Studio's betting system: save half of every win. Log deposits, wins, savings, and balance snapshots. See savings owed and saved, savings and balance as a share of deposits, and loss, over a day, week, month, year, decade, or life. Keep Bet Stories with the Worthy principles as labels. |
 | **After School DS** | Built | A group dictionary for an after-school program. Make a group for your site and add staff by email. Lessons: a Monday-to-Friday template on top, copied into each new week, with five weeks shown at a time and a regenerate button that recopies the template into them. Calendar: weeks by month, each with a theme and five activities. |
+| **Notepad** | Built | Pages that stay until you delete them: a title and whatever you write. Night DS is for letting go; Notepad is for keeping. |
+| **Address Book** | Built | The people you know: name, phone, email, address, notes. |
+| **Birthdays** | Built | Name, month, day, and the year if you know it. Who's next is on top, with how many days away and how old they turn. |
 | **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
 | **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
@@ -63,11 +66,13 @@ Needs `.env.local` with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_K
 
 The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next code, per `AGENTS.md`) on Supabase. A daily Vercel Cron hits `/api/keepalive`, which keeps the free Supabase project awake and archives expired Night DS notes. Notes also archive themselves whenever they are read.
 
+**Basic apps.** Notepad, Address Book, and Birthdays share one pattern. Each is one entry in `src/lib/basics.ts` (its table, fields, order, and summary line), and that entry drives its API (`/api/basics`), its Display View (`BasicsView`), and its Sage AI noun. A new basic app (Checklist, Recipes) is a migration plus one entry there.
+
 ## Database
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0015 applied (2026-10-27). Nothing pending.
+**Live project:** 0001 to 0015 applied (2026-10-27). Pending: 0016 (Notepad, Address Book, Birthdays).
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
