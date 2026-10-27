@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Module1DictionarySelect, type SelectedDictionary } from "./Module1DictionarySelect";
 import { Module2Definitions } from "./Module2Definitions";
 import { Module3SageAI } from "./Module3SageAI";
+import { usePreferences } from "@/lib/use-preferences";
 
 export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [selectedDictionaries, setSelectedDictionaries] = useState<SelectedDictionary[]>([]);
@@ -11,6 +12,7 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
   // Refresh button) so every module refetches what it shows.
   const [reloadKey, setReloadKey] = useState(0);
   const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+  const { prefs, loaded, update } = usePreferences(isLoggedIn);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -19,8 +21,18 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
         onSelectionChange={setSelectedDictionaries}
         reloadKey={reloadKey}
         onChange={reload}
+        storeHidden={prefs.module1?.storeHidden ?? false}
+        onStoreHiddenChange={(hidden) => update((p) => ({ ...p, module1: { ...p.module1, storeHidden: hidden } }))}
       />
-      <Module2Definitions dictionaries={selectedDictionaries} reloadKey={reloadKey} onRefresh={reload} />
+      {loaded && (
+        <Module2Definitions
+          dictionaries={selectedDictionaries}
+          reloadKey={reloadKey}
+          onRefresh={reload}
+          prefs={prefs.module2 ?? {}}
+          onPrefsChange={(change) => update((p) => ({ ...p, module2: change(p.module2 ?? {}) }))}
+        />
+      )}
       <Module3SageAI isLoggedIn={isLoggedIn} onChange={reload} />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { ProfileFields } from "./ProfileFields";
 import { NightNotes } from "./NightNotes";
 import { AccountsView } from "./AccountsView";
@@ -11,6 +11,7 @@ import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
 import { NotepadView } from "./NotepadView";
 import { BASIC_APPS, basicApp } from "@/lib/basics";
+import type { Preferences } from "@/lib/preferences";
 
 type SelectedDictionary = { id: string; name: string; displayKind: string };
 type PartOfSpeech = "verb" | "noun" | "more";
@@ -29,77 +30,84 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
   { key: "more", label: "More" },
 ];
 
-// Module 2 remembers what you had on (unchecked dictionaries, tabs, and
-// Term or Display View) in this browser, so a refresh or a new login opens
-// where you left off.
-const SAVED_VIEW_KEY = "stardust.module2";
-
-type SavedView = { deselectedIds?: string[]; activeTabs?: PartOfSpeech[]; viewMode?: "term" | "display" };
-
-function loadSavedView(): SavedView {
-  if (typeof window === "undefined") return {};
-  try {
-    return JSON.parse(window.localStorage.getItem(SAVED_VIEW_KEY) ?? "{}") as SavedView;
-  } catch {
-    return {};
-  }
-}
-
 // Display kinds that have their own Display View.
 const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", ...BASIC_APPS.map((a) => a.kind)];
 
+const hasDisplayView = (d: SelectedDictionary) => DISPLAY_KINDS.includes(d.displayKind);
+
+// Your dictionaries in your order. Ones not placed yet (newly added) go
+// at the bottom, in the order they came.
+function inOrder(dictionaries: SelectedDictionary[], order: string[]): SelectedDictionary[] {
+  const rank = new Map(order.map((id, i) => [id, i]));
+  return dictionaries
+    .map((d, i) => ({ d, r: rank.get(d.id) ?? order.length + i }))
+    .sort((a, b) => a.r - b.r)
+    .map(({ d }) => d);
+}
+
+// One dictionary's Display View in the feed.
+function DisplayFor({ d, reloadKey }: { d: SelectedDictionary; reloadKey: number }) {
+  const dictionary = { id: d.id, name: d.name };
+  switch (d.displayKind) {
+    case "notes_list":
+      return <NightNotes dictionaries={[dictionary]} reloadKey={reloadKey} />;
+    case "profile":
+      return <ProfileFields dictionaries={[dictionary]} reloadKey={reloadKey} />;
+    case "accounts":
+      return <AccountsView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "worthy":
+      return <WorthyView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "after_school":
+      return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "lockers":
+      return <LockersView reloadKey={reloadKey} />;
+    case "lockers_admin":
+      return <LockersAdminView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "notepad":
+      return <NotepadView dictionary={dictionary} reloadKey={reloadKey} />;
+    default: {
+      const app = basicApp(d.displayKind);
+      return app ? <BasicsView app={app} dictionary={dictionary} reloadKey={reloadKey} /> : null;
+    }
+  }
+}
+
 export function Module2Definitions({
-  dictionaries,
+  dictionaries: incoming,
   reloadKey = 0,
   onRefresh,
+  prefs,
+  onPrefsChange,
 }: {
   dictionaries: SelectedDictionary[];
   reloadKey?: number;
   onRefresh?: () => void;
+  prefs: NonNullable<Preferences["module2"]>;
+  onPrefsChange: (change: (prev: NonNullable<Preferences["module2"]>) => NonNullable<Preferences["module2"]>) => void;
 }) {
-  // Everything opted-in is active by default; track what's unchecked so
-  // newly opted-in dictionaries show up active with no effect needed.
-  const [saved] = useState(loadSavedView);
-  const [deselectedIds, setDeselectedIds] = useState<string[]>(saved.deselectedIds ?? []);
-  const [activeTabs, setActiveTabs] = useState<PartOfSpeech[]>(saved.activeTabs ?? ["verb", "noun", "more"]);
+  // Everything opted-in is active by default; prefs track what's unchecked
+  // so newly opted-in dictionaries show up active.
+  const deselectedIds = prefs.deselectedIds ?? [];
+  const activeTabs = prefs.activeTabs ?? ["verb", "noun", "more"];
+  const dictionaries = inOrder(incoming, prefs.order ?? []);
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<DefinitionRow[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, startLoading] = useTransition();
+  const pendingJump = useRef<string | null>(null);
 
   const activeDictionaryIds = dictionaries
     .map((d) => d.id)
     .filter((id) => !deselectedIds.includes(id));
 
-  const displayable = dictionaries.filter(
-    (d) => DISPLAY_KINDS.includes(d.displayKind) && !deselectedIds.includes(d.id),
-  );
+  const displayable = dictionaries.filter((d) => hasDisplayView(d) && !deselectedIds.includes(d.id));
   const hasDisplay = displayable.length > 0;
-  const ofKind = (kind: string) => displayable.filter((d) => d.displayKind === kind);
-  const profileDictionaries = ofKind("profile");
-  const notesDictionaries = ofKind("notes_list");
-  const accountsDictionaries = ofKind("accounts");
-  const worthyDictionaries = ofKind("worthy");
-  const afterSchoolDictionaries = ofKind("after_school");
-  const lockersDictionaries = ofKind("lockers");
-  const lockersAdminDictionaries = ofKind("lockers_admin");
-  const notepadDictionaries = ofKind("notepad");
-  const basicDictionaries = displayable.filter((d) => d.displayKind !== "notepad" && basicApp(d.displayKind));
 
   // The view you last picked wins. Until you pick one, Display View is the
   // landing view when a dictionary other than the always-on profiles has one.
   const prefersDisplay = displayable.some((d) => d.displayKind !== "profile");
-  const [chosenView, setViewMode] = useState<"term" | "display" | undefined>(saved.viewMode);
-  const viewMode = chosenView ?? (prefersDisplay ? "display" : "term");
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SAVED_VIEW_KEY, JSON.stringify({ deselectedIds, activeTabs, viewMode: chosenView }));
-    } catch {
-      // Private windows can refuse storage; Module 2 still works, it just
-      // won't remember.
-    }
-  }, [deselectedIds, activeTabs, chosenView]);
+  const viewMode = prefs.viewMode ?? (prefersDisplay ? "display" : "term");
+  const setViewMode = (mode: "term" | "display") => onPrefsChange((p) => ({ ...p, viewMode: mode }));
 
   // Reset to page 1 whenever the effective filter changes.
   const filterKey = `${activeDictionaryIds.join(",")}|${activeTabs.join(",")}`;
@@ -139,16 +147,49 @@ export function Module2Definitions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showDisplay, activeDictionaryIds.join(","), activeTabs.join(","), page, noFilters, reloadKey]);
 
+  // After a jump is asked for, scroll once its block is on the page (it may
+  // take a render to turn on or switch to Display View).
+  useEffect(() => {
+    const el = pendingJump.current && document.getElementById(`feed-${pendingJump.current}`);
+    if (!el) return;
+    pendingJump.current = null;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  const setDeselectedIds = (change: (prev: string[]) => string[]) =>
+    onPrefsChange((p) => ({ ...p, deselectedIds: change(p.deselectedIds ?? []) }));
+
   function toggleDictionaryFilter(id: string) {
-    setDeselectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+    setDeselectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   function toggleTab(tab: PartOfSpeech) {
-    setActiveTabs((prev) =>
-      prev.includes(tab) ? prev.filter((x) => x !== tab) : [...prev, tab],
-    );
+    onPrefsChange((p) => {
+      const prev = p.activeTabs ?? ["verb", "noun", "more"];
+      return { ...p, activeTabs: prev.includes(tab) ? prev.filter((x) => x !== tab) : [...prev, tab] };
+    });
+  }
+
+  // Moves a dictionary one place up or down the feed.
+  function move(id: string, by: -1 | 1) {
+    const ids = dictionaries.map((d) => d.id);
+    const i = ids.indexOf(id);
+    const j = i + by;
+    if (i < 0 || j < 0 || j >= ids.length) return;
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+    // Keep places for dictionaries that are off right now.
+    const rest = (prefs.order ?? []).filter((x) => !ids.includes(x));
+    onPrefsChange((p) => ({ ...p, order: [...ids, ...rest] }));
+  }
+
+  // Clicking a name turns it on if it's off and jumps to its Display View.
+  function jumpTo(d: SelectedDictionary) {
+    if (deselectedIds.includes(d.id)) setDeselectedIds((prev) => prev.filter((x) => x !== d.id));
+    if (!hasDisplayView(d)) return;
+    if (viewMode !== "display") setViewMode("display");
+    pendingJump.current = d.id;
+    // Already showing: nothing re-renders, so scroll now.
+    document.getElementById(`feed-${d.id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (dictionaries.length === 0) {
@@ -166,7 +207,7 @@ export function Module2Definitions({
     <section className="flex flex-col gap-2 border-b border-neutral-200 px-6 py-6">
       <RefreshButton onRefresh={onRefresh} />
       <div className="flex gap-6">
-        <aside className="flex w-40 shrink-0 flex-col gap-2">
+        <aside className="sticky top-2 flex max-h-[calc(100vh-1rem)] w-48 shrink-0 flex-col gap-1 self-start overflow-y-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-medium text-neutral-500">Dictionaries</h3>
             <button
@@ -181,15 +222,43 @@ export function Module2Definitions({
               {deselectedIds.length === 0 ? "None" : "All"}
             </button>
           </div>
-          {dictionaries.map((d) => (
-            <label key={d.id} className="flex items-center gap-2 text-sm">
+          {dictionaries.map((d, i) => (
+            <div key={d.id} className="group flex items-center gap-1.5 text-sm">
               <input
                 type="checkbox"
                 checked={!deselectedIds.includes(d.id)}
                 onChange={() => toggleDictionaryFilter(d.id)}
+                aria-label={`Show ${d.name}`}
               />
-              {d.name}
-            </label>
+              <button
+                type="button"
+                onClick={() => jumpTo(d)}
+                title={hasDisplayView(d) ? `Go to ${d.name}` : undefined}
+                className={`min-w-0 flex-1 truncate text-left ${hasDisplayView(d) ? "hover:underline" : "cursor-default"}`}
+              >
+                {d.name}
+              </button>
+              <span className="flex shrink-0 text-xs text-neutral-400">
+                <button
+                  type="button"
+                  disabled={i === 0}
+                  onClick={() => move(d.id, -1)}
+                  aria-label={`Move ${d.name} up`}
+                  className="px-0.5 hover:text-neutral-900 disabled:opacity-20"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  disabled={i === dictionaries.length - 1}
+                  onClick={() => move(d.id, 1)}
+                  aria-label={`Move ${d.name} down`}
+                  className="px-0.5 hover:text-neutral-900 disabled:opacity-20"
+                >
+                  ▼
+                </button>
+              </span>
+            </div>
           ))}
         </aside>
 
@@ -294,31 +363,11 @@ export function Module2Definitions({
             </>
           ) : (
             <div className="flex flex-col gap-8">
-              {notesDictionaries.length > 0 && (
-                <NightNotes dictionaries={notesDictionaries.map((d) => ({ id: d.id, name: d.name }))} reloadKey={reloadKey} />
-              )}
-              {accountsDictionaries.map((d) => (
-                <AccountsView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
+              {displayable.map((d) => (
+                <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4">
+                  <DisplayFor d={d} reloadKey={reloadKey} />
+                </div>
               ))}
-              {afterSchoolDictionaries.map((d) => (
-                <AfterSchoolView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
-              ))}
-              {lockersDictionaries.length > 0 && <LockersView reloadKey={reloadKey} />}
-              {lockersAdminDictionaries.map((d) => (
-                <LockersAdminView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
-              ))}
-              {notepadDictionaries.map((d) => (
-                <NotepadView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
-              ))}
-              {basicDictionaries.map((d) => (
-                <BasicsView key={d.id} app={basicApp(d.displayKind)!} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
-              ))}
-              {worthyDictionaries.map((d) => (
-                <WorthyView key={d.id} dictionary={{ id: d.id, name: d.name }} reloadKey={reloadKey} />
-              ))}
-              {profileDictionaries.length > 0 && (
-                <ProfileFields dictionaries={profileDictionaries.map((d) => ({ id: d.id, name: d.name }))} reloadKey={reloadKey} />
-              )}
             </div>
           )}
         </div>

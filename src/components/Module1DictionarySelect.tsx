@@ -30,13 +30,19 @@ export function Module1DictionarySelect({
   onSelectionChange,
   reloadKey = 0,
   onChange,
+  storeHidden = false,
+  onStoreHiddenChange,
 }: {
   isLoggedIn: boolean;
   onSelectionChange?: (dictionaries: SelectedDictionary[]) => void;
   reloadKey?: number;
   onChange?: () => void;
+  storeHidden?: boolean;
+  onStoreHiddenChange?: (hidden: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [label, setLabel] = useState<string | null>(null);
+  const [allLabels, setAllLabels] = useState(false);
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
@@ -126,11 +132,40 @@ export function Module1DictionarySelect({
     });
   }
 
-  // One compact row: search, then every dictionary as an on/off chip.
-  // Labels still match in search; the description shows on hover.
+  // Your dictionaries (on) as chips, then the store (everything you
+  // haven't added), which can be hidden and filtered by label. Search
+  // matches names, descriptions, and labels in both.
+  const mine = dictionaries.filter((d) => d.optedIn);
+  const store = dictionaries.filter((d) => !d.optedIn);
+  const shownStore = label ? store.filter((d) => labelsOf(d).includes(label)) : store;
+
+  // Store labels, most-used first. A dozen show; the rest wait behind More.
+  const counts = new Map<string, number>();
+  for (const d of store) for (const l of labelsOf(d)) counts.set(l, (counts.get(l) ?? 0) + 1);
+  const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([l]) => l);
+  const suggestions = allLabels ? ranked : ranked.slice(0, LABELS_SHOWN);
+  if (label && !suggestions.includes(label)) suggestions.unshift(label);
+
+  const chip = (d: Dictionary) => (
+    <li key={d.id}>
+      <button
+        type="button"
+        disabled={d.locked || isToggling}
+        onClick={() => handleToggle(d)}
+        title={d.isOtherProfile ? undefined : (d.description ?? undefined)}
+        aria-pressed={d.optedIn}
+        className={`rounded-full px-3 py-1 text-xs font-medium ${
+          d.optedIn ? "bg-neutral-900 text-white" : "border border-neutral-300 text-neutral-600"
+        } disabled:cursor-default`}
+      >
+        {d.instance?.name ?? d.name}
+      </button>
+    </li>
+  );
+
   return (
     <section className="flex flex-col gap-2 border-b border-neutral-200 px-6 py-3">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-sm font-medium text-neutral-500">Dictionaries</h2>
         <input
           type="text"
@@ -139,31 +174,56 @@ export function Module1DictionarySelect({
           placeholder="Search..."
           className="w-full max-w-xs rounded-md border border-neutral-300 px-2 py-1 text-sm"
         />
+        <button
+          type="button"
+          onClick={() => onStoreHiddenChange?.(!storeHidden)}
+          className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
+        >
+          {storeHidden ? `Show store (${store.length})` : "Hide store"}
+        </button>
         {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <ul className="flex flex-wrap gap-1.5">
-        {dictionaries.map((d) => (
-          <li key={d.id}>
-            <button
-              type="button"
-              disabled={d.locked || isToggling}
-              onClick={() => handleToggle(d)}
-              title={d.isOtherProfile ? undefined : (d.description ?? undefined)}
-              aria-pressed={d.optedIn}
-              className={`rounded-full px-3 py-1 text-xs font-medium ${
-                d.optedIn
-                  ? "bg-neutral-900 text-white"
-                  : "border border-neutral-300 text-neutral-600"
-              } disabled:cursor-default`}
-            >
-              {d.instance?.name ?? d.name}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <ul className="flex flex-wrap gap-1.5">{mine.map(chip)}</ul>
+
+      {!storeHidden && (
+        <div className="flex flex-col gap-2 rounded-md bg-neutral-50 p-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-xs font-medium text-neutral-500">Store</span>
+            {suggestions.map((l) => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLabel(label === l ? null : l)}
+                aria-pressed={label === l}
+                className={`rounded-full px-2 py-0.5 text-xs ${
+                  label === l ? "bg-blue-600 text-white" : "bg-white text-neutral-600 ring-1 ring-neutral-200"
+                }`}
+              >
+                #{l}
+              </button>
+            ))}
+            {ranked.length > LABELS_SHOWN && (
+              <button type="button" onClick={() => setAllLabels((v) => !v)} className="text-xs text-neutral-500 underline">
+                {allLabels ? "Fewer" : "More labels"}
+              </button>
+            )}
+          </div>
+          {shownStore.length === 0 ? (
+            <p className="text-xs text-neutral-400">{store.length === 0 ? "You've added everything." : "Nothing matches."}</p>
+          ) : (
+            <ul className="flex flex-wrap gap-1.5">{shownStore.map(chip)}</ul>
+          )}
+        </div>
+      )}
     </section>
   );
+}
+
+const LABELS_SHOWN = 12;
+
+function labelsOf(d: Dictionary): string[] {
+  return [...new Set([...d.labels, ...d.ownLabels])];
 }

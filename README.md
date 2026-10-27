@@ -29,6 +29,8 @@ Stardust DS starts in one city: Seattle.
 
 **Views.** Every dictionary has a Term View (its words and definitions). Personal and group dictionaries also have a Display View built for what they hold.
 
+**Your arrangement.** Module 1 shows your dictionaries, then the store (everything you haven't added), which you can hide and filter by label. Module 2 is one feed of Display Views in your order: click a name to jump to it, ▲▼ to move it. Which dictionaries are checked, the tabs, the view, the feed order, and whether the store is open save to your account (`profiles.preferences`) with a copy in the browser, so the app opens how you left it on any device.
+
 **Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Notepad Note, Contact, Birthday.
 
 **Profile dictionaries.** Every spark gets two, locked on:
@@ -72,7 +74,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0017 applied (2026-10-27). Nothing pending.
+**Live project:** 0001 to 0017 applied (2026-10-27). Pending: 0018 (saving your arrangement to your account; until it runs, it saves in the browser only).
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
