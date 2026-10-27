@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NOTE_OR_NOTEPAD } from "@/lib/basics";
 import { NOTE_LABELS, TIME_FRAMES, expiresAtFor, type TimeFrame } from "@/lib/time-frames";
 import type { NounContext, NounDef, VerbResult } from "../engine";
 
@@ -69,7 +70,7 @@ export const noteNoun: NounDef = {
   name: "Note",
   dictionary: "night-ds",
   description: "A note in Night DS. Notes have no title, only content, and live for a time frame. When it runs out the note archives itself.",
-  notes: 'If the user doesn\'t say a time frame, pick the one their words imply ("today" is day, "this week" is week) and default to day.',
+  notes: 'If the user doesn\'t say a time frame, pick the one their words imply ("today" is day, "this week" is week) and default to day. ' + NOTE_OR_NOTEPAD,
   verbs: {
     Add: {
       params: [{ name: "body", type: "text", required: true }, timeFrameField, labelField],

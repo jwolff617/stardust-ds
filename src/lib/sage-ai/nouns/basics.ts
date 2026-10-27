@@ -36,6 +36,7 @@ function nounFor(app: BasicApp): NounDef {
     name: app.noun,
     dictionary: app.address,
     description: app.nounDescription,
+    notes: app.nounNotes,
     verbs: {
       Add: {
         params: fieldsOf(app, true),
