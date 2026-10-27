@@ -30,7 +30,19 @@ function getSpeechSupportServerSnapshot() {
   return false;
 }
 
-export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; onChange?: () => void }) {
+// Sage AI floats over the page, bottom right, so it is always in reach.
+// Minimized, it is one button; expanded, a chat panel.
+export function Module3SageAI({
+  isLoggedIn,
+  onChange,
+  collapsed = false,
+  onCollapsedChange,
+}: {
+  isLoggedIn: boolean;
+  onChange?: () => void;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
+}) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,6 +51,13 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
   const [isListBusy, startListBusy] = useTransition();
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const [showConversations, setShowConversations] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  // Keep the newest message in view.
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ block: "end" });
+  }, [messages, collapsed]);
 
   const hasSpeechSupport = useSyncExternalStore(
     noopSubscribe,
@@ -173,29 +192,70 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
     setIsListening(true);
   }
 
-  if (!isLoggedIn) {
+  const toggle = () => onCollapsedChange?.(!collapsed);
+
+  if (collapsed) {
     return (
-      <section className="px-6 py-6">
-        <p className="text-sm text-neutral-400">Sign in to talk to Sage AI.</p>
-      </section>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={false}
+        className="fixed bottom-4 right-4 z-40 rounded-full bg-neutral-900 px-4 py-3 text-sm font-medium text-white shadow-lg"
+      >
+        Sage AI ▴
+      </button>
     );
   }
 
   return (
-    <section className="flex gap-6 px-6 py-6">
-      <aside className="flex w-48 shrink-0 flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-medium text-neutral-500">Conversations</h3>
-          <button type="button" className="text-xs underline" onClick={startNewConversation}>
-            New
-          </button>
-        </div>
-        <div className="flex flex-col gap-1">
+    <section className="fixed inset-x-2 bottom-2 z-40 flex max-h-[60vh] flex-col rounded-lg border border-neutral-200 bg-white shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]">
+      <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-2">
+        <h2 className="text-sm font-medium">Sage AI</h2>
+        {isLoggedIn && (
+          <>
+            <button
+              type="button"
+              onClick={() => setShowConversations((v) => !v)}
+              aria-pressed={showConversations}
+              className="text-xs text-neutral-500 underline"
+            >
+              {showConversations ? "Back to chat" : "Conversations"}
+            </button>
+            <button
+              type="button"
+              className="text-xs text-neutral-500 underline"
+              onClick={() => {
+                startNewConversation();
+                setShowConversations(false);
+              }}
+            >
+              New
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={true}
+          aria-label="Minimize Sage AI"
+          className="ml-auto px-1 text-neutral-500 hover:text-neutral-900"
+        >
+          ▾
+        </button>
+      </div>
+
+      {!isLoggedIn ? (
+        <p className="px-4 py-4 text-sm text-neutral-400">Sign in to talk to Sage AI.</p>
+      ) : showConversations ? (
+        <div className="flex flex-col gap-1 overflow-y-auto p-3">
           {conversations.map((c) => (
             <div key={c.id} className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => openConversation(c.id)}
+                onClick={() => {
+                  openConversation(c.id);
+                  setShowConversations(false);
+                }}
                 className={`flex-1 truncate rounded px-2 py-1 text-left text-sm ${
                   c.id === conversationId ? "bg-neutral-900 text-white" : "hover:bg-neutral-100"
                 }`}
@@ -212,14 +272,13 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
               </button>
             </div>
           ))}
-          {isListBusy && conversations.length === 0 && (
-            <p className="px-2 text-xs text-neutral-400">Loading...</p>
+          {conversations.length === 0 && (
+            <p className="px-2 text-xs text-neutral-400">{isListBusy ? "Loading..." : "No conversations yet."}</p>
           )}
         </div>
-      </aside>
-
-      <div className="flex flex-1 flex-col gap-4">
-        <div className="flex min-h-40 flex-col gap-3 rounded border border-neutral-200 p-4">
+      ) : (
+      <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
+        <div className="flex min-h-24 flex-1 flex-col gap-3 overflow-y-auto">
           {messages.length === 0 ? (
             <p className="text-sm text-neutral-400">Tell Sage AI what to do.</p>
           ) : (
@@ -232,6 +291,7 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
               </div>
             ))
           )}
+          <div ref={bottomRef} />
         </div>
 
         <form
@@ -246,7 +306,7 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="note write groceries milk, eggs, bread"
-            className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm"
+            className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-2 text-sm"
           />
           {hasSpeechSupport && (
             <button
@@ -268,6 +328,7 @@ export function Module3SageAI({ isLoggedIn, onChange }: { isLoggedIn: boolean; o
           </button>
         </form>
       </div>
+      )}
     </section>
   );
 }

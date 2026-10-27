@@ -15,7 +15,8 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
   const { prefs, loaded, update } = usePreferences(isLoggedIn);
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Bottom padding keeps the end of the feed clear of the Sage AI button.
+    <div className="flex flex-1 flex-col pb-20">
       <Module1DictionarySelect
         isLoggedIn={isLoggedIn}
         onSelectionChange={setSelectedDictionaries}
@@ -23,6 +24,8 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
         onChange={reload}
         storeHidden={prefs.module1?.storeHidden ?? false}
         onStoreHiddenChange={(hidden) => update((p) => ({ ...p, module1: { ...p.module1, storeHidden: hidden } }))}
+        collapsed={prefs.module1?.collapsed ?? false}
+        onCollapsedChange={(collapsed) => update((p) => ({ ...p, module1: { ...p.module1, collapsed } }))}
       />
       {loaded && (
         <Module2Definitions
@@ -33,7 +36,14 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
           onPrefsChange={(change) => update((p) => ({ ...p, module2: change(p.module2 ?? {}) }))}
         />
       )}
-      <Module3SageAI isLoggedIn={isLoggedIn} onChange={reload} />
+      {loaded && (
+        <Module3SageAI
+          isLoggedIn={isLoggedIn}
+          onChange={reload}
+          collapsed={prefs.module3?.collapsed ?? false}
+          onCollapsedChange={(collapsed) => update((p) => ({ ...p, module3: { collapsed } }))}
+        />
+      )}
     </div>
   );
 }

@@ -12,8 +12,11 @@ export type Preferences = {
     viewMode?: "term" | "display";
     // Dictionary ids, top of the feed first.
     order?: string[];
+    // On phones, the dictionary list folds away so the feed gets the width.
+    listCollapsed?: boolean;
   };
-  module1?: { storeHidden?: boolean };
+  module1?: { storeHidden?: boolean; collapsed?: boolean };
+  module3?: { collapsed?: boolean };
 };
 
 const BROWSER_KEY = "stardust.preferences";
@@ -27,6 +30,8 @@ export function cleanPreferences(raw: unknown): Preferences {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, Record<string, unknown> | undefined>;
   const m2 = r.module2 ?? {};
   const m1 = r.module1 ?? {};
+  const m3 = r.module3 ?? {};
+  const flag = (v: unknown) => (typeof v === "boolean" ? v : undefined);
   const tabs = strings(m2.activeTabs)?.filter((t): t is PartOfSpeech => ["verb", "noun", "more"].includes(t));
   return {
     module2: {
@@ -34,8 +39,10 @@ export function cleanPreferences(raw: unknown): Preferences {
       activeTabs: tabs,
       viewMode: m2.viewMode === "term" || m2.viewMode === "display" ? m2.viewMode : undefined,
       order: strings(m2.order),
+      listCollapsed: flag(m2.listCollapsed),
     },
-    module1: { storeHidden: typeof m1.storeHidden === "boolean" ? m1.storeHidden : undefined },
+    module1: { storeHidden: flag(m1.storeHidden), collapsed: flag(m1.collapsed) },
+    module3: { collapsed: flag(m3.collapsed) },
   };
 }
 

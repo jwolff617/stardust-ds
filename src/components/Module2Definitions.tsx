@@ -106,6 +106,7 @@ export function Module2Definitions({
   // The view you last picked wins. Until you pick one, Display View is the
   // landing view when a dictionary other than the always-on profiles has one.
   const prefersDisplay = displayable.some((d) => d.displayKind !== "profile");
+  const listCollapsed = prefs.listCollapsed ?? false;
   const viewMode = prefs.viewMode ?? (prefersDisplay ? "display" : "term");
   const setViewMode = (mode: "term" | "display") => onPrefsChange((p) => ({ ...p, viewMode: mode }));
 
@@ -204,12 +205,21 @@ export function Module2Definitions({
   }
 
   return (
-    <section className="flex flex-col gap-2 border-b border-neutral-200 px-6 py-6">
+    <section className="flex flex-col gap-2 border-b border-neutral-200 px-4 py-6 sm:px-6">
       <RefreshButton onRefresh={onRefresh} />
-      <div className="flex gap-6">
-        <aside className="sticky top-2 flex max-h-[calc(100vh-1rem)] w-48 shrink-0 flex-col gap-1 self-start overflow-y-auto">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-medium text-neutral-500">Dictionaries</h3>
+      <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+        <aside className="flex w-full shrink-0 flex-col gap-1 self-start sm:sticky sm:top-2 sm:max-h-[calc(100vh-1rem)] sm:w-48 sm:overflow-y-auto">
+          <div className="flex items-center justify-between gap-2">
+            {/* Phones only: fold the list away so the feed gets the full width. */}
+            <button
+              type="button"
+              onClick={() => onPrefsChange((p) => ({ ...p, listCollapsed: !listCollapsed }))}
+              aria-expanded={!listCollapsed}
+              className="text-xs font-medium text-neutral-500 sm:hidden"
+            >
+              {listCollapsed ? `▸ Dictionaries (${dictionaries.length})` : "▾ Dictionaries"}
+            </button>
+            <h3 className="hidden text-xs font-medium text-neutral-500 sm:block">Dictionaries</h3>
             <button
               type="button"
               className="text-xs underline"
@@ -222,6 +232,7 @@ export function Module2Definitions({
               {deselectedIds.length === 0 ? "None" : "All"}
             </button>
           </div>
+          <div className={listCollapsed ? "hidden sm:flex sm:flex-col sm:gap-1" : "flex flex-col gap-1"}>
           {dictionaries.map((d, i) => (
             <div key={d.id} className="group flex items-center gap-1.5 text-sm">
               <input
@@ -260,6 +271,7 @@ export function Module2Definitions({
               </span>
             </div>
           ))}
+          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">

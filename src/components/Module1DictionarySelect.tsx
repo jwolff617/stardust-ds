@@ -31,6 +31,8 @@ export function Module1DictionarySelect({
   reloadKey = 0,
   onChange,
   storeHidden = false,
+  collapsed = false,
+  onCollapsedChange,
   onStoreHiddenChange,
 }: {
   isLoggedIn: boolean;
@@ -38,6 +40,8 @@ export function Module1DictionarySelect({
   reloadKey?: number;
   onChange?: () => void;
   storeHidden?: boolean;
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
   onStoreHiddenChange?: (hidden: boolean) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -164,9 +168,18 @@ export function Module1DictionarySelect({
   );
 
   return (
-    <section className="flex flex-col gap-2 border-b border-neutral-200 px-6 py-3">
+    <section className="flex flex-col gap-2 border-b border-neutral-200 px-4 py-3 sm:px-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-sm font-medium text-neutral-500">Dictionaries</h2>
+        <button
+          type="button"
+          onClick={() => onCollapsedChange?.(!collapsed)}
+          aria-expanded={!collapsed}
+          className="text-sm font-medium text-neutral-500 hover:text-neutral-900"
+        >
+          {collapsed ? `▸ Dictionaries (${mine.length} on)` : "▾ Dictionaries"}
+        </button>
+        {!collapsed && (
+          <>
         <input
           type="text"
           value={query}
@@ -182,7 +195,12 @@ export function Module1DictionarySelect({
           {storeHidden ? `Show store (${store.length})` : "Hide store"}
         </button>
         {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}
+          </>
+        )}
       </div>
+
+      {!collapsed && (
+        <>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -217,6 +235,8 @@ export function Module1DictionarySelect({
             <ul className="flex flex-wrap gap-1.5">{shownStore.map(chip)}</ul>
           )}
         </div>
+      )}
+        </>
       )}
     </section>
   );
