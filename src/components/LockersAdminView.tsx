@@ -168,7 +168,7 @@ function Participants({ data, save }: { data: Data; save: Save }) {
               {barred && <span className="rounded-full bg-red-100 px-2 text-xs text-red-700">Barred</span>}
               {overdue && <span className="rounded-full bg-yellow-100 px-2 text-xs text-yellow-800">Renewal due</span>}
             </button>
-            {openId === p.id && <ParticipantForm participant={p} save={save} />}
+            {openId === p.id && <ParticipantForm participant={p} data={data} save={save} />}
           </div>
         );
       })}
@@ -176,10 +176,11 @@ function Participants({ data, save }: { data: Data; save: Save }) {
   );
 }
 
-function ParticipantForm({ participant: p, save }: { participant: Participant; save: Save }) {
+function ParticipantForm({ participant: p, data, save }: { participant: Participant; data: Data; save: Save }) {
   const field = (key: keyof Participant, value: unknown) => save("participant", { ...p, [key]: value });
   return (
     <div className="grid grid-cols-1 gap-2 rounded-md bg-neutral-50 p-3 text-xs sm:grid-cols-2">
+      {!p.archived && <LockerAssigner participant={p} data={data} save={save} />}
       <label className="flex flex-col gap-1">
         Name
         <input defaultValue={p.name} onBlur={(e) => e.target.value !== p.name && field("name", e.target.value)} className={input} />
@@ -216,6 +217,64 @@ function ParticipantForm({ participant: p, save }: { participant: Participant; s
       >
         {p.archived ? "Restore" : "Archive"}
       </button>
+    </div>
+  );
+}
+
+// A participant's lockers, each with Release, and a box to assign another
+// by number.
+function LockerAssigner({ participant: p, data, save }: { participant: Participant; data: Data; save: Save }) {
+  const [number, setNumber] = useState("");
+  const nameOf = new Map(data.participants.map((x) => [x.id, x.name]));
+  const theirs = data.lockers.filter((l) => l.participantId === p.id);
+
+  function assign() {
+    const n = Number(number);
+    if (!Number.isInteger(n) || n < 1 || n > LOCKER_COUNT) return window.alert(`Pick a locker from 1 to ${LOCKER_COUNT}.`);
+    const locker = data.lockers.find((l) => l.number === n) ?? { number: n, participantId: null, assignedDate: null, broken: false, notes: "" };
+    if (locker.participantId === p.id) return setNumber("");
+    if (locker.participantId && !window.confirm(`Locker ${n} belongs to ${nameOf.get(locker.participantId)}. Move it to ${p.name}?`)) return;
+    if (locker.broken && !window.confirm(`Locker ${n} is marked broken. Assign it anyway?`)) return;
+    save("locker", { ...locker, participantId: p.id, assignedDate: today(), broken: false }).then(() => setNumber(""));
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+      <span className="font-medium">Lockers</span>
+      {theirs.length === 0 && <span className="text-neutral-400">None</span>}
+      {theirs.map((l) => (
+        <span key={l.number} className="flex items-center gap-1 rounded-full border border-neutral-300 bg-white px-2 py-0.5">
+          {l.number}
+          <button
+            type="button"
+            onClick={() => window.confirm(`Release locker ${l.number}?`) && save("locker", { ...l, participantId: null })}
+            aria-label={`Release locker ${l.number}`}
+            className="text-neutral-400 hover:text-red-600"
+          >
+            ✕
+          </button>
+        </span>
+      ))}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          assign();
+        }}
+        className="flex items-center gap-1"
+      >
+        <input
+          type="number"
+          min={1}
+          max={LOCKER_COUNT}
+          value={number}
+          onChange={(e) => setNumber(e.target.value)}
+          placeholder="Locker #"
+          className={`${input} w-24`}
+        />
+        <button type="submit" className="rounded-full border border-neutral-300 bg-white px-3 py-1 font-medium">
+          Assign
+        </button>
+      </form>
     </div>
   );
 }
