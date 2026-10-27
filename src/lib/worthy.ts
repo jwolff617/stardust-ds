@@ -21,7 +21,7 @@ export const BET_OUTCOME_LABELS: Record<BetOutcome, string> = {
   other: "Other",
 };
 
-export const PRINCIPLES = ["unique", "present", "open_minded", "fun", "good_reason"] as const;
+export const PRINCIPLES = ["unique", "present", "open_minded", "fun", "good_reason", "heart"] as const;
 export type Principle = (typeof PRINCIPLES)[number];
 
 export const PRINCIPLE_LABELS: Record<Principle, string> = {
@@ -30,6 +30,8 @@ export const PRINCIPLE_LABELS: Record<Principle, string> = {
   open_minded: "Be open minded.",
   fun: "Have fun.",
   good_reason: "Have a good reason: research informed or just having fun.",
+  heart:
+    "The best bets come from the heart. Find what the books missed, the story no one is talking about. Read the stats, the players, the situation. Love the game and good bets reveal themselves. Less is more.",
 };
 
 export const PRINCIPLE_SHORT: Record<Principle, string> = {
@@ -38,6 +40,7 @@ export const PRINCIPLE_SHORT: Record<Principle, string> = {
   open_minded: "Open minded",
   fun: "Fun",
   good_reason: "Good reason",
+  heart: "Heart",
 };
 
 export type WorthyEntry = { kind: WorthyKind; amount: number; occurredAt: string };

@@ -56,13 +56,9 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Pending application to the live project** (written, not yet run):
+**Pending application to the live project** (written, not yet run; 0001 to 0012 were applied 2026-10-26):
 
-- `0006_core_vocabulary_trim.sql` through `0008_profile_dictionaries.sql`, if they haven't been applied yet
-- `0009_night_ds_time_frames.sql`: time frames, labels, Done, auto-archive. Existing notes become life notes, so nothing vanishes.
-- `0010_accounts_ds.sql`: Accounts DS template and entries
-- `0011_worthy_ds.sql`: Worthy DS template, entries, and Bet Stories
-- `0012_stardust_accounts_words.sql`: the Accounts words in Stardust
+- `0013_worthy_heart.sql`: the Heart principle for Bet Stories
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
