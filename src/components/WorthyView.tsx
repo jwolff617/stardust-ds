@@ -160,6 +160,9 @@ export function WorthyView({ dictionary }: { dictionary: WorthyDictionary }) {
             <li key={p}>{PRINCIPLE_LABELS[p]}</li>
           ))}
         </ul>
+        <p className="mt-2 text-xs font-medium">
+          Ask: Does my bet make sense for my scheme? Is there a reason to pick one bet over the other?
+        </p>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
