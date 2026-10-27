@@ -124,7 +124,9 @@ export async function searchDictionaries(
 
   const visible = [...rows, ...templateRows].filter((d) => {
     if (d.kind !== "instance") return true;
-    if (d.scope === "group") return true;
+    // Your own copy of a template shows through its template, personal or
+    // group alike. Someone else's group you were added to shows on its own.
+    if (d.scope === "group") return d.owner_user_id !== userId;
     return (
       Boolean(userId) &&
       d.owner_user_id !== userId &&
@@ -141,7 +143,6 @@ export async function searchDictionaries(
         .from("dictionaries")
         .select("id, name, display_kind, template_id")
         .eq("owner_user_id", userId)
-        .eq("scope", "personal")
         .in("template_id", templateIds);
       for (const i of instances ?? []) {
         instanceByTemplate.set(i.template_id, {

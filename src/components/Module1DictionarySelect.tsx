@@ -85,9 +85,10 @@ export function Module1DictionarySelect({
       return;
     }
 
-    // A group template makes a new group, named here.
-    if (dictionary.kind === "instance_template" && dictionary.scope === "group") {
-      const name = window.prompt(`Name your new ${dictionary.name} group (for example, your site):`);
+    // The first time, a group template asks for a name (members see it).
+    // After that it toggles your copy on and off, same as Night DS.
+    if (dictionary.kind === "instance_template" && dictionary.scope === "group" && !dictionary.instance) {
+      const name = window.prompt(`Name your ${dictionary.name} group (for example, your site):`);
       if (!name?.trim()) return;
       setError(null);
       startToggle(async () => {
@@ -158,7 +159,6 @@ export function Module1DictionarySelect({
                   : "border border-neutral-300 text-neutral-600"
               } disabled:cursor-default`}
             >
-              {d.kind === "instance_template" && d.scope === "group" ? "+ " : ""}
               {d.instance?.name ?? d.name}
             </button>
           </li>

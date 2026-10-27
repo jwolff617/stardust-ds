@@ -27,15 +27,22 @@ export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
     throw new Error("This dictionary is always on and can't be removed.");
   }
 
-  // Instance-template dictionaries (e.g. Night DS) have no user_dictionaries
-  // row of their own -- opting in resolves/creates the caller's own personal
-  // instance and opts them into that instead.
-  if (dictionary?.kind === "instance_template" && dictionary.scope === "group") {
-    throw new Error("A group template makes a new group. Name the group first.");
-  }
-
+  // Templates (Night DS, After School DS) have no user_dictionaries row of
+  // their own. Toggling one turns the caller's own copy on or off. A personal
+  // copy is made on first opt-in; a group copy needs a name, so it's made
+  // with createGroup first.
   if (dictionary?.kind === "instance_template") {
-    if (optIn) {
+    if (optIn && dictionary.scope === "group") {
+      const instance = await findPersonalInstance(supabase, user.id, dictionaryId);
+      if (!instance) throw new Error("Name your group first.");
+      const { error } = await supabase
+        .from("user_dictionaries")
+        .upsert(
+          { user_id: user.id, dictionary_id: instance.id, opted_in: true, opted_in_at: new Date().toISOString() },
+          { onConflict: "user_id,dictionary_id" },
+        );
+      if (error) throw new Error(error.message);
+    } else if (optIn) {
       const { data: profile } = await supabase
         .from("profiles")
         .select("display_name")
@@ -91,11 +98,15 @@ export async function removeLabel(dictionaryId: string, label: string) {
   if (!result.ok) throw new Error(result.error);
 }
 
-// Makes a new group from a group template (After School DS) and turns it on.
+// Makes the caller's group copy of a group template (After School DS) and
+// turns it on. One per template, like a personal copy.
 export async function createGroup(templateId: string, name: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Log in to make a group.");
+
+  const existing = await findPersonalInstance(supabase, user.id, templateId);
+  if (existing) return existing.id;
 
   const { data, error } = await supabase.rpc("create_group", { p_template_id: templateId, p_name: name });
   if (error || !data) throw new Error(error?.message ?? "Couldn't make that group.");

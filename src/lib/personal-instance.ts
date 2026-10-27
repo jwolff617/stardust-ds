@@ -22,8 +22,8 @@ export async function ensurePersonalInstance(
   return data as string;
 }
 
-// Looks up (without creating) the caller's existing instance of a template
-// dictionary, if any.
+// Looks up (without creating) the caller's existing copy of a template
+// dictionary, personal or group, if any.
 export async function findPersonalInstance(
   supabase: SupabaseClient,
   userId: string,
@@ -34,6 +34,8 @@ export async function findPersonalInstance(
     .select("id, name, display_kind")
     .eq("template_id", templateId)
     .eq("owner_user_id", userId)
+    .order("created_at")
+    .limit(1)
     .maybeSingle();
 
   if (!data) return null;
