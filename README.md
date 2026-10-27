@@ -46,6 +46,8 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional amount and a note, and shows its balance. |
 | **Worthy DS** | Built | Urban Wolf Studio's betting system: save half of every win. Log deposits, wins, savings, and balance snapshots. See savings owed and saved, savings and balance as a share of deposits, and loss, over a day, week, month, year, decade, or life. Keep Bet Stories with the Worthy principles as labels. |
 | **After School DS** | Built | A group dictionary for an after-school program. Make a group for your site and add staff by email. Lessons: a Monday-to-Friday template on top, copied into each new week, with five weeks shown at a time and a regenerate button that recopies the template into them. Calendar: weeks by month, each with a theme and five activities. |
+| **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
+| **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
 | Manifesto Match DS | Planned | Stub in `../manifesto-match/`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |
@@ -65,7 +67,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0014 applied (2026-10-26). Nothing pending.
+**Live project:** 0001 to 0014 applied (2026-10-26). Pending: 0015 (Lockers).
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
