@@ -56,9 +56,8 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Pending application to the live project** (written, not yet run; 0001 to 0012 were applied 2026-10-26):
+**Pending application to the live project** (written, not yet run; 0001 to 0013 were applied 2026-10-26):
 
-- `0013_worthy_heart.sql`: the Heart principle for Bet Stories
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
