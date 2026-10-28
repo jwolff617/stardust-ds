@@ -51,6 +51,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Notepad** | Built | Plain notes that stay until you delete them, in a 3x3 grid with as many pages as it takes. The first box is always a new note; edit any note where it sits. Night DS is for letting go; Notepad is for keeping. |
 | **Address Book** | Built | The people you know: name, phone, email, address, notes. |
 | **Birthdays** | Built | Name, month, day, and the year if you know it. Who's next is on top, with how many days away and how old they turn. |
+| **Wolffie Games** | Built | Pick or type themes, set kids and age, and Sage AI writes a one-day packet: 5-minute craft, game, joke, riddle, fact, a cut-out template, a coloring page, and a word search. Opens as 6 printable pages; Print or save PDF. Packets and themes are kept. Separate from After School DS. Drawings come from `src/lib/wolffie/printables.js`, a copy of `shop/wolffie-lessons/printables.js`. |
 | **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
 | **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
@@ -74,7 +75,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0018 applied (2026-10-27). Nothing pending.
+**Live project:** 0001 to 0018 applied (2026-10-27). Pending: 0019 (Wolffie Games; until it runs, it doesn't show in the store).
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
