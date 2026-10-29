@@ -47,3 +47,26 @@ The Craigslist part. Each one is empty until people post, so they only work once
 1. Basic apps first, three at a time: Notepad, Address Book, Birthdays. Each is about one table and one view, the same pattern as Accounts DS.
 2. One board Sage can fill himself: Services, seeded with Business dictionaries he writes for real Seattle businesses, so the board isn't empty on day one.
 3. The rest of the boards once there are people to post on them.
+
+## New direction (2026-10-29): real tools for Seattle
+
+Sage's call: less on phone-style basics, more on tools that help people in Seattle and the nonprofits he works in (Recovery Cafe, SHARE, the Y) find and help each other. Five dictionaries, all built on one shared piece.
+
+**The shared piece: Posts.** One table of posts (title, body, kind, neighborhood, labels, who posted, open or closed) and one way to reply privately to a post. Every board below is Posts with its own fields and words. Built once, so the five cost far less than five apps. Every post comes from a signed-in spark with a Public Profile, so nothing is anonymous. Report and block are in from day one.
+
+| Dictionary | What it does | Kinds of post |
+|---|---|---|
+| **Idea Index DS** | Post an idea, vote, comment, find people to build it with. Port of `../idea-index/` (votes, comments, favorites, leaders). | Idea |
+| **Manifesto Match DS** | You write a manifesto (who you are, what you want), pick lines that fit you, and say what you are looking for: dating, friends, or business partners. Matches by shared lines. Port of `../manifesto-match/`. Dating needs an 18+ check and blocking before it opens. | Manifesto |
+| **Marketplace DS** | Buy, sell, free, trade, and housing (rooms, apartments). Fair-housing rules on how housing posts are worded. No payment in the app yet: people meet or pay each other directly. | For sale, Free, Wanted, Trade, Housing |
+| **Job Match DS** | Jobs and gigs, plus people looking. Nonprofits post openings and training for their participants. Later: reads your Universal Transcript to suggest matches. | Job, Gig, Looking, Training |
+| **Idea House DS** | The Idea House Fund on Stardust: the story, how to apply, the application itself, and the public ledger (grants by ID number, never by name). Applicants and judges as a group. Waiting on: where the current Idea House website lives. | Application, Grant |
+
+**Who it is for first:** the people Sage already knows through work. Recovery Cafe members and SHARE participants (Marketplace for free items and housing leads, Job Match for work), Idea House applicants, and Sage's own circles (Manifesto Match, Idea Index). Small and real beats big and empty.
+
+**Order:**
+1. Posts (the shared piece) with Marketplace DS on top: free and for-sale is the simplest board and the easiest for people to use.
+2. Job Match DS: same posts, new fields.
+3. Idea House DS: it has a real deadline cycle and real applicants already.
+4. Idea Index DS: port the existing prototype.
+5. Manifesto Match DS last: dating and matching carry the most safety work.
