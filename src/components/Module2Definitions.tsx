@@ -110,6 +110,7 @@ export function Module2Definitions({
   // landing view when a dictionary other than the always-on profiles has one.
   const prefersDisplay = displayable.some((d) => d.displayKind !== "profile");
   const listCollapsed = prefs.listCollapsed ?? false;
+  const [dragging, setDragging] = useState<string | null>(null);
   const viewMode = prefs.viewMode ?? (prefersDisplay ? "display" : "term");
   const setViewMode = (mode: "term" | "display") => onPrefsChange((p) => ({ ...p, viewMode: mode }));
 
@@ -174,13 +175,14 @@ export function Module2Definitions({
     });
   }
 
-  // Moves a dictionary one place up or down the feed.
-  function move(id: string, by: -1 | 1) {
+  // Moves a dictionary to a new place in the feed: by the arrows, or by
+  // dragging it onto another name (mouse only; phones use the arrows).
+  function moveTo(id: string, j: number) {
     const ids = dictionaries.map((d) => d.id);
     const i = ids.indexOf(id);
-    const j = i + by;
-    if (i < 0 || j < 0 || j >= ids.length) return;
-    [ids[i], ids[j]] = [ids[j], ids[i]];
+    if (i < 0 || j < 0 || j >= ids.length || i === j) return;
+    ids.splice(i, 1);
+    ids.splice(j, 0, id);
     // Keep places for dictionaries that are off right now.
     const rest = (prefs.order ?? []).filter((x) => !ids.includes(x));
     onPrefsChange((p) => ({ ...p, order: [...ids, ...rest] }));
@@ -237,7 +239,22 @@ export function Module2Definitions({
           </div>
           <div className={listCollapsed ? "hidden sm:flex sm:flex-col sm:gap-1" : "flex flex-col gap-1"}>
           {dictionaries.map((d, i) => (
-            <div key={d.id} className="group flex items-center gap-1.5 text-sm">
+            <div
+              key={d.id}
+              draggable
+              onDragStart={(e) => {
+                setDragging(d.id);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => dragging && e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragging) moveTo(dragging, i);
+                setDragging(null);
+              }}
+              onDragEnd={() => setDragging(null)}
+              className={`group flex cursor-grab items-center gap-1.5 text-sm ${dragging === d.id ? "opacity-40" : ""}`}
+            >
               <input
                 type="checkbox"
                 checked={!deselectedIds.includes(d.id)}
@@ -256,7 +273,7 @@ export function Module2Definitions({
                 <button
                   type="button"
                   disabled={i === 0}
-                  onClick={() => move(d.id, -1)}
+                  onClick={() => moveTo(d.id, i - 1)}
                   aria-label={`Move ${d.name} up`}
                   className="px-0.5 hover:text-neutral-900 disabled:opacity-20"
                 >
@@ -265,7 +282,7 @@ export function Module2Definitions({
                 <button
                   type="button"
                   disabled={i === dictionaries.length - 1}
-                  onClick={() => move(d.id, 1)}
+                  onClick={() => moveTo(d.id, i + 1)}
                   aria-label={`Move ${d.name} down`}
                   className="px-0.5 hover:text-neutral-900 disabled:opacity-20"
                 >
