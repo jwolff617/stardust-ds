@@ -68,6 +68,8 @@ create table if not exists post_kinds (
   one_per_person boolean not null default false,
   -- Seen only by the poster and the board's stewards (an application).
   stewards_only boolean not null default false,
+  -- See others' posts of this kind only once you have your own (a manifesto).
+  mutual boolean not null default false,
   -- A kind can be listed before it opens to new posts.
   open boolean not null default true,
   primary key (dictionary_id, name)
@@ -329,8 +331,9 @@ $$;
 
 grant execute on function post_board(uuid) to authenticated;
 
--- Whether the caller may see posts of this kind at all: not steward-only,
--- and not 18+ unless they've confirmed for this board.
+-- Whether the caller may see others' posts of this kind at all: not
+-- steward-only, not 18+ unless they've confirmed for this board, and for a
+-- mutual kind, only once they have their own post of it.
 create or replace function can_see_kind(p_dictionary_id uuid, p_kind text)
 returns boolean
 language sql
@@ -342,6 +345,11 @@ as $$
        and (not k.adult_only or exists (
          select 1 from board_confirmations c
          where c.dictionary_id = k.dictionary_id and c.user_id = auth.uid() and c.adult_at is not null
+       ))
+       and (not k.mutual or exists (
+         select 1 from posts mine
+         where mine.dictionary_id = k.dictionary_id and mine.kind = k.name
+           and mine.author_user_id = auth.uid() and mine.status = 'open'
        ))
     from post_kinds k
     where k.dictionary_id = p_dictionary_id and k.name = p_kind

@@ -11,12 +11,12 @@ export type BoardField = {
   key: string;
   label: string;
   // lines: a list of { word, text } picked from options (a manifesto).
-  type: "text" | "longtext" | "choice" | "date" | "lines";
+  type: "text" | "longtext" | "choice" | "date" | "number" | "lines";
   options?: readonly string[];
   required?: boolean;
-  // Most characters, or for lines, most lines.
+  // Most characters; for lines, most lines; for a number, the highest.
   max?: number;
-  // For lines: fewest lines.
+  // For lines, fewest lines; for a number, the lowest.
   min?: number;
   placeholder?: string;
   help?: string;
@@ -261,7 +261,86 @@ export const IDEA_INDEX: BoardConfig = {
   ],
 };
 
-export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX];
+// The words a manifesto picks from: Stardust Dictionary words first, then
+// the prototype's (../manifesto-match).
+export const MANIFESTO_WORDS = [
+  "Love", "Presence", "Empathy", "Peace", "Freedom", "Community", "Family", "Forgiveness", "Imagination", "Nature",
+  "Music", "Art", "Dream", "Purpose", "Passion", "Growth", "Balance", "Relax", "Stories", "Travel",
+  "Sports", "Yes", "Focus", "Energy", "Spirit", "Soul", "Body", "Confidence", "Time", "Innocence",
+  "Roots", "Risk", "Slowness", "Depth", "Wonder", "Loyalty", "Craft", "Solitude", "Tender", "Play",
+  "Legacy", "Wild", "Honest", "Grounded", "Vision", "Simple", "Curious", "Home",
+] as const;
+
+const LINES: BoardField = {
+  key: "lines",
+  label: "Your words",
+  type: "lines",
+  options: MANIFESTO_WORDS,
+  min: 5,
+  max: 12,
+  required: true,
+};
+
+const PAUSE = { verb: "Pause", done: "Paused", note: "" };
+
+export const MANIFESTO_MATCH: BoardConfig = {
+  address: "manifesto-match-ds",
+  noun: "Manifesto",
+  nounDescription: "Who a spark is in their own words, matched by shared words.",
+  newPost: "Write yours",
+  photos: 0,
+  labels: [],
+  // A manifesto is a person speaking for themselves.
+  sageAi: false,
+  safety: [
+    "Be who you are. One manifesto per kind, about you.",
+    "Meet somewhere public the first time, and tell a friend where you'll be.",
+    "Never send money, gift cards, or crypto to someone you haven't met. Be careful with anyone who wants to move to another app fast.",
+    "Block anyone who makes you uneasy. Report anyone who is unsafe.",
+  ],
+  kinds: [
+    {
+      name: "Friends",
+      fields: [
+        LINES,
+        { key: "into", label: "Into", type: "text", max: 160, placeholder: "Walks, gospel choir, board games" },
+        { key: "free", label: "Free when", type: "text", max: 120, placeholder: "Weekday evenings" },
+      ],
+      titlePlaceholder: "A headline: Slow mornings, honest talk",
+      bodyPlaceholder: "A few lines about you and the friend you hope to find.",
+      close: PAUSE,
+    },
+    {
+      name: "Business Partners",
+      fields: [
+        LINES,
+        { key: "building", label: "What I'm building", type: "text", max: 200, placeholder: "A bike repair stand in Lake City" },
+        { key: "bring", label: "What I bring", type: "text", max: 200, placeholder: "Five years fixing bikes" },
+        { key: "need", label: "What I need", type: "text", max: 200, placeholder: "Someone good with money and permits" },
+      ],
+      titlePlaceholder: "A headline: Builder looking for a money person",
+      bodyPlaceholder: "A few lines about you and how you like to work.",
+      close: PAUSE,
+    },
+    {
+      name: "Dating",
+      fields: [
+        LINES,
+        { key: "age", label: "Age", type: "number", min: 18, max: 120, required: true },
+        { key: "iam", label: "I am", type: "choice", options: ["A woman", "A man", "Nonbinary"], required: true },
+        { key: "meet", label: "Hoping to meet", type: "choice", options: ["Women", "Men", "Everyone"], required: true },
+        { key: "age_min", label: "Ages open to, from", type: "number", min: 18, max: 120, required: true },
+        { key: "age_max", label: "Ages open to, up to", type: "number", min: 18, max: 120, required: true },
+        { key: "looking", label: "Looking for", type: "choice", options: ["Something serious", "Seeing where it goes"] },
+      ],
+      titlePlaceholder: "A headline: Curious, rooted, still a kid at heart",
+      bodyPlaceholder: "A few lines about you and who you hope to meet.",
+      close: PAUSE,
+    },
+  ],
+};
+
+export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX, MANIFESTO_MATCH];
 
 export function boardByAddress(address: string): BoardConfig | undefined {
   return BOARDS.find((b) => b.address === address);
@@ -283,7 +362,7 @@ export function cleanDetails(kind: BoardKind, input: unknown): { details: Record
       if (lines.lines.length > 0) details[f.key] = lines.lines;
       continue;
     }
-    const value = String(raw[f.key] ?? "").trim().slice(0, f.max ?? (f.type === "longtext" ? 2000 : 200));
+    const value = String(raw[f.key] ?? "").trim().slice(0, f.type === "number" ? 12 : f.max ?? (f.type === "longtext" ? 2000 : 200));
     if (!value) {
       if (f.required) return { error: `${f.label} is needed for a ${kind.name} post.` };
       continue;
@@ -292,6 +371,12 @@ export function cleanDetails(kind: BoardKind, input: unknown): { details: Record
       const match = f.options?.find((o) => o.toLowerCase() === value.toLowerCase());
       if (!match) return { error: `${f.label} must be one of: ${f.options?.join(", ")}.` };
       details[f.key] = match;
+    } else if (f.type === "number") {
+      const n = Number(value);
+      if (!Number.isInteger(n) || (f.min !== undefined && n < f.min) || (f.max !== undefined && n > f.max)) {
+        return { error: `${f.label} must be a whole number${f.min !== undefined ? ` from ${f.min}` : ""}${f.max !== undefined ? ` to ${f.max}` : ""}.` };
+      }
+      details[f.key] = String(n);
     } else if (f.type === "date") {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return { error: `${f.label} must be a date like 2026-11-02.` };
       details[f.key] = value;

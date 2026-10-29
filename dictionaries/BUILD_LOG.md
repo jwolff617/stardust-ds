@@ -112,3 +112,38 @@ Push only after the migrations have run: the live site would show empty boards t
 - No leaderboard. Do you want the prototype's "Top leaders" back in some gentler form?
 
 **Ideas for later.** Follow a spark. Turn a Need into an Idea, or an Idea into Building, in one tap. Apply to Idea House from a Building idea.
+
+## 4. Manifesto Match DS
+
+**What I built.**
+- `0026_manifesto_match.sql`: the board with kinds Friends, Business Partners, and Dating. All three are 18+, one per person, and mutual; Dating is closed. Words: Manifesto, Line, Match, Say Hello, Pause, Business Partner.
+- In 0022, a new kind switch, `mutual`: you see others' posts of that kind only while your own is up. It lives in `can_see_kind()`, so the database keeps it.
+- A `lines` field type (words from a list, each with your own line, 5 to 12) and a `number` type (ages) in `boards.ts`.
+- `ManifestoView`: the 18+ gate with the rules, a tab per kind, your manifesto editor (headline, word chips, a line per word, the kind's fields, a few lines about you, neighborhood), Pause and Unpause, and matches sorted by shared words with the shared ones in green, an excerpt from their line on a word you share, and "Say hello" with a starter that quotes it. Dating only shows people who fit both ways (who you are, who you hope to meet, ages).
+- 48 words: 30 from the Stardust Dictionary, 18 from the prototype.
+- No Sage AI noun, on purpose: a manifesto is a person speaking for themselves. Said in the design doc.
+- Design doc: `dictionaries/Manifesto_Match_DS.md`.
+
+**Migrations to run.** 0026, after 0022 to 0025. Since 0022 changed again for `mutual`, run it from the file as it is now.
+
+**Opening Dating, when you're ready** (after two stewards are in place):
+
+```sql
+update post_kinds set open = true
+where name = 'Dating' and dictionary_id = (select id from dictionaries where address = 'manifesto-match-ds');
+```
+
+**Test tonight.**
+1. Add Manifesto Match. The 18+ gate shows. Try a birth date under 18: it says no. Confirm with a real one.
+2. Friends shows the editor and nothing else. Pick 5 words, write 3 lines, put it up.
+3. From a second account, write one sharing 2 words. Each account now sees the other with "2 shared words."
+4. Say hello with the starter. Pause on one account: both stop seeing each other until Unpause.
+5. Dating says "opens soon." Open it with the SQL above and check the fit: a man hoping to meet women only sees women whose ranges include his age.
+
+**Open questions for Sage.**
+- 5 to 12 words (the prototype said 10 to 20). Right size?
+- Friends and Business Partners are 18+ too. Is that what you want, or should Friends allow 16 and up later with its own rules?
+- Is the word list right? Swap any word freely: it's `MANIFESTO_WORDS` in `src/lib/boards.ts`, and existing manifestos keep working as long as words are only added. Removing a word makes manifestos using it fail to save until the person picks another.
+- Who would be the second steward before Dating opens?
+
+**Ideas for later.** Your Stardust order (word order as weight in matching). Small groups of three or four who share words, meeting at a real place. Sage AI helping draft your lines, shown to you, never posted for you.

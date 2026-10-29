@@ -59,7 +59,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
 | **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | **Idea Index** | Built | Ideas on Posts: Idea, Building, and Need, each with its own fields (the problem, a first small step, who you're looking for). Spark to say you love it (no downvotes, no leaderboard), sort by newest or most sparked, open comments with one level of replies, and I'm In to say you'd help build it and what you'd bring. Report any comment; three hide it until a steward looks. Port of `../idea-index/`. See `dictionaries/Idea_Index_DS.md`. |
-| Manifesto Match DS | Planned | Stub in `../manifesto-match/`. |
+| **Manifesto Match** | Built | Write who you are in your own words: pick 5 to 12 words (Presence, Honest, Roots, Play...) and say what each means to you. Match with people by the words you share, most shared first. Friends and Business Partners are open; Dating is built (age, who you are, who you hope to meet, ages, fits both ways) and opens when Sage says. 18+ for the whole board, and you see others only while yours is up. Say hello starting from a shared word. Pause any time. Port of `../manifesto-match/`. See `dictionaries/Manifesto_Match_DS.md`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |
 
 ## Run it
@@ -79,7 +79,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket), 0024 (Job Match), 0025 (Idea Index). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket), 0024 (Job Match), 0025 (Idea Index), 0026 (Manifesto Match). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 

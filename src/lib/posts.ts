@@ -15,6 +15,7 @@ export type PostKind = {
   adultOnly: boolean;
   onePerPerson: boolean;
   stewardsOnly: boolean;
+  mutual: boolean;
   open: boolean;
 };
 
@@ -221,7 +222,7 @@ export async function loadBoard(
     supabase.from("post_boards").select("intro, settings").eq("dictionary_id", dictionaryId).maybeSingle(),
     supabase
       .from("post_kinds")
-      .select("name, description, expires_days, adult_only, one_per_person, stewards_only, open")
+      .select("name, description, expires_days, adult_only, one_per_person, stewards_only, mutual, open")
       .eq("dictionary_id", dictionaryId)
       .order("position"),
     supabase.rpc("is_steward", { p_dictionary_id: dictionaryId }),
@@ -258,6 +259,7 @@ export async function loadBoard(
     adultOnly: k.adult_only,
     onePerPerson: k.one_per_person,
     stewardsOnly: k.stewards_only,
+    mutual: k.mutual,
     open: k.open,
   }));
 
@@ -492,6 +494,8 @@ export function cleanPost(config: BoardConfig, input: Record<string, unknown>, u
   if (kind.price?.required && !price) return { error: `${kind.price.label} is needed for a ${kind.name} post.` };
   const details = cleanDetails(kind, input.details);
   if ("error" in details) return details;
+  const { age_min: low, age_max: high } = details.details;
+  if (low && high && Number(low) > Number(high)) return { error: "The lower age goes first." };
   const photos = (Array.isArray(input.photos) ? input.photos : [])
     .map((p) => String(p))
     .filter((p) => p.startsWith(`${userId}/`) && /^[A-Za-z0-9._/-]+$/.test(p))

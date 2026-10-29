@@ -313,13 +313,15 @@ export function FieldInput({ field, value, onChange }: { field: BoardField; valu
         <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} maxLength={field.max ?? 2000} rows={3} className={input} />
       ) : (
         <input
-          type={field.type === "date" ? "date" : "text"}
+          type={field.type === "date" ? "date" : field.type === "number" ? "number" : "text"}
+          min={field.type === "number" ? field.min : undefined}
+          max={field.type === "number" ? field.max : undefined}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.placeholder}
-          maxLength={field.max ?? 200}
+          maxLength={field.type === "number" ? undefined : field.max ?? 200}
           required={field.required}
-          className={`${input} ${field.type === "date" ? "w-44" : "sm:max-w-md"}`}
+          className={`${input} ${field.type === "date" || field.type === "number" ? "w-44" : "sm:max-w-md"}`}
         />
       )}
       {field.help && <span className="text-neutral-500">{field.help}</span>}

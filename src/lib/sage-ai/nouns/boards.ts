@@ -17,7 +17,7 @@ function detailParams(board: BoardConfig): Field[] {
   for (const kind of board.kinds) {
     for (const f of kind.fields) {
       if (f.type === "lines" || seen.has(f.key)) continue;
-      const options = f.type === "choice" ? ` One of: ${f.options?.join(", ")}.` : "";
+      const options = f.type === "choice" ? ` One of: ${f.options?.join(", ")}.` : f.type === "number" ? ` A whole number${f.min !== undefined ? ` from ${f.min}` : ""}${f.max !== undefined ? ` to ${f.max}` : ""}.` : "";
       seen.set(f.key, { name: f.key, type: "text", max: f.max ?? 2000, description: `${f.label} (${kind.name}).${options}` });
     }
   }
