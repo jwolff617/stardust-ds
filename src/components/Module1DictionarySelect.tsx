@@ -136,19 +136,22 @@ export function Module1DictionarySelect({
     });
   }
 
-  // Your dictionaries (on) as chips, then the store (everything you
-  // haven't added), which can be hidden and filtered by label. Search
+  // Your dictionaries (on) as chips, then the library (everything you
+  // haven't added), which can be hidden and filtered by label. In code and
+  // saved preferences the library is still called the store. Search
   // matches names, descriptions, and labels in both.
   const mine = dictionaries.filter((d) => d.optedIn);
   const store = dictionaries.filter((d) => !d.optedIn);
   const shownStore = label ? store.filter((d) => labelsOf(d).includes(label)) : store;
 
-  // Store labels, most-used first. A dozen show; the rest wait behind More.
+  // Library labels, most-used first, shown once there are enough
+  // dictionaries for filtering to help. A dozen show; the rest wait behind More.
   const counts = new Map<string, number>();
   for (const d of store) for (const l of labelsOf(d)) counts.set(l, (counts.get(l) ?? 0) + 1);
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([l]) => l);
   const suggestions = allLabels ? ranked : ranked.slice(0, LABELS_SHOWN);
   if (label && !suggestions.includes(label)) suggestions.unshift(label);
+  const showLabels = store.length >= LABELS_FROM || label !== null;
 
   const chip = (d: Dictionary) => (
     <li key={d.id}>
@@ -192,7 +195,7 @@ export function Module1DictionarySelect({
           onClick={() => onStoreHiddenChange?.(!storeHidden)}
           className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
         >
-          {storeHidden ? `Show store (${store.length})` : "Hide store"}
+          {storeHidden ? `Show library (${store.length})` : "Hide library"}
         </button>
         {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}
           </>
@@ -209,8 +212,9 @@ export function Module1DictionarySelect({
       {!storeHidden && (
         <div className="flex flex-col gap-2 rounded-md bg-neutral-50 p-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-xs font-medium text-neutral-500">Store</span>
-            {suggestions.map((l) => (
+            <span className="mr-1 text-xs font-medium text-neutral-500">Library</span>
+            {showLabels && <span className="text-xs text-neutral-400">Filter:</span>}
+            {showLabels && suggestions.map((l) => (
               <button
                 key={l}
                 type="button"
@@ -223,7 +227,7 @@ export function Module1DictionarySelect({
                 #{l}
               </button>
             ))}
-            {ranked.length > LABELS_SHOWN && (
+            {showLabels && ranked.length > LABELS_SHOWN && (
               <button type="button" onClick={() => setAllLabels((v) => !v)} className="text-xs text-neutral-500 underline">
                 {allLabels ? "Fewer" : "More labels"}
               </button>
@@ -243,6 +247,7 @@ export function Module1DictionarySelect({
 }
 
 const LABELS_SHOWN = 12;
+const LABELS_FROM = 6;
 
 function labelsOf(d: Dictionary): string[] {
   return [...new Set([...d.labels, ...d.ownLabels])];
