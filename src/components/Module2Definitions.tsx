@@ -14,7 +14,7 @@ import { NotepadView } from "./NotepadView";
 import { BASIC_APPS, basicApp } from "@/lib/basics";
 import type { Preferences } from "@/lib/preferences";
 
-type SelectedDictionary = { id: string; name: string; displayKind: string };
+type SelectedDictionary = { id: string; name: string; displayKind: string; belongs: "personal" | "group" | "public" };
 type PartOfSpeech = "verb" | "noun" | "more";
 type DefinitionRow = {
   id: string;
@@ -264,10 +264,13 @@ export function Module2Definitions({
               <button
                 type="button"
                 onClick={() => jumpTo(d)}
-                title={hasDisplayView(d) ? `Go to ${d.name}` : undefined}
+                title={`${d.name}${d.belongs === "group" ? " (group)" : d.belongs === "public" ? " (public)" : ""}`}
                 className={`min-w-0 flex-1 truncate text-left ${hasDisplayView(d) ? "hover:underline" : "cursor-default"}`}
               >
                 {d.name}
+                {d.belongs !== "personal" && (
+                  <span className="ml-1 text-[10px] uppercase tracking-wide text-neutral-400">{d.belongs}</span>
+                )}
               </button>
               <span className="flex shrink-0 text-xs text-neutral-400">
                 <button

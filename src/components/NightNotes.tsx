@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   isNoteSort,
   NOTE_LABELS,
@@ -52,6 +52,7 @@ async function post(path: string, body: Record<string, unknown>) {
 
 // The sort you picked is remembered in this browser.
 const SORT_KEY = "stardust.nightSort";
+const UNDO_SECONDS = 8;
 
 function savedSort(): NoteSort {
   try {
@@ -92,6 +93,12 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
   const [newLabel, setNewLabel] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [dragging, setDragging] = useState<NoteRow | null>(null);
+
+  // A deleted note hides at once and is deleted for good after a few
+  // seconds, so Undo can bring it back. Leaving the page deletes it then.
+  const [pendingDelete, setPendingDelete] = useState<NoteRow | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingRef = useRef<NoteRow | null>(null);
 
   const idsKey = dictionaries.map((d) => d.id).join(",");
   const primaryId = dictionaries[0]?.id ?? null;
@@ -159,10 +166,39 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
     await run("/api/notes/archive", { dictionaryId: primaryId, noteIds: notes.map((n) => n.id) });
   }
 
-  async function deleteNote(noteId: string) {
-    if (!window.confirm("Delete this note for good?")) return;
-    await run("/api/notes/delete", { noteId });
+  function commitDelete() {
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    deleteTimer.current = null;
+    const note = pendingRef.current;
+    pendingRef.current = null;
+    setPendingDelete(null);
+    if (note) run("/api/notes/delete", { noteId: note.id });
   }
+
+  function deleteNote(note: NoteRow) {
+    commitDelete();
+    pendingRef.current = note;
+    setPendingDelete(note);
+    deleteTimer.current = setTimeout(commitDelete, UNDO_SECONDS * 1000);
+  }
+
+  function undoDelete() {
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    deleteTimer.current = null;
+    pendingRef.current = null;
+    setPendingDelete(null);
+  }
+
+  useEffect(
+    () => () => {
+      if (deleteTimer.current) clearTimeout(deleteTimer.current);
+      const note = pendingRef.current;
+      if (note) post("/api/notes/delete", { noteId: note.id }).catch(() => {});
+    },
+    [],
+  );
+
+  const shownNotes = pendingDelete ? notes.filter((n) => n.id !== pendingDelete.id) : notes;
 
   return (
     <div className="flex flex-col gap-4">
@@ -211,6 +247,15 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      {pendingDelete && (
+        <div className="flex items-center gap-3 rounded-md bg-neutral-900 px-3 py-2 text-sm text-white">
+          <span className="min-w-0 flex-1 truncate">Deleted &ldquo;{pendingDelete.body.split("\n")[0]}&rdquo;</span>
+          <button type="button" onClick={undoDelete} className="font-semibold underline">
+            Undo
+          </button>
+        </div>
+      )}
+
       {state === "active" && primaryId && (
         <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
           <textarea
@@ -237,22 +282,22 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
 
       {isLoading ? (
         <p className="text-sm text-neutral-400">Loading...</p>
-      ) : notes.length === 0 ? (
+      ) : shownNotes.length === 0 ? (
         <p className="text-sm text-neutral-400">
           {state === "active" ? "No notes here. Write one above." : state === "done" ? "Nothing done here yet." : "Nothing archived here."}
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-neutral-100">
-          {notes.map((note, index) => (
+          {shownNotes.map((note, index) => (
             <NoteItem
               key={`${note.id}-${refreshToken}-${reloadKey}`}
               note={note}
               state={state}
               isFirst={index === 0}
-              isLast={index === notes.length - 1}
+              isLast={index === shownNotes.length - 1}
               canReorder={sort === "mine"}
               onRun={run}
-              onDelete={() => deleteNote(note.id)}
+              onDelete={() => deleteNote(note)}
               dragging={dragging}
               onDragChange={setDragging}
             />
@@ -419,7 +464,7 @@ function NoteItem({
 
         <span className="text-neutral-400">{meta}</span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-3">
           {isActive && (
             <>
               <button
@@ -452,11 +497,13 @@ function NoteItem({
               </button>
             </>
           )}
+          {/* Set apart from the other buttons so a slip doesn't hit it. */}
           <button
             type="button"
             onClick={onDelete}
-            className="text-neutral-400 hover:text-red-600"
+            className="ml-3 border-l border-neutral-200 pl-4 text-neutral-400 hover:text-red-600"
             aria-label="Delete note"
+            title="Delete (you can undo)"
           >
             ✕
           </button>

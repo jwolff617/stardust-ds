@@ -23,7 +23,16 @@ type Dictionary = {
   displayKind: string;
 };
 
-export type SelectedDictionary = { id: string; name: string; displayKind: string };
+// Who a dictionary belongs to, so the lists can say so:
+// personal (your own copy), group (shared with members), or public.
+export type Belongs = "personal" | "group" | "public";
+export type SelectedDictionary = { id: string; name: string; displayKind: string; belongs: Belongs };
+
+function belongsOf(d: { scope: string }): Belongs {
+  return d.scope === "personal" ? "personal" : d.scope === "group" ? "group" : "public";
+}
+
+const BELONGS_TITLES: Record<Belongs, string> = { personal: "Mine", group: "Groups", public: "Public" };
 
 // Your copy of a template is stored as "Peacemaker's Notes". Everything
 // in your list is already yours, so the app shows just "Notes".
@@ -87,8 +96,8 @@ export function Module1DictionarySelect({
         .filter((d) => d.optedIn)
         .map((d) =>
           d.instance
-            ? { id: d.instance.id, name: shortName(d.instance.name), displayKind: d.instance.displayKind }
-            : { id: d.id, name: d.name, displayKind: d.displayKind },
+            ? { id: d.instance.id, name: shortName(d.instance.name), displayKind: d.instance.displayKind, belongs: belongsOf(d) }
+            : { id: d.id, name: d.name, displayKind: d.displayKind, belongs: belongsOf(d) },
         ),
     );
   }, [dictionaries, onSelectionChange]);
@@ -213,10 +222,17 @@ export function Module1DictionarySelect({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="mr-1 text-xs font-medium text-neutral-500">Mine</span>
-        <ul className="flex flex-wrap gap-1.5">{mine.map(chip)}</ul>
-      </div>
+      {/* Yours in three rows: your own copies, groups you're in, and public ones. */}
+      {(["personal", "group", "public"] as const).map((b) => {
+        const row = mine.filter((d) => belongsOf(d) === b);
+        if (row.length === 0) return null;
+        return (
+          <div key={b} className="flex flex-wrap items-center gap-1.5">
+            <span className="w-14 shrink-0 text-xs font-medium text-neutral-500">{BELONGS_TITLES[b]}</span>
+            <ul className="flex flex-wrap gap-1.5">{row.map(chip)}</ul>
+          </div>
+        );
+      })}
 
       {!storeHidden && (
         <div className="flex flex-col gap-2 rounded-md bg-neutral-50 p-3">
