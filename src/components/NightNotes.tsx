@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { NOTE_LABELS, TIME_FRAMES, TIME_FRAME_LABELS, type TimeFrame } from "@/lib/time-frames";
+import {
+  isNoteSort,
+  NOTE_LABELS,
+  NOTE_SORT_LABELS,
+  NOTE_SORTS,
+  TIME_FRAMES,
+  TIME_FRAME_LABELS,
+  type NoteSort,
+  type TimeFrame,
+} from "@/lib/time-frames";
 
 type NotesDictionary = { id: string; name: string };
 type NoteState = "active" | "archived" | "done";
@@ -41,6 +50,18 @@ async function post(path: string, body: Record<string, unknown>) {
   }
 }
 
+// The sort you picked is remembered in this browser.
+const SORT_KEY = "stardust.nightSort";
+
+function savedSort(): NoteSort {
+  try {
+    const s = window.localStorage.getItem(SORT_KEY);
+    return isNoteSort(s) ? s : "shortest";
+  } catch {
+    return "shortest";
+  }
+}
+
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -50,8 +71,15 @@ function formatWhen(iso: string | null): string {
 // archives itself, so you keep letting go and starting fresh.
 export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: NotesDictionary[]; reloadKey?: number }) {
   const [state, setState] = useState<NoteState>("active");
-  const [timeFrameFilter, setTimeFrameFilter] = useState<TimeFrame | "">("");
-  const [labelFilter, setLabelFilter] = useState("");
+  const [timeFrameFilter, setTimeFrameFilter] = useState<TimeFrame[]>([]);
+  const [labelFilter, setLabelFilter] = useState<string[]>([]);
+  const [sort, setSortState] = useState<NoteSort>(savedSort);
+  const setSort = (next: NoteSort) => {
+    setSortState(next);
+    try {
+      window.localStorage.setItem(SORT_KEY, next);
+    } catch {}
+  };
   const [page, setPage] = useState(1);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -70,7 +98,9 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
 
   // Back to page 1 whenever the list or a filter changes. Computed during
   // render so there's no extra commit.
-  const filterKey = `${idsKey}|${state}|${timeFrameFilter}|${labelFilter}`;
+  const timeFramesKey = timeFrameFilter.join(",");
+  const labelsKey = labelFilter.join(",");
+  const filterKey = `${idsKey}|${state}|${timeFramesKey}|${labelsKey}|${sort}`;
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (filterKey !== prevFilterKey) {
     setPrevFilterKey(filterKey);
@@ -80,9 +110,9 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
   useEffect(() => {
     if (!idsKey) return;
     const controller = new AbortController();
-    const params = new URLSearchParams({ dictionaryIds: idsKey, state, page: String(page) });
-    if (timeFrameFilter) params.set("timeFrame", timeFrameFilter);
-    if (labelFilter) params.set("label", labelFilter);
+    const params = new URLSearchParams({ dictionaryIds: idsKey, state, sort, page: String(page) });
+    if (timeFramesKey) params.set("timeFrames", timeFramesKey);
+    if (labelsKey) params.set("labels", labelsKey);
 
     startLoading(async () => {
       try {
@@ -96,7 +126,7 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
     });
 
     return () => controller.abort();
-  }, [idsKey, state, timeFrameFilter, labelFilter, page, refreshToken, reloadKey]);
+  }, [idsKey, state, timeFramesKey, labelsKey, sort, page, refreshToken, reloadKey]);
 
   async function run(path: string, body: Record<string, unknown>) {
     setError(null);
@@ -149,32 +179,34 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
             {tab.label}
           </button>
         ))}
-        <label className="ml-2 text-xs text-neutral-500">Time frame</label>
+        <label className="ml-2 text-xs text-neutral-500">Sort</label>
         <select
-          value={timeFrameFilter}
-          onChange={(e) => setTimeFrameFilter(e.target.value as TimeFrame | "")}
+          value={sort}
+          onChange={(e) => setSort(e.target.value as NoteSort)}
           className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
         >
-          <option value="">None</option>
-          {TIME_FRAMES.map((tf) => (
-            <option key={tf} value={tf}>
-              {TIME_FRAME_LABELS[tf]}
+          {NOTE_SORTS.map((s) => (
+            <option key={s} value={s}>
+              {NOTE_SORT_LABELS[s]}
             </option>
           ))}
         </select>
-        <label className="text-xs text-neutral-500">Label</label>
-        <select
-          value={labelFilter}
-          onChange={(e) => setLabelFilter(e.target.value)}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-        >
-          <option value="">None</option>
-          {NOTE_LABELS.map((label) => (
-            <option key={label} value={label}>
-              {label}
-            </option>
-          ))}
-        </select>
+      </div>
+
+      {/* Filters: pick any number. Nothing picked shows everything. */}
+      <div className="flex flex-col gap-1.5">
+        <FilterChips
+          title="Time frame"
+          options={TIME_FRAMES.map((tf) => ({ value: tf, label: TIME_FRAME_LABELS[tf] }))}
+          picked={timeFrameFilter}
+          onChange={(next) => setTimeFrameFilter(next as TimeFrame[])}
+        />
+        <FilterChips
+          title="Label"
+          options={NOTE_LABELS.map((l) => ({ value: l, label: l }))}
+          picked={labelFilter}
+          onChange={setLabelFilter}
+        />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
@@ -218,6 +250,7 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
               state={state}
               isFirst={index === 0}
               isLast={index === notes.length - 1}
+              canReorder={sort === "mine"}
               onRun={run}
               onDelete={() => deleteNote(note.id)}
               dragging={dragging}
@@ -261,6 +294,7 @@ function NoteItem({
   onDelete,
   dragging,
   onDragChange,
+  canReorder,
 }: {
   note: NoteRow;
   state: NoteState;
@@ -270,6 +304,7 @@ function NoteItem({
   onDelete: () => void;
   dragging: NoteRow | null;
   onDragChange: (note: NoteRow | null) => void;
+  canReorder: boolean;
 }) {
   const [restoreTimeFrame, setRestoreTimeFrame] = useState<TimeFrame>(note.timeFrame);
   const [label, setLabel] = useState(note.label ?? "");
@@ -315,7 +350,8 @@ function NoteItem({
       />
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        {isActive && (
+        {/* Moving notes only makes sense in My order. */}
+        {isActive && canReorder && (
           <div className="flex items-center">
             <span
               draggable
@@ -427,6 +463,43 @@ function NoteItem({
         </div>
       </div>
     </li>
+  );
+}
+
+function FilterChips({
+  title,
+  options,
+  picked,
+  onChange,
+}: {
+  title: string;
+  options: { value: string; label: string }[];
+  picked: string[];
+  onChange: (next: string[]) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-20 text-xs text-neutral-500">{title}</span>
+      {options.map((o) => {
+        const on = picked.includes(o.value);
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={on}
+            onClick={() => onChange(on ? picked.filter((v) => v !== o.value) : [...picked, o.value])}
+            className={`rounded-full px-2.5 py-0.5 text-xs ${on ? "bg-blue-600 text-white" : "border border-neutral-300 text-neutral-600"}`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+      {picked.length > 0 && (
+        <button type="button" onClick={() => onChange([])} className="text-xs text-neutral-500 underline">
+          Clear
+        </button>
+      )}
+    </div>
   );
 }
 

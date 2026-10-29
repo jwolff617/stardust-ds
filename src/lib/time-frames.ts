@@ -13,6 +13,22 @@ export const TIME_FRAME_LABELS: Record<TimeFrame, string> = {
   life: "Life",
 };
 
+// How a Night DS list is sorted. Shortest time frame first is the default;
+// "mine" is the order set by dragging and the arrows.
+export const NOTE_SORTS = ["shortest", "longest", "newest", "oldest", "mine"] as const;
+export type NoteSort = (typeof NOTE_SORTS)[number];
+export const NOTE_SORT_LABELS: Record<NoteSort, string> = {
+  shortest: "Day to Life",
+  longest: "Life to Day",
+  newest: "Newest first",
+  oldest: "Oldest first",
+  mine: "My order",
+};
+
+export function isNoteSort(value: unknown): value is NoteSort {
+  return typeof value === "string" && (NOTE_SORTS as readonly string[]).includes(value);
+}
+
 export const NOTE_LABELS = ["goal", "lesson", "memory", "idea", "person", "place"] as const;
 
 export function isTimeFrame(value: unknown): value is TimeFrame {

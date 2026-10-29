@@ -1,13 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
-import { expiresAtFor, isTimeFrame, normalizeNoteLabel, safeTimeZone } from "@/lib/time-frames";
+import { expiresAtFor, isNoteSort, isTimeFrame, normalizeNoteLabel, safeTimeZone, TIME_FRAMES } from "@/lib/time-frames";
 
 const PAGE_SIZE = 25;
 const STATES = ["active", "archived", "done"] as const;
 type NoteState = (typeof STATES)[number];
 
-// Night DS Display View. `state` picks the list: active notes (in the
-// owner's order), Archived, or Done (newest first). `timeFrame` and
-// `label` filter it; leaving either out shows everything.
+// Night DS Display View. `state` picks the list: active notes, Archived,
+// or Done. `timeFrames` and `labels` (comma-separated, any of them match)
+// filter it; leaving either out shows everything. `sort`: shortest time
+// frame first (the default), longest first, newest, oldest, or "mine"
+// (the drag order).
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
 
@@ -18,8 +20,11 @@ export async function GET(request: Request) {
 
   const requestedState = searchParams.get("state") as NoteState;
   const state: NoteState = STATES.includes(requestedState) ? requestedState : "active";
-  const timeFrame = searchParams.get("timeFrame");
-  const label = normalizeNoteLabel(searchParams.get("label"));
+  const list = (key: string) => (searchParams.get(key) ?? "").split(",").filter(Boolean);
+  const timeFrames = list("timeFrames").filter(isTimeFrame);
+  const labels = list("labels").map(normalizeNoteLabel).filter((l) => l !== null);
+  const requestedSort = searchParams.get("sort");
+  const sort = isNoteSort(requestedSort) ? requestedSort : "shortest";
   const page = Math.max(1, Number(searchParams.get("page") ?? "1") || 1);
 
   if (dictionaryIds.length === 0) {
@@ -49,14 +54,28 @@ export async function GET(request: Request) {
   else if (state === "archived") query = query.not("archived_at", "is", null).is("done_at", null);
   else query = query.not("done_at", "is", null);
 
-  if (isTimeFrame(timeFrame)) query = query.eq("time_frame", timeFrame);
-  if (label) query = query.eq("label", label);
+  if (timeFrames.length > 0) query = query.in("time_frame", timeFrames);
+  if (labels.length > 0) query = query.in("label", labels);
 
-  if (state === "active") query = query.order("position", { ascending: true });
-  else query = query.order(state === "done" ? "done_at" : "archived_at", { ascending: false });
+  // Recency means when it was written, or for Archived and Done, when it
+  // left. Time-frame sorts break ties by the drag order.
+  const when = state === "active" ? "created_at" : state === "done" ? "done_at" : "archived_at";
+  if (sort === "newest" || sort === "oldest") query = query.order(when, { ascending: sort === "oldest" });
+  else query = query.order("position", { ascending: true }).order("created_at", { ascending: false });
 
+  // Time frames aren't alphabetical, so those sorts happen here, over every
+  // matching note (a person's notes number in the hundreds, not millions).
+  const byTimeFrame = sort === "shortest" || sort === "longest";
   const from = (page - 1) * PAGE_SIZE;
-  const { data, count, error } = await query.range(from, from + PAGE_SIZE - 1);
+  const result = byTimeFrame ? await query.limit(5000) : await query.range(from, from + PAGE_SIZE - 1);
+  const { count, error } = result;
+  let data = result.data;
+  if (byTimeFrame && data) {
+    const rank = (tf: string) => TIME_FRAMES.indexOf(tf as (typeof TIME_FRAMES)[number]);
+    const dir = sort === "shortest" ? 1 : -1;
+    // Array sort is stable, so the database order breaks ties.
+    data = [...data].sort((a, b) => dir * (rank(a.time_frame) - rank(b.time_frame))).slice(from, from + PAGE_SIZE);
+  }
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
