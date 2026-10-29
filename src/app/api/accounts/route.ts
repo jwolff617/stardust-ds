@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const items = (data ?? []).map((row) => ({
     id: row.id,
     account: row.account,
-    amount: row.amount === null ? null : Number(row.amount),
+    amount: row.amount,
     note: row.note,
     createdAt: row.created_at,
   }));
@@ -32,16 +32,17 @@ export async function POST(request: Request) {
   const body = await request.json();
   const dictionaryId = String(body.dictionaryId ?? "");
   const note = typeof body.note === "string" && body.note.trim() ? body.note.trim() : null;
-  const rawAmount = body.amount === "" || body.amount === null || body.amount === undefined ? null : Number(body.amount);
+  // Quantity: a number or a word, up to 60 characters.
+  const rawAmount = typeof body.amount === "string" || typeof body.amount === "number" ? String(body.amount).trim() || null : null;
 
   if (!dictionaryId || !isAccountName(body.account)) {
     return Response.json({ error: "dictionaryId and an account are required." }, { status: 400 });
   }
-  if (rawAmount !== null && !Number.isFinite(rawAmount)) {
-    return Response.json({ error: "Amount must be a number." }, { status: 400 });
+  if (rawAmount !== null && rawAmount.length > 60) {
+    return Response.json({ error: "Quantity is 60 characters at most." }, { status: 400 });
   }
   if (rawAmount === null && !note) {
-    return Response.json({ error: "An entry needs an amount, a note, or both." }, { status: 400 });
+    return Response.json({ error: "An entry needs a quantity, a note, or both." }, { status: 400 });
   }
 
   const supabase = await createClient();

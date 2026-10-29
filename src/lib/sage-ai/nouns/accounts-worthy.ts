@@ -20,21 +20,21 @@ async function deleteById(
 export const entryNoun: NounDef = {
   name: "Account Entry",
   dictionary: "accounts-ds",
-  description: `One dated line in an Accounts DS account: an amount, a note, or both. Accounts: ${ACCOUNT_GROUPS.map((g) => `${g.group} (${g.accounts.join(", ")})`).join("; ")}.`,
+  description: `One dated line in an Accounts DS account: a quantity (a number or a word), a note, or both. Accounts: ${ACCOUNT_GROUPS.map((g) => `${g.group} (${g.accounts.join(", ")})`).join("; ")}.`,
   verbs: {
     Add: {
       params: [
         { name: "account", type: "enum", options: ACCOUNTS, required: true },
-        { name: "amount", type: "number", description: "Money, minutes, a count, whatever the user tracks." },
+        { name: "amount", type: "text", max: 60, description: "The quantity: a number or a word (\"3\", \"a lot\", \"half\"). Whatever the user tracks." },
         { name: "note", type: "text", max: 2000 },
       ],
       run: async ({ ctx, dictionary, values }) => {
-        if (values.amount === undefined && !values.note) return { ok: false, error: "An entry needs an amount, a note, or both." };
+        if (!values.amount && !values.note) return { ok: false, error: "An entry needs a quantity, a note, or both." };
         const { error } = await ctx.supabase.from("account_entries").insert({
           dictionary_id: dictionary!.id,
           owner_user_id: ctx.userId,
           account: values.account,
-          amount: values.amount ?? null,
+          amount: values.amount || null,
           note: values.note || null,
         });
         if (error) return { ok: false, error: error.message };
@@ -42,7 +42,7 @@ export const entryNoun: NounDef = {
       },
     },
     Find: {
-      description: "Entries, newest first, with each account's balance.",
+      description: "Entries, newest first, with how many each account has.",
       params: [
         { name: "account", type: "enum", options: ACCOUNTS },
         { name: "query", type: "text", description: "Text in the note." },
@@ -58,12 +58,8 @@ export const entryNoun: NounDef = {
         const { data, error } = await q.limit(200);
         if (error) return { ok: false, error: error.message };
 
-        const balances: Record<string, { total: number; entries: number }> = {};
-        for (const row of data ?? []) {
-          const b = (balances[row.account] ??= { total: 0, entries: 0 });
-          b.total += row.amount === null ? 0 : Number(row.amount);
-          b.entries += 1;
-        }
+        const balances: Record<string, { entries: number }> = {};
+        for (const row of data ?? []) (balances[row.account] ??= { entries: 0 }).entries += 1;
         return {
           ok: true,
           message: `Found ${data?.length ?? 0} entr${data?.length === 1 ? "y" : "ies"}.`,

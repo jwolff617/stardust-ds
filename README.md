@@ -45,7 +45,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | DS | Status | What it does |
 |---|---|---|
 | **Night DS** | Built | Notes that live in the now. Each note has a time frame (day, week, month, year, decade, life) and archives itself when its time is up, so you keep letting go and starting fresh. One label per note (goal, lesson, memory, idea, person, or place). Filter by time frame and label. Mark notes Done to keep a Done archive of what you finished. |
-| **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional amount and a note, and shows its balance. |
+| **Accounts DS** | Built | A bank account for your whole life. Nine accounts in three groups: Matrix (Savings, Home, Avatar), Life (Friends, Community, Hobbies), Imagination (Ideas, Reflections, Memories). Each account keeps dated entries with an optional quantity (a number or a word) and a note, and shows how many entries it has. |
 | **Worthy DS** | Built | Urban Wolf Studio's betting system: save half of every win. Log deposits, wins, savings, and balance snapshots. See savings owed and saved, savings and balance as a share of deposits, and loss, over a day, week, month, year, decade, or life. Keep Bet Stories with the Worthy principles as labels. |
 | **After School DS** | Built | A group dictionary for an after-school program. Make a group for your site and add staff by email. Lessons: a Monday-to-Friday template on top, copied into each new week, with five weeks shown at a time and a regenerate button that recopies the template into them. Calendar: weeks by month, each with a theme and five activities. |
 | **Notepad** | Built | Plain notes that stay until you delete them, in a 3x3 grid with as many pages as it takes. The first box is always a new note; edit any note where it sits. Night DS is for letting go; Notepad is for keeping. |
@@ -75,7 +75,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0020 applied (2026-10-29). Nothing pending.
+**Live project:** 0001 to 0020 applied (2026-10-29). Pending: 0021 (Accounts quantity takes words).
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 

@@ -7,14 +7,11 @@ type AccountsDictionary = { id: string; name: string };
 type Entry = {
   id: string;
   account: AccountName;
-  amount: number | null;
+  // Quantity: a number or a word. Stored in the amount column.
+  amount: string | null;
   note: string | null;
   createdAt: string;
 };
-
-function formatAmount(n: number): string {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
 
 // Accounts DS Display View: like a bank account that holds more than
 // money. Each account keeps dated entries and shows its balance.
@@ -44,9 +41,7 @@ export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: Accoun
 
   function balanceOf(account: AccountName) {
     const rows = entries.filter((e) => e.account === account);
-    const total = rows.reduce((sum, e) => sum + (e.amount ?? 0), 0);
-    const hasAmounts = rows.some((e) => e.amount !== null);
-    return { count: rows.length, total, hasAmounts };
+    return { count: rows.length };
   }
 
   async function addEntry() {
@@ -92,7 +87,7 @@ export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: Accoun
             <p className="text-xs text-neutral-400">{group}</p>
             <div className="grid grid-cols-3 gap-2">
               {accounts.map((account) => {
-                const { count, total, hasAmounts } = balanceOf(account);
+                const { count } = balanceOf(account);
                 return (
                   <button
                     key={account}
@@ -104,7 +99,6 @@ export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: Accoun
                   >
                     <span className="text-sm font-medium">{account}</span>
                     <span className="text-xs text-neutral-500">
-                      {hasAmounts ? `${formatAmount(total)} · ` : ""}
                       {count} {count === 1 ? "entry" : "entries"}
                     </span>
                   </button>
@@ -119,11 +113,11 @@ export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: Accoun
         <p className="text-sm font-medium">{selected}</p>
         <div className="flex flex-wrap items-center gap-2">
           <input
-            type="number"
-            step="any"
+            type="text"
             value={amount}
+            maxLength={60}
             onChange={(e) => setAmount(e.target.value)}
-            placeholder="Amount (optional)"
+            placeholder="Quantity (optional)"
             className="w-36 rounded-md border border-neutral-300 px-2 py-1 text-sm"
           />
           <input
@@ -158,7 +152,7 @@ export function AccountsView({ dictionary, reloadKey = 0 }: { dictionary: Accoun
                 <span className="w-36 shrink-0 text-xs text-neutral-400">
                   {new Date(entry.createdAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                 </span>
-                {entry.amount !== null && <span className="w-20 shrink-0 font-medium">{formatAmount(entry.amount)}</span>}
+                {entry.amount !== null && <span className="w-20 shrink-0 font-medium">{entry.amount}</span>}
                 <span className="min-w-0 flex-1 text-neutral-700">{entry.note}</span>
                 <button
                   type="button"
