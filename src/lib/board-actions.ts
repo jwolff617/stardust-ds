@@ -73,6 +73,22 @@ export async function boardAction(
       const { error } = await supabase.from("post_joins").delete().eq("post_id", id).eq("user_id", userId);
       return error ? fail(error.message) : ok();
     }
+    case "decide": {
+      // Idea House judges. RLS lets only stewards of the board write.
+      const status = ["reviewing", "granted", "not_this_time"].includes(String(body.status)) ? String(body.status) : null;
+      if (!status) return fail("Pick a decision.");
+      const grantId = String(body.grantId ?? "").trim().slice(0, 20);
+      if (status === "granted" && !grantId) return fail("Give the grant its ledger ID, like IH-008.");
+      const { error } = await supabase.from("idea_house_decisions").upsert({
+        post_id: id,
+        status,
+        grant_id: status === "granted" ? grantId : "",
+        note: String(body.note ?? "").trim().slice(0, 1000),
+        decided_by: userId,
+        updated_at: new Date().toISOString(),
+      });
+      return error ? fail(error.code === "42501" ? "Only the fund's judges can decide." : error.message) : ok();
+    }
     case "removeJoin": {
       const { error } = await supabase.from("post_joins").delete().eq("post_id", id).eq("user_id", String(body.userId ?? ""));
       return error ? fail(error.message) : ok();

@@ -147,3 +147,47 @@ where name = 'Dating' and dictionary_id = (select id from dictionaries where add
 - Who would be the second steward before Dating opens?
 
 **Ideas for later.** Your Stardust order (word order as weight in matching). Small groups of three or four who share words, meeting at a real place. Sage AI helping draft your lines, shown to you, never posted for you.
+
+## 5. Idea House DS
+
+**What I built.**
+- `0027_idea_house.sql`: the Idea House board, with one kind, Application, marked stewards only. The fund's judges are stewards of this board. `idea_house_decisions` (Reviewing, Granted with a ledger ID, Not this time, and a note) is readable by the applicant and judges and written only by judges. Board settings hold the ledger's CSV link (the same Google Sheet the site's `/idea-house` page reads), a next review date, and the public page link.
+- `src/lib/idea-house.ts` and `/api/idea-house`: read the ledger fresh each time and drop any column whose header looks like a name, email, phone, or address, as a second lock on privacy.
+- `IdeaHouseView`: three tabs. The fund and its ledger has the story, the tax status said plainly, and the ledger table. Apply (or Your application) has the private form, your status, and questions from judges. Applications is for judges only: answers, a decision panel, and a private thread with the applicant.
+- Sage AI noun **Application**: it can help someone write theirs, and Find shows only your own. It never decides.
+- Design doc: `dictionaries/Idea_House_DS.md`.
+
+**Migrations to run.** 0027, after 0022 to 0026.
+
+**Make a judge** (you, for this board only; you're already a steward of every board if you ran the first SQL):
+
+```sql
+insert into stewards (user_id, dictionary_id)
+select u.id, d.id from auth.users u, dictionaries d
+where u.email = 'judge@example.com' and d.address = 'idea-house-ds'
+on conflict do nothing;
+```
+
+**Set the next review date** shown on Apply:
+
+```sql
+update post_boards set settings = settings || '{"nextReview": "December 1"}'::jsonb
+where dictionary_id = (select id from dictionaries where address = 'idea-house-ds');
+```
+
+**Test tonight.**
+1. The ledger tab shows the same rows as urbanwolfstudio.net/idea-house.
+2. From a second account (not a steward), apply. It shows "Received." Check that a third account can't see it anywhere.
+3. As a judge, open Applications, ask a question, then mark Granted with IH-001 and a note. The applicant sees "Granted, IH-001 on the ledger" and the note.
+
+**Open questions for Sage.**
+- What's the next review date, and should applications close between cycles? Right now Application is always open (`post_kinds.open` can close it).
+- Should an applicant be able to have more than one open application at a time?
+- Who besides you judges? The fund's board members?
+- When donations open, where should the "give" link go?
+
+**Ideas for later.** A first-name-only "thank you" post from grantees who want to share progress. Apply from an Idea Index idea in one tap. Cycle dates as data with reminders.
+
+## A late fix to 0022
+
+On an edit, the post's kind was looked up before its board was pinned back, so a crafted edit could name another board's kind for a moment. Now the board and author are pinned first. Found on the reread; 0022 isn't applied, so it's fixed in place.

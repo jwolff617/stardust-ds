@@ -340,7 +340,38 @@ export const MANIFESTO_MATCH: BoardConfig = {
   ],
 };
 
-export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX, MANIFESTO_MATCH];
+export const IDEA_HOUSE: BoardConfig = {
+  address: "idea-house-ds",
+  noun: "Application",
+  nounDescription:
+    "An application to the Idea House Fund: your idea, what you need (things, not cash), and how it helps. Only you and the fund's judges see it. Judges decide; Sage AI never does.",
+  newPost: "Apply",
+  photos: 0,
+  labels: [],
+  safety: [
+    "Your application is seen only by you and the fund's judges. Nothing about you is ever public.",
+    "The fund gives things, not cash, and never asks you for money, a bank account, or a Social Security number.",
+    "Only the fund's judges can message you about an application.",
+  ],
+  kinds: [
+    {
+      name: "Application",
+      price: { label: "About what it costs", placeholder: "About $300" },
+      fields: [
+        { key: "need", label: "What you need, in detail", type: "longtext", max: 1000, required: true, placeholder: "A vacuum and cleaning supplies. The vacuum is about $200 at Target." },
+        { key: "helps", label: "How it helps", type: "longtext", max: 1000, required: true, placeholder: "I can take cleaning jobs and earn on my own schedule." },
+        { key: "first_step", label: "First step once you have it", type: "text", max: 200, placeholder: "Clean two houses for people I know, for references." },
+        { key: "found", label: "How you found the fund", type: "choice", options: ["Recovery Cafe", "SHARE", "A friend", "Other"] },
+        { key: "reach", label: "Best way to reach you", type: "text", max: 120, placeholder: "Messages here, or at the Cafe on Tuesdays" },
+      ],
+      titlePlaceholder: "Your idea in one line: Start a house-cleaning business",
+      bodyPlaceholder: "Anything else the judges should know. Your own words are best.",
+      close: { verb: "Withdraw", done: "Closed", note: "" },
+    },
+  ],
+};
+
+export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX, MANIFESTO_MATCH, IDEA_HOUSE];
 
 export function boardByAddress(address: string): BoardConfig | undefined {
   return BOARDS.find((b) => b.address === address);

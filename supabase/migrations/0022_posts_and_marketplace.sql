@@ -407,8 +407,13 @@ declare
   v_kind_changed boolean := true;
   v_org_changed boolean := true;
 begin
-  -- OLD only exists on UPDATE, so it's read only there.
+  -- OLD only exists on UPDATE, so it's read only there. A post never moves
+  -- boards or authors, so pin those before looking up its kind.
   if tg_op = 'UPDATE' then
+    if not v_trusted then
+      new.author_user_id := old.author_user_id;
+      new.dictionary_id := old.dictionary_id;
+    end if;
     v_kind_changed := new.kind is distinct from old.kind;
     v_org_changed := new.organization_id is distinct from old.organization_id;
   end if;
