@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import type { NightView } from "@/lib/preferences";
 import {
   isNoteSort,
+  isTimeFrame,
   NOTE_LABELS,
   NOTE_SORT_LABELS,
   NOTE_SORTS,
@@ -50,18 +52,7 @@ async function post(path: string, body: Record<string, unknown>) {
   }
 }
 
-// The sort you picked is remembered in this browser.
-const SORT_KEY = "stardust.nightSort";
 const UNDO_SECONDS = 8;
-
-function savedSort(): NoteSort {
-  try {
-    const s = window.localStorage.getItem(SORT_KEY);
-    return isNoteSort(s) ? s : "shortest";
-  } catch {
-    return "shortest";
-  }
-}
 
 function formatWhen(iso: string | null): string {
   if (!iso) return "";
@@ -70,17 +61,28 @@ function formatWhen(iso: string | null): string {
 
 // Night DS Display View. Every note lives for its time frame, then
 // archives itself, so you keep letting go and starting fresh.
-export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: NotesDictionary[]; reloadKey?: number }) {
-  const [state, setState] = useState<NoteState>("active");
-  const [timeFrameFilter, setTimeFrameFilter] = useState<TimeFrame[]>([]);
-  const [labelFilter, setLabelFilter] = useState<string[]>([]);
-  const [sort, setSortState] = useState<NoteSort>(savedSort);
-  const setSort = (next: NoteSort) => {
-    setSortState(next);
-    try {
-      window.localStorage.setItem(SORT_KEY, next);
-    } catch {}
-  };
+// The list, filters, and sort come back as you left them (saved with the
+// rest of your arrangement).
+export function NightNotes({
+  dictionaries,
+  reloadKey = 0,
+  view = {},
+  onViewChange,
+}: {
+  dictionaries: NotesDictionary[];
+  reloadKey?: number;
+  view?: NightView;
+  onViewChange?: (view: NightView) => void;
+}) {
+  const state: NoteState = view.state ?? "active";
+  const timeFrameFilter = (view.timeFrames ?? []).filter(isTimeFrame);
+  const labelFilter = view.labels ?? [];
+  const sort: NoteSort = isNoteSort(view.sort) ? view.sort : "shortest";
+  const change = (next: NightView) => onViewChange?.({ ...view, ...next });
+  const setState = (next: NoteState) => change({ state: next });
+  const setTimeFrameFilter = (next: TimeFrame[]) => change({ timeFrames: next });
+  const setLabelFilter = (next: string[]) => change({ labels: next });
+  const setSort = (next: NoteSort) => change({ sort: next });
   const [page, setPage] = useState(1);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [totalPages, setTotalPages] = useState(1);

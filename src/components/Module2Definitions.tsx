@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { ProfileFields } from "./ProfileFields";
 import { NightNotes } from "./NightNotes";
+import type { NightView } from "@/lib/preferences";
 import { AccountsView } from "./AccountsView";
 import { WorthyView } from "./WorthyView";
 import { AfterSchoolView } from "./AfterSchoolView";
@@ -47,11 +48,21 @@ function inOrder(dictionaries: SelectedDictionary[], order: string[]): SelectedD
 }
 
 // One dictionary's Display View in the feed.
-function DisplayFor({ d, reloadKey }: { d: SelectedDictionary; reloadKey: number }) {
+function DisplayFor({
+  d,
+  reloadKey,
+  night,
+  onNightChange,
+}: {
+  d: SelectedDictionary;
+  reloadKey: number;
+  night: NightView;
+  onNightChange: (view: NightView) => void;
+}) {
   const dictionary = { id: d.id, name: d.name };
   switch (d.displayKind) {
     case "notes_list":
-      return <NightNotes dictionaries={[dictionary]} reloadKey={reloadKey} />;
+      return <NightNotes dictionaries={[dictionary]} reloadKey={reloadKey} view={night} onViewChange={onNightChange} />;
     case "profile":
       return <ProfileFields dictionaries={[dictionary]} reloadKey={reloadKey} />;
     case "accounts":
@@ -400,7 +411,12 @@ export function Module2Definitions({
             <div className="flex flex-col gap-8">
               {displayable.map((d) => (
                 <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4">
-                  <DisplayFor d={d} reloadKey={reloadKey} />
+                  <DisplayFor
+                    d={d}
+                    reloadKey={reloadKey}
+                    night={prefs.night ?? {}}
+                    onNightChange={(view) => onPrefsChange((p) => ({ ...p, night: view }))}
+                  />
                 </div>
               ))}
             </div>

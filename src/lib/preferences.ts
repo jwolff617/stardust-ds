@@ -5,6 +5,14 @@
 
 export type PartOfSpeech = "verb" | "noun" | "more";
 
+// Night DS: which list, filters, and sort were showing last time.
+export type NightView = {
+  state?: "active" | "archived" | "done";
+  timeFrames?: string[];
+  labels?: string[];
+  sort?: string;
+};
+
 export type Preferences = {
   module2?: {
     deselectedIds?: string[];
@@ -14,6 +22,7 @@ export type Preferences = {
     order?: string[];
     // On phones, the dictionary list folds away so the feed gets the width.
     listCollapsed?: boolean;
+    night?: NightView;
   };
   module1?: { storeHidden?: boolean; collapsed?: boolean };
   module3?: { collapsed?: boolean };
@@ -32,6 +41,7 @@ export function cleanPreferences(raw: unknown): Preferences {
   const m1 = r.module1 ?? {};
   const m3 = r.module3 ?? {};
   const flag = (v: unknown) => (typeof v === "boolean" ? v : undefined);
+  const night = (m2.night && typeof m2.night === "object" ? m2.night : {}) as Record<string, unknown>;
   const tabs = strings(m2.activeTabs)?.filter((t): t is PartOfSpeech => ["verb", "noun", "more"].includes(t));
   return {
     module2: {
@@ -40,6 +50,12 @@ export function cleanPreferences(raw: unknown): Preferences {
       viewMode: m2.viewMode === "term" || m2.viewMode === "display" ? m2.viewMode : undefined,
       order: strings(m2.order),
       listCollapsed: flag(m2.listCollapsed),
+      night: {
+        state: night.state === "active" || night.state === "archived" || night.state === "done" ? night.state : undefined,
+        timeFrames: strings(night.timeFrames, 10),
+        labels: strings(night.labels, 20),
+        sort: typeof night.sort === "string" ? night.sort.slice(0, 20) : undefined,
+      },
     },
     module1: { storeHidden: flag(m1.storeHidden), collapsed: flag(m1.collapsed) },
     module3: { collapsed: flag(m3.collapsed) },
