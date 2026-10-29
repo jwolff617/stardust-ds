@@ -2,14 +2,33 @@
 
 A day of building the five boards on Posts while Sage was at work. Nothing here is pushed or deployed, and no migration has been run. Everything is committed locally.
 
+## Tonight, in short
+
+All five boards are built: Marketplace, Job Match, Idea Index, Manifesto Match, and Idea House, on one shared Posts piece. `npx tsc --noEmit`, `npm run lint`, and `npm run build` all pass.
+
+**Commits, oldest first.**
+- `338ade8` Posts: one shared piece for every board
+- `948d4db` Marketplace DS
+- `e7df584` Job Match DS
+- `ae4f543` Idea Index DS
+- `2e62d21` Manifesto Match DS
+- `9bb6e3f` Idea House DS (and a small fix to 0022)
+- plus the commit that finished this log
+
 ## Before anything: run the migrations, in order
 
-Run each in the Supabase SQL editor, one at a time, in this order. Each is safe to run twice.
+Run each in the Supabase SQL editor, one at a time, in this order. Each is safe to run twice. Each needs the ones before it.
 
 1. `0022_posts_and_marketplace.sql`: Posts (the shared piece), stewards, organizations, 18+ confirmations, and Marketplace.
 2. `0023_post_photos.sql`: the `post-photos` storage bucket and its rules.
+3. `0024_job_match.sql`: Job Match.
+4. `0025_idea_index.sql`: Idea Index, with sparks, comments, and I'm In.
+5. `0026_manifesto_match.sql`: Manifesto Match (Dating closed).
+6. `0027_idea_house.sql`: Idea House, with decisions.
 
-Then make yourself a steward of every board (paste in the SQL editor, with your email):
+I checked them in order against a database at 0021. Every function is defined once, nothing from 0001 to 0021 is redefined, later files use only what 0022 makes, and the display-kind list keeps every earlier kind. Marketplace's display kind is now `marketplace` (the unapplied 0022 used to say `posts`).
+
+Then make yourself a steward of every board (paste in the SQL editor):
 
 ```sql
 insert into stewards (user_id)
@@ -17,7 +36,39 @@ select id from auth.users where email = 'jwolff617@gmail.com'
 on conflict do nothing;
 ```
 
-Push only after the migrations have run: the live site would show empty boards that error otherwise.
+Push only after the migrations have run. Otherwise the live site would show boards that error.
+
+## What to test first
+
+1. Marketplace: post a Free item, then message it from a second account and close it with the note. That one loop touches posts, threads, Your Turn, and closing notes.
+2. Report and Block from the second account, then Unblock.
+3. Job Match: a Job with no pay won't post. A Looking post on one account matches a Job with the same label on the other.
+4. Idea Index: spark, comment, I'm in.
+5. Manifesto Match: the 18+ gate, then two Friends manifestos that share words.
+6. Idea House: apply from a non-steward account, then decide as yourself.
+
+Detailed steps for each board are in its section below.
+
+## Not finished, or not built on purpose
+
+- Nothing ran against a real database. The SQL was checked by reading, line by line, since no migration could be run.
+- Organizations have no screen yet. Sage adds them and their members by SQL (example below).
+- No email or push notices for new messages. People see "Your turn (n)" when they open a board.
+- Manifesto Match has no Sage AI noun, on purpose (see its section).
+- The 18+ confirmation trusts the birth date a person enters, like every incumbent does. Someone could also write the confirmation row directly through the API without the age check. It's the same level of trust, but it's worth knowing.
+
+**Adding an organization** (once it says yes):
+
+```sql
+insert into organizations (slug, name, kind, neighborhood, about, website, verified)
+values ('ymca-seattle', 'YMCA of Greater Seattle', 'nonprofit', 'Downtown', 'Programs for kids, families, and neighbors.', 'https://www.seattleymca.org', true)
+on conflict (slug) do nothing;
+
+insert into organization_members (organization_id, user_id, role)
+select o.id, u.id, 'admin' from organizations o, auth.users u
+where o.slug = 'ymca-seattle' and u.email = 'someone@example.com'
+on conflict do nothing;
+```
 
 ## 1. Marketplace DS
 
@@ -38,7 +89,7 @@ Push only after the migrations have run: the live site would show empty boards t
 - Sage AI noun **Listing**: Add, Edit, Find, Archive (close), Restore, Delete, Act Renew. It runs the fair-housing check strictly: it has to reword, it can't post as is.
 - Design doc: `dictionaries/Marketplace_DS.md`.
 
-**Commits.** See `git log`: "Posts: one shared piece for every board..." and "Marketplace DS: ...".
+**Commits.** `338ade8`, `948d4db`.
 
 **Test tonight, in this order.**
 1. Add Marketplace from the library. The board shows its intro and "Staying safe."
@@ -70,6 +121,8 @@ Push only after the migrations have run: the live site would show empty boards t
 - Sage AI noun **Job Post**, from the same factory as Listing.
 - Design doc: `dictionaries/Job_Match_DS.md`.
 
+**Commits.** `e7df584`.
+
 **Migrations to run.** 0024, after 0022 and 0023.
 
 **Test tonight.**
@@ -98,6 +151,8 @@ Push only after the migrations have run: the live site would show empty boards t
 
 **From the prototype, kept:** votes (as sparks), comments with one level of replies, favorites (Save), categories (as labels). **Left behind:** downvotes, the leaderboard, the 9-panel grid. Connections and follow are in "Later."
 
+**Commits.** `ae4f543`.
+
 **Migrations to run.** 0025, after 0022 to 0024.
 
 **Test tonight.**
@@ -123,6 +178,8 @@ Push only after the migrations have run: the live site would show empty boards t
 - 48 words: 30 from the Stardust Dictionary, 18 from the prototype.
 - No Sage AI noun, on purpose: a manifesto is a person speaking for themselves. Said in the design doc.
 - Design doc: `dictionaries/Manifesto_Match_DS.md`.
+
+**Commits.** `2e62d21`.
 
 **Migrations to run.** 0026, after 0022 to 0025. Since 0022 changed again for `mutual`, run it from the file as it is now.
 
@@ -156,6 +213,8 @@ where name = 'Dating' and dictionary_id = (select id from dictionaries where add
 - `IdeaHouseView`: three tabs. The fund and its ledger has the story, the tax status said plainly, and the ledger table. Apply (or Your application) has the private form, your status, and questions from judges. Applications is for judges only: answers, a decision panel, and a private thread with the applicant.
 - Sage AI noun **Application**: it can help someone write theirs, and Find shows only your own. It never decides.
 - Design doc: `dictionaries/Idea_House_DS.md`.
+
+**Commits.** `9bb6e3f`.
 
 **Migrations to run.** 0027, after 0022 to 0026.
 
