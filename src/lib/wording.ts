@@ -21,9 +21,9 @@ const HOUSING: Rule[] = [
 ];
 
 const HIRING: Rule[] = [
-  { re: /\b(young|youthful|energetic young|recent (college )?grads? only|digital natives?|under (2|3|4)\d|max(imum)? age)\b/i, why: "Job posts can't prefer an age. Say what the work needs instead, like lifting 30 pounds or being on your feet." },
+  { re: /\b(young|youthful)\b(?!\s+(kids|children|students|learners|people|readers|athletes|families|scholars|ones))|\b(recent (college )?grads? only|digital natives?|under (2|3|4)\d|max(imum)? age)\b/i, why: "Job posts can't prefer an age. Say what the work needs instead, like lifting 30 pounds or being on your feet." },
   { re: /\b(males?|females?|men|women|guys?|girls?|ladies|man|woman)( only| preferred| wanted)\b|\bwaitress(es)?\b|\bsalesm[ae]n\b/i, why: "Job posts can't prefer a sex or gender. Name the job, not the person: server, salesperson." },
-  { re: /\bno (felons?|criminals?|criminal (record|history|background)s?|ex[- ]?cons?|records?)\b|\bclean (criminal )?record (required|only)\b|\bmust pass (a )?background check\b/i, why: "Seattle's Fair Chance rules keep job ads from shutting out people with records. Many people here are rebuilding, and many employers welcome them." },
+  { re: /\bno (felons?|criminals?|criminal (record|history|background)s?|ex[- ]?cons?|records?)\b|\bclean (criminal )?record (required|only)\b/i, why: "Seattle's Fair Chance rules keep job ads from shutting out people with records. Many people here are rebuilding, and many employers welcome them." },
   { re: /\b(native|perfect|unaccented) english\b|\bamericans? only\b|\bcitizens? only\b|\bmust be (a )?(us |u\.s\. )?citizen\b/i, why: "Job posts can't require a native language or citizenship unless the law requires it. Say what language the work uses: \"speaks English with customers.\"" },
   { re: /\b(able[- ]bodied|no (disabled|disabilities|handicapped))\b/i, why: "Job posts can't exclude people with disabilities. Describe the tasks, and people can ask for what they need." },
   { re: /\b(christians?|muslims?|catholics?|believers?) (only|preferred)\b/i, why: "Job posts can't prefer a religion." },
@@ -49,6 +49,7 @@ const SCAMS: Rule[] = [
   { re: /\b(zelle|venmo|cash ?app|paypal)\b.*\b(deposit|hold|first|before|ahead|now)\b|\b(deposit|hold) .*\b(zelle|venmo|cash ?app|paypal)\b/i, why: "Never pay to hold something or a deposit before you've seen it in person. Pay when it's in your hands." },
   { re: /\b(deposit|first month|application fee).{0,40}\b(before|without) (seeing|a showing|viewing|meeting)\b|\bcan'?t show (you )?(the|it)\b/i, why: "Never pay a deposit before you've seen the place inside and met the person. Rental scams copy real listings." },
   { re: /\b(pay|buy) (for )?(your |the )?(training|equipment|starter kit|uniform|background check)\b|\breship(ping)? (packages|items)\b|\bpackage (forward|reship)/i, why: "A real job never asks you to pay to start or to reship packages." },
+  { re: /\b(social security|ssn|bank account|routing number|account number|debit card (number|pin))\b/i, why: "Don't send your Social Security number or bank details in a message. Paperwork comes after you're hired, in person." },
 ];
 
 export function scamWarning(text: string): string | null {

@@ -234,6 +234,7 @@ export function ThreadBox({
   onReport,
   placeholder = "Write a message",
   closedToNew,
+  starter,
 }: {
   thread: Thread | null;
   title: string;
@@ -242,6 +243,8 @@ export function ThreadBox({
   onReport?: (reason: string, note: string) => void;
   placeholder?: string;
   closedToNew?: boolean;
+  // A few lines to start from, offered before the first message.
+  starter?: string;
 }) {
   const [text, setText] = useState("");
   const [reporting, setReporting] = useState(false);
@@ -302,16 +305,21 @@ export function ThreadBox({
               submit();
             }
           }}
-          rows={1}
           placeholder={placeholder}
           maxLength={2000}
           aria-label={placeholder}
+          rows={text.includes("\n") ? 4 : 1}
           className={`${input} min-w-0 flex-1 resize-y`}
         />
         <button type="button" disabled={!text.trim() || sending} onClick={submit} className={primary}>
           Send
         </button>
       </div>
+      {starter && !thread && !text && (
+        <button type="button" onClick={() => setText(starter)} className={`${link} self-start`}>
+          Use a starter
+        </button>
+      )}
     </div>
   );
 }
@@ -423,7 +431,19 @@ export function OtherActions({ post, send, saveLabel = "Save" }: { post: Post; s
 }
 
 // The threads on a post: yours with the poster, or every replier's on yours.
-export function PostThreads({ post, send, emptyMine = "No messages yet.", startLabel }: { post: Post; send: Send; emptyMine?: string; startLabel?: string }) {
+export function PostThreads({
+  post,
+  send,
+  emptyMine = "No messages yet.",
+  startLabel,
+  starter,
+}: {
+  post: Post;
+  send: Send;
+  emptyMine?: string;
+  startLabel?: string;
+  starter?: string;
+}) {
   if (post.mine) {
     return (
       <div className="flex flex-col gap-2">
@@ -448,7 +468,8 @@ export function PostThreads({ post, send, emptyMine = "No messages yet.", startL
     <ThreadBox
       thread={post.threads[0] ?? null}
       closedToNew={post.status === "closed"}
-      title={startLabel ?? `Message ${post.authorName} privately`}
+      title={startLabel ?? `Message ${post.organization?.name ?? post.authorName} privately`}
+      starter={starter}
       onSend={async (text) => Boolean(await send({ action: "reply", id: post.id, body: text }))}
       onReport={(reason, note) => send({ action: "reportThread", id: post.id, reason, note })}
     />

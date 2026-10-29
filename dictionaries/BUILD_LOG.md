@@ -59,3 +59,28 @@ Push only after the migrations have run: the live site would show empty boards t
 
 **Ideas for later.**
 - Borrow and Lend as a kind. Meet Spots as a short list of real places. A "handed over" confirmation that builds trust without star ratings. Cleaning up old photos from expired posts after 90 days.
+
+## 2. Job Match DS
+
+**What I built.**
+- `0024_job_match.sql`: the Job Match board, kinds Job (30 days), Gig (7), Looking (30), Training (45), labels, and its words (Job, Gig, Looking, Training, Pay, Fair Chance, Apply, Filled).
+- `JOB_MATCH` in `src/lib/boards.ts`: pay required on Job and Gig; Job has Hours, Schedule, Fair chance, Experience, How to apply, Where or how, and "We answer everyone" (a promise: within 3 days or a week). Looking has the work you want, when, and what you've done. Training has when, how long, what you leave with, and who it's for.
+- `JobsView`: pay in green up top, Fair chance and No experience filters, "Matches you" (when you have a Looking post, it shows jobs, gigs, and trainings sharing a label), "I'm looking" and "Post work" buttons, apply by message with a starter, and "How to apply" when it's in person, by phone, or online.
+- Fair-hiring wording check (age, sex, records, language and citizenship, disability, religion, parents), and a scam note for Social Security or bank details in a message.
+- Sage AI noun **Job Post**, from the same factory as Listing.
+- Design doc: `dictionaries/Job_Match_DS.md`.
+
+**Migrations to run.** 0024, after 0022 and 0023.
+
+**Test tonight.**
+1. Add Job Match. Post a Job without pay: the form won't post. Add pay, choose Fair chance, post.
+2. Write "energetic young person" in a job: the form explains the age rule. "Working with young kids" doesn't trip it.
+3. From a second account, tap "I'm looking," post Looking with the label kitchen. Post a Job with the label kitchen from the first. The second account sees "Matches your Looking post" and a "Matches you" filter.
+4. Apply with a message using "Use a starter." Then Mark filled on the job: the applicant gets the note.
+
+**Open questions for Sage.**
+- Pay is required on Job and Gig. Should Training's cost be required too (so "Free" is always said)?
+- Should Job Match ask employers to agree to a short pledge (answer everyone, pay what you post) before their first job post?
+- Which employers would you want verified first, beyond the Y and Recovery Cafe?
+
+**Ideas for later.** Universal Transcript suggestions. A "hired here" note from applicants in place of ratings. Bus time from your neighborhood to the job.

@@ -131,7 +131,88 @@ export const MARKETPLACE: BoardConfig = {
   ],
 };
 
-export const BOARDS: BoardConfig[] = [MARKETPLACE];
+const FILLED = { verb: "Mark filled", done: "Filled", note: "Thank you for applying. This one is filled now. We wish you the best, and we hope you'll look at our next one." };
+
+export const JOB_MATCH: BoardConfig = {
+  address: "job-match-ds",
+  noun: "Job Post",
+  nounDescription:
+    "A Job Match post: a Job or Gig (both say what they pay), a Looking post from someone who wants work, or a Training. Looking matches jobs, gigs, and trainings that share a label.",
+  newPost: "New post",
+  photos: 0,
+  labels: [
+    "kitchen", "dishwasher", "cleaning", "janitorial", "warehouse", "retail", "childcare", "after-school", "driving", "delivery",
+    "construction", "landscaping", "moving", "events", "security", "office", "healthcare", "outreach", "peer-support", "remote", "bus-line",
+  ],
+  safety: [
+    "A real job never asks you to pay to start, buy equipment, or reship packages.",
+    "Don't send your Social Security number or bank details in a message. Paperwork comes after you're hired, in person.",
+    "Meet for an interview at the workplace or a public place in daylight.",
+    "If something feels off, Report it. A steward will look.",
+  ],
+  kinds: [
+    {
+      name: "Job",
+      price: { label: "Pay", required: true, placeholder: "$21 to $23/hr, or $48,000 a year" },
+      fields: [
+        { key: "hours", label: "Hours", type: "choice", options: ["Full time", "Part time", "Weekends only", "Seasonal"], required: true },
+        { key: "schedule", label: "Schedule", type: "text", max: 120, placeholder: "Weekdays 2:15 to 6" },
+        { key: "fair_chance", label: "Fair chance", type: "choice", options: ["People with records are welcome"], help: "Shows a Fair chance badge and filter." },
+        { key: "experience", label: "Experience", type: "choice", options: ["None needed", "Some", "Experienced"] },
+        { key: "apply", label: "How to apply", type: "choice", options: ["Message here", "In person", "Phone", "Online"], required: true },
+        { key: "apply_where", label: "Where or how", type: "text", max: 200, placeholder: "An address and hours, a number, or a link" },
+        { key: "answer", label: "We answer everyone", type: "choice", options: ["Within 3 days", "Within a week"], help: "A promise to everyone who applies." },
+      ],
+      titlePlaceholder: "What the job is: Dishwasher, mornings",
+      bodyPlaceholder: "What the work is, where, what it needs (on your feet, lifting 30 lbs), and what you offer.",
+      check: "hiring",
+      matches: ["Looking"],
+      close: FILLED,
+    },
+    {
+      name: "Gig",
+      price: { label: "Pay", required: true, placeholder: "$25/hr, or $80 for the job" },
+      fields: [
+        { key: "when", label: "When", type: "text", max: 120, required: true, placeholder: "Saturday Nov 8, 10am" },
+        { key: "length", label: "About how long", type: "text", max: 60, placeholder: "3 hours" },
+        { key: "bring", label: "What to bring", type: "text", max: 120, placeholder: "Gloves, work boots" },
+      ],
+      titlePlaceholder: "Help moving a couch, Wallingford",
+      bodyPlaceholder: "What needs doing, and anything heavy or tricky about it.",
+      check: "hiring",
+      matches: ["Looking"],
+      close: { verb: "Mark filled", done: "Filled", note: "Thanks for writing. I found someone for this one." },
+    },
+    {
+      name: "Looking",
+      fields: [
+        { key: "work", label: "Work I'm looking for", type: "text", max: 160, required: true, placeholder: "Kitchen, dishwasher, prep cook" },
+        { key: "available", label: "When I can work", type: "text", max: 120, placeholder: "Weekday mornings" },
+        { key: "done", label: "What I've done", type: "longtext", max: 1000, placeholder: "Two years washing dishes. Food handler card." },
+      ],
+      titlePlaceholder: "Looking for kitchen work, mornings",
+      bodyPlaceholder: "Anything else an employer should know. A first name and neighborhood is plenty; every signed-in spark can read this.",
+      matches: ["Job", "Gig", "Training"],
+      close: { verb: "Mark found", done: "Found work", note: "Thank you. I found work." },
+    },
+    {
+      name: "Training",
+      price: { label: "Cost", placeholder: "Free, with a $15/hr stipend" },
+      fields: [
+        { key: "when", label: "When", type: "text", max: 120, required: true, placeholder: "Starts Nov 17, weekdays 9 to 1" },
+        { key: "length", label: "How long", type: "text", max: 60, placeholder: "6 weeks" },
+        { key: "leaves_with", label: "You leave with", type: "text", max: 120, placeholder: "Food handler card, job interviews" },
+        { key: "who", label: "Who it's for", type: "text", max: 160, placeholder: "Adults rebuilding after treatment or jail" },
+      ],
+      titlePlaceholder: "Free kitchen training with a stipend",
+      bodyPlaceholder: "What you'll learn, where, and how to sign up.",
+      matches: ["Looking"],
+      close: { verb: "Mark full", done: "Full", note: "Thanks for asking. This session is full. Watch for the next one." },
+    },
+  ],
+};
+
+export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH];
 
 export function boardByAddress(address: string): BoardConfig | undefined {
   return BOARDS.find((b) => b.address === address);
