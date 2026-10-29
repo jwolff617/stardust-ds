@@ -17,9 +17,9 @@ Stardust DS starts in one city: Seattle.
 
 **Core vocabulary.**
 
-- Verbs: Add, Remove, Edit, Delete, Archive, Restore, Find, Filter, Share, Connect, Match, Message, Email, Call, Vote, Buy, Sell, Trade, Give
+- Verbs: Add, Remove, Edit, Delete, Archive, Restore, Find, Filter, Share, Connect, Match, Message, Email, Call, Vote, Buy, Sell, Trade, Give, Report, Block, Save, Renew
 - Both: Label, View
-- Nouns: Spark, Person, Business, Nonprofit, Government, Dictionary, Term, Definition, Private Profile, Public Profile, Place, City, Neighborhood, Email Address, Phone Number, Hours, Price, Note, Account, Time Frame, Connection
+- Nouns: Spark, Person, Business, Nonprofit, Government, Dictionary, Term, Definition, Private Profile, Public Profile, Place, City, Neighborhood, Email Address, Phone Number, Hours, Price, Note, Account, Time Frame, Connection, Post, Reply, Kind, Steward
 
 **Classes.** Every dictionary has one class, which sets who sees it by default:
 
@@ -33,7 +33,7 @@ Stardust DS starts in one city: Seattle.
 
 **Your arrangement.** Module 1 shows your dictionaries, then the library (everything you haven't added), which you can hide and, once it holds 6 or more, filter by label. Module 2 is one feed of Display Views in your order: click a name to jump to it, drag it or use ▲▼ to move it. Which dictionaries are checked, the tabs, the view, the feed order, and whether the library is open save to your account (`profiles.preferences`) with a copy in the browser, so the app opens how you left it on any device.
 
-**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Notepad Note, Contact, Birthday.
+**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Notepad Note, Contact, Birthday, Listing.
 
 **Profile dictionaries.** Every spark gets two, locked on:
 
@@ -54,7 +54,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Address Book** | Built | The people you know: name, phone, email, address, notes. |
 | **Birthdays** | Built | Name, month, day, and the year if you know it. Who's next is on top, with how many days away and how old they turn. |
 | **Wolffie Games** | Built | Pick or type themes, set kids and age, and Sage AI writes a one-day packet: 5-minute craft, game, joke, riddle, fact, a cut-out template, a coloring page, and a word search. Opens as 6 printable pages; Print or save PDF. Packets and themes are kept. Separate from After School DS. Drawings come from `src/lib/wolffie/printables.js`, a copy of `shop/wolffie-lessons/printables.js`. |
-| **Marketplace** | Built | The first board on Posts, the shared piece every board uses (Core words: Post, Reply, Kind, Report, Block). Kinds: For Sale, Free, Wanted, Trade, Housing. Filter by kind and label, search, post, and reply privately. Three reports hide a post; Block hides a spark both ways. Next on Posts: Job Match, Idea House, Idea Index, Manifesto Match. |
+| **Marketplace** | Built | The first board on Posts, the shared piece every board uses. Kinds: For Sale, Free, Wanted, Trade, Housing, each with its own fields (condition, pickup, rent, move-in). Up to 4 photos, shrunk on the phone first. Newest first, no ads, no boosts. Private messages with a Your Turn count; closing a post sends one kind note to everyone who wrote. Posts expire (14 to 30 days) and renew with a tap. Report (with a reason), Block both ways, Save, a scam note under risky messages, and a fair-housing wording check. Stewards review hidden posts. See `dictionaries/Marketplace_DS.md`. |
 | **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
 | **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | Idea Index DS | Planned | Specs in `../idea-index/`. |
@@ -78,7 +78,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0021 applied (2026-10-29). Pending: 0022 (Posts and Marketplace; until it runs, Marketplace does not show in the library).
+**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
