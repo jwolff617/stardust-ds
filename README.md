@@ -4,6 +4,8 @@ Stardust DS is a dictionary system for sparks. Every person, business, nonprofit
 
 Stardust DS starts in one city: Seattle.
 
+**The focus: peaceful living.** Stardust DS is for the heaven level of life: quieting your mind and making connections in your community. Night DS lets you embrace your spark and clear your mind. The boards (Marketplace, Job Match, Manifesto Match, Idea Index, Idea House) help you find and help the people around you. A new dictionary earns its place if it does one of those two things.
+
 ## The pieces
 
 **Sparks.** Anyone who acts in Stardust DS: a person, a business, a nonprofit, or a government.
