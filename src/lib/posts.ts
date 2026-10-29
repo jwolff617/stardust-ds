@@ -47,6 +47,8 @@ export type Post = {
   expiresAt: string | null;
   createdAt: string;
   saved: boolean;
+  // You sparked it (boards with votes).
+  voted: boolean;
   voteCount: number;
   commentCount: number;
   joinCount: number;
@@ -87,8 +89,20 @@ export type Board = {
     organizations: { id: string; name: string; verified: boolean }[];
     blocked: { userId: string; name: string }[];
   };
-  review: { posts: ReviewItem[]; threads: ThreadReview[] } | null;
+  review: { posts: ReviewItem[]; threads: ThreadReview[]; comments: CommentReview[] } | null;
 };
+
+export type Comment = {
+  id: string;
+  parentId: string | null;
+  authorName: string;
+  mine: boolean;
+  body: string;
+  hidden: boolean;
+  createdAt: string;
+};
+export type Join = { userId: string; name: string; offer: string; mine: boolean };
+export type CommentReview = { comment: Comment; postId: string; postTitle: string; reports: { reason: string; note: string }[] };
 
 export type BoardFilters = {
   view: BoardView;
@@ -297,6 +311,15 @@ export async function loadBoard(
     for (const o of data ?? []) orgById.set(o.id, o);
   }
 
+  // Your sparks, on boards that have them.
+  const settings = (boardRow.data?.settings as Record<string, unknown>) ?? {};
+  const votedIds = new Set<string>();
+  if (settings.votes && rows.length > 0) {
+    const { data, error } = await supabase.from("post_votes").select("post_id").eq("user_id", userId).in("post_id", rows.map((r) => r.id));
+    if (error) throw new Error(error.message);
+    for (const v of data ?? []) votedIds.add(v.post_id);
+  }
+
   const toPost = (r: PostRow): Post => ({
     id: r.id,
     kind: r.kind,
@@ -317,6 +340,7 @@ export async function loadBoard(
     expiresAt: neverExpires(r.expires_at) ? null : r.expires_at,
     createdAt: r.created_at,
     saved: savedIds.has(r.id),
+    voted: votedIds.has(r.id),
     voteCount: r.vote_count,
     commentCount: r.comment_count,
     joinCount: r.join_count,
@@ -334,12 +358,12 @@ export async function loadBoard(
   };
 
   let review: Board["review"] = null;
-  if (isSteward && filters.view === "review") review = await loadReview(supabase, dictionaryId, posts, userId);
+  if (isSteward && filters.view === "review") review = await loadReview(supabase, dictionaryId, posts, userId, Boolean(settings.comments));
 
   return {
     address: config.address,
     intro: boardRow.data?.intro ?? "",
-    settings: (boardRow.data?.settings as Record<string, unknown>) ?? {},
+    settings,
     kinds,
     labels: count(rows.flatMap((r) => r.labels ?? [])).slice(0, 24),
     neighborhoods: count(rows.map((r) => r.neighborhood)).slice(0, 30),
@@ -372,7 +396,7 @@ export function matchFor(config: BoardConfig, board: Pick<Board, "mineOpen">, po
 
 // What a steward needs: each hidden post's reports, and every open thread
 // report with its messages.
-async function loadReview(supabase: SupabaseClient, dictionaryId: string, hidden: Post[], userId: string) {
+async function loadReview(supabase: SupabaseClient, dictionaryId: string, hidden: Post[], userId: string, comments: boolean) {
   const ids = hidden.map((p) => p.id);
   const reportsRes = ids.length
     ? await supabase.from("post_reports").select("post_id, reason, note, created_at").in("post_id", ids).order("created_at")
@@ -411,7 +435,26 @@ async function loadReview(supabase: SupabaseClient, dictionaryId: string, hidden
     }
   }
 
+  // Hidden comments, on boards that have comments.
+  const commentReviews: CommentReview[] = [];
+  if (comments) {
+    const { data, error } = await supabase
+      .from("post_comments")
+      .select("id, post_id, parent_id, author_user_id, author_name, body, hidden_at, created_at, posts!inner(dictionary_id, title), comment_reports(reason, note)")
+      .eq("posts.dictionary_id", dictionaryId)
+      .not("hidden_at", "is", null)
+      .is("review", null)
+      .limit(100);
+    if (error) throw new Error(error.message);
+    type CR = CommentRow & { posts: { title: string } | { title: string }[]; comment_reports: { reason: string; note: string }[] | null };
+    for (const c of (data ?? []) as unknown as CR[]) {
+      const post = Array.isArray(c.posts) ? c.posts[0] : c.posts;
+      commentReviews.push({ comment: toComment(c, userId), postId: c.post_id, postTitle: post?.title ?? "", reports: c.comment_reports ?? [] });
+    }
+  }
+
   return {
+    comments: commentReviews,
     posts: hidden.map((post) => ({
       post,
       reports: (reportsRes.data ?? [])
@@ -466,5 +509,47 @@ export function cleanPost(config: BoardConfig, input: Record<string, unknown>, u
       photos,
       organization_id: /^[0-9a-f-]{36}$/.test(org) ? org : null,
     },
+  };
+}
+
+type CommentRow = {
+  id: string;
+  post_id: string;
+  parent_id: string | null;
+  author_user_id: string;
+  author_name: string;
+  body: string;
+  hidden_at: string | null;
+  created_at: string;
+};
+
+function toComment(c: CommentRow, userId: string): Comment {
+  return {
+    id: c.id,
+    parentId: c.parent_id,
+    authorName: c.author_name || "A Stardust spark",
+    mine: c.author_user_id === userId,
+    body: c.body,
+    hidden: c.hidden_at !== null,
+    createdAt: c.created_at,
+  };
+}
+
+// One post's open conversation and who's in, loaded when it's opened.
+export async function loadExtras(supabase: SupabaseClient, userId: string, postId: string) {
+  const [comments, joins] = await Promise.all([
+    supabase
+      .from("post_comments")
+      .select("id, post_id, parent_id, author_user_id, author_name, body, hidden_at, created_at")
+      .eq("post_id", postId)
+      .order("created_at")
+      .limit(500),
+    supabase.from("post_joins").select("user_id, user_name, offer").eq("post_id", postId).order("created_at"),
+  ]);
+  if (comments.error) throw new Error(comments.error.message);
+  if (joins.error) throw new Error(joins.error.message);
+  return {
+    comments: ((comments.data ?? []) as CommentRow[]).map((c) => toComment(c, userId)),
+    joins: (joins.data ?? []).map((j): Join => ({ userId: j.user_id, name: j.user_name || "A spark", offer: j.offer, mine: j.user_id === userId })),
   };
 }

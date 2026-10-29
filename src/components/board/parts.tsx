@@ -328,7 +328,7 @@ export function ThreadBox({
 // replied, reopen, renew, delete.
 export function OwnerActions({ post, kind, send, onEdit }: { post: Post; kind: BoardKind | undefined; send: Send; onEdit: () => void }) {
   const [closing, setClosing] = useState(false);
-  const [notify, setNotify] = useState(true);
+  const [notify, setNotify] = useState(Boolean(kind?.close.note));
   const [note, setNote] = useState(kind?.close.note ?? "");
   const left = daysLeft(post.expiresAt);
   const replied = post.threads.length;
@@ -501,7 +501,7 @@ const REASON_NAMES: Record<string, string> = { scam: "scam", unsafe: "unsafe", u
 export function ReviewList({ board, send, render }: { board: Board; send: Send; render: (p: Post) => ReactNode }) {
   const review = board.review;
   if (!review) return null;
-  if (review.posts.length === 0 && review.threads.length === 0) return <p className="text-sm text-neutral-500">Nothing waiting. Thank you for looking.</p>;
+  if (review.posts.length === 0 && review.threads.length === 0 && review.comments.length === 0) return <p className="text-sm text-neutral-500">Nothing waiting. Thank you for looking.</p>;
   return (
     <div className="flex flex-col gap-4">
       {review.posts.map(({ post, reports }) => (
@@ -520,6 +520,31 @@ export function ReviewList({ board, send, render }: { board: Board; send: Send; 
               Clear, put it back
             </button>
             <button type="button" className={primary} onClick={() => send({ action: "review", id: post.id, decision: "remove" })}>
+              Remove
+            </button>
+          </div>
+        </div>
+      ))}
+      {review.comments.map(({ comment: c, postTitle, reports }) => (
+        <div key={c.id} className="flex flex-col gap-1.5 rounded-md border border-red-200 p-3">
+          <p className="text-xs font-medium text-neutral-600">Hidden comment on &ldquo;{postTitle}&rdquo;</p>
+          <p className="whitespace-pre-wrap text-sm">
+            <span className="mr-1 text-xs text-neutral-500">{c.authorName}:</span>
+            {c.body}
+          </p>
+          <ul className="flex flex-col gap-0.5 text-xs text-neutral-700">
+            {reports.map((r, i) => (
+              <li key={i}>
+                <span className="font-medium">{REASON_NAMES[r.reason] ?? r.reason}</span>
+                {r.note ? `: ${r.note}` : ""}
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2">
+            <button type="button" className={quiet} onClick={() => send({ action: "reviewComment", commentId: c.id, decision: "clear" })}>
+              Clear, put it back
+            </button>
+            <button type="button" className={primary} onClick={() => send({ action: "reviewComment", commentId: c.id, decision: "remove" })}>
               Remove
             </button>
           </div>

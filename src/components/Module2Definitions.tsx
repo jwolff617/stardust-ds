@@ -10,6 +10,7 @@ import { AfterSchoolView } from "./AfterSchoolView";
 import { WolffieGamesView } from "./WolffieGamesView";
 import { MarketplaceView } from "./MarketplaceView";
 import { JobsView } from "./JobsView";
+import { IdeasView } from "./IdeasView";
 import { LockersView } from "./LockersView";
 import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
@@ -35,7 +36,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "marketplace", "jobs", ...BASIC_APPS.map((a) => a.kind)];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "marketplace", "jobs", "ideas", ...BASIC_APPS.map((a) => a.kind)];
 
 const hasDisplayView = (d: SelectedDictionary) => DISPLAY_KINDS.includes(d.displayKind);
 
@@ -83,6 +84,8 @@ function DisplayFor({
       return <MarketplaceView dictionary={dictionary} reloadKey={reloadKey} />;
     case "jobs":
       return <JobsView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "ideas":
+      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} />;
     case "wolffie_games":
       return <WolffieGamesView dictionary={dictionary} reloadKey={reloadKey} />;
     default: {

@@ -33,7 +33,7 @@ Stardust DS starts in one city: Seattle.
 
 **Your arrangement.** Module 1 shows your dictionaries, then the library (everything you haven't added), which you can hide and, once it holds 6 or more, filter by label. Module 2 is one feed of Display Views in your order: click a name to jump to it, drag it or use ▲▼ to move it. Which dictionaries are checked, the tabs, the view, the feed order, and whether the library is open save to your account (`profiles.preferences`) with a copy in the browser, so the app opens how you left it on any device.
 
-**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Notepad Note, Contact, Birthday, Listing, Job Post.
+**Sage AI: verbs and nouns.** Sage AI's tools are the Core verbs themselves (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove), plus Act for a verb a dictionary adds, like Night DS's Done or After School's Regenerate. Each dictionary registers its nouns in `src/lib/sage-ai/nouns/`: the noun's fields, which verbs work on it, and what each verb does. The engine (`src/lib/sage-ai/engine.ts`) checks every field, picks the right dictionary copy, and tells Sage AI exactly what to fix when something's wrong. Sage AI only sees the nouns of dictionaries you have on. A new dictionary registers its nouns and Sage AI can use them, with no new tools. Nouns today: Dictionary, Term, Profile Field, Note, Lesson, Theme, Activity, Account Entry, Worthy Entry, Bet Story, Notepad Note, Contact, Birthday, Listing, Job Post, Idea.
 
 **Profile dictionaries.** Every spark gets two, locked on:
 
@@ -58,7 +58,7 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Job Match** | Built | Jobs, gigs, people looking for work, and free training, on Posts. Every job and gig says what it pays. Fair chance and No experience filters. Apply with a short message from any phone, with a starter to fill in. Jobs promise when they'll answer, and Mark filled sends everyone who applied a kind note. Looking posts show "Matches you" on jobs that share a label. Fair-hiring wording check. See `dictionaries/Job_Match_DS.md`. |
 | **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
 | **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
-| Idea Index DS | Planned | Specs in `../idea-index/`. |
+| **Idea Index** | Built | Ideas on Posts: Idea, Building, and Need, each with its own fields (the problem, a first small step, who you're looking for). Spark to say you love it (no downvotes, no leaderboard), sort by newest or most sparked, open comments with one level of replies, and I'm In to say you'd help build it and what you'd bring. Report any comment; three hide it until a steward looks. Port of `../idea-index/`. See `dictionaries/Idea_Index_DS.md`. |
 | Manifesto Match DS | Planned | Stub in `../manifesto-match/`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |
 
@@ -79,7 +79,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket), 0024 (Job Match). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket), 0024 (Job Match), 0025 (Idea Index). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 

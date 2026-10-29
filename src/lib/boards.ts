@@ -212,7 +212,56 @@ export const JOB_MATCH: BoardConfig = {
   ],
 };
 
-export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH];
+export const IDEA_INDEX: BoardConfig = {
+  address: "idea-index-ds",
+  noun: "Idea",
+  nounDescription:
+    "An Idea Index post: an Idea (a thought that could be built), Building (people making it now), or a Need (a problem looking for an idea). Others spark it, comment, and say I'm in.",
+  newPost: "New idea",
+  photos: 0,
+  labels: ["housing", "education", "transportation", "community", "food", "art", "music", "tech", "health", "environment", "business", "kids", "games", "writing", "sports", "nonprofit"],
+  safety: [
+    "Ideas here are public to every signed-in spark. Post what you're glad for others to build on.",
+    "Stardust handles no money. Be careful with anyone who asks you to invest or pay to join.",
+    "Meet new teammates somewhere public first.",
+  ],
+  kinds: [
+    {
+      name: "Idea",
+      fields: [
+        { key: "problem", label: "The problem it solves", type: "longtext", max: 600, placeholder: "People sleeping outside can't charge their phones." },
+        { key: "first_step", label: "First small step", type: "text", max: 160, placeholder: "Ask the Cafe director about one outlet." },
+        { key: "looking_for", label: "Looking for", type: "text", max: 160, placeholder: "Someone handy, and a place to try it" },
+      ],
+      titlePlaceholder: "Charging lockers at the Cafe",
+      bodyPlaceholder: "The idea, in a few lines.",
+      close: { verb: "Close it", done: "Closed", note: "" },
+    },
+    {
+      name: "Building",
+      fields: [
+        { key: "stage", label: "Stage", type: "choice", options: ["Just starting", "Making it", "Up and running"] },
+        { key: "looking_for", label: "Looking for", type: "text", max: 160, placeholder: "Saturday volunteers" },
+        { key: "join", label: "How to join", type: "text", max: 160, placeholder: "Say I'm in, or message me" },
+      ],
+      titlePlaceholder: "Kids' board game swap at the Y",
+      bodyPlaceholder: "What you're making, and where you are with it.",
+      close: { verb: "Close it", done: "Closed", note: "" },
+    },
+    {
+      name: "Need",
+      fields: [
+        { key: "who", label: "Who has this need", type: "text", max: 160, placeholder: "People sleeping outside near First Hill" },
+        { key: "would_help", label: "What would help", type: "text", max: 200, placeholder: "A safe place to charge a phone overnight" },
+      ],
+      titlePlaceholder: "A place to charge phones overnight",
+      bodyPlaceholder: "What happens now, and why it's hard.",
+      close: { verb: "Mark met", done: "Met", note: "" },
+    },
+  ],
+};
+
+export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX];
 
 export function boardByAddress(address: string): BoardConfig | undefined {
   return BOARDS.find((b) => b.address === address);

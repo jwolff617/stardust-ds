@@ -84,3 +84,31 @@ Push only after the migrations have run: the live site would show empty boards t
 - Which employers would you want verified first, beyond the Y and Recovery Cafe?
 
 **Ideas for later.** Universal Transcript suggestions. A "hired here" note from applicants in place of ratings. Bus time from your neighborhood to the job.
+
+## 3. Idea Index DS
+
+**What I built.**
+- `0025_idea_index.sql`: the Idea Index board (kinds Idea, Building, Need; Need lasts 90 days, the others until closed), with three features switched on in its board settings: sparks (`post_votes`, one per spark, never your own), open comments (`post_comments`, one level of replies, Report on every comment, three reports hide it, stewards clear or remove), and I'm In (`post_joins`, with what you'd bring, public on the idea). Counts on posts change only through trusted triggers. `board_has()` keeps each feature to boards that turned it on.
+- `IDEA_INDEX` in `boards.ts`: Idea (the problem, first small step, looking for), Building (stage, looking for, how to join), Need (who has it, what would help).
+- `IdeasView`: idea cards two across on a wide screen, one on a phone, a spark button with the count, Newest or Most sparked, Who's in with offers, the open conversation, and private messages a tap away.
+- `/api/posts/extras`: one idea's comments and who's in, loaded when it opens.
+- Review now also lists hidden comments.
+- Sage AI noun **Idea** (shared factory). Sparks, comments, and I'm In stay with people, so the counts mean real people.
+- Design doc: `dictionaries/Idea_Index_DS.md`.
+
+**From the prototype, kept:** votes (as sparks), comments with one level of replies, favorites (Save), categories (as labels). **Left behind:** downvotes, the leaderboard, the 9-panel grid. Connections and follow are in "Later."
+
+**Migrations to run.** 0025, after 0022 to 0024.
+
+**Test tonight.**
+1. Post an Idea. From a second account: spark it (count goes to 1), tap again to take it back.
+2. Say I'm in with "I can do design." The first account sees the name and offer, and can Take off.
+3. Comment, reply to the comment, delete your own. Report a comment from two more accounts (three total) and check Review shows it.
+4. Sort by Most sparked.
+
+**Open questions for Sage.**
+- Up only, no downvotes. The prototype had both. OK?
+- "Spark" is a Core noun (a person) and now an Idea Index verb (love an idea). Keep the double meaning, or call the verb something else (Light, Love)?
+- No leaderboard. Do you want the prototype's "Top leaders" back in some gentler form?
+
+**Ideas for later.** Follow a spark. Turn a Need into an Idea, or an Idea into Building, in one tap. Apply to Idea House from a Building idea.
