@@ -63,6 +63,7 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
   const [newTimeFrame, setNewTimeFrame] = useState<TimeFrame>("day");
   const [newLabel, setNewLabel] = useState("");
   const [isAdding, setIsAdding] = useState(false);
+  const [dragging, setDragging] = useState<NoteRow | null>(null);
 
   const idsKey = dictionaries.map((d) => d.id).join(",");
   const primaryId = dictionaries[0]?.id ?? null;
@@ -219,6 +220,8 @@ export function NightNotes({ dictionaries, reloadKey = 0 }: { dictionaries: Note
               isLast={index === notes.length - 1}
               onRun={run}
               onDelete={() => deleteNote(note.id)}
+              dragging={dragging}
+              onDragChange={setDragging}
             />
           ))}
         </ul>
@@ -256,6 +259,8 @@ function NoteItem({
   isLast,
   onRun,
   onDelete,
+  dragging,
+  onDragChange,
 }: {
   note: NoteRow;
   state: NoteState;
@@ -263,6 +268,8 @@ function NoteItem({
   isLast: boolean;
   onRun: (path: string, body: Record<string, unknown>) => Promise<void>;
   onDelete: () => void;
+  dragging: NoteRow | null;
+  onDragChange: (note: NoteRow | null) => void;
 }) {
   const [restoreTimeFrame, setRestoreTimeFrame] = useState<TimeFrame>(note.timeFrame);
   const [label, setLabel] = useState(note.label ?? "");
@@ -276,8 +283,26 @@ function NoteItem({
       ? `Done ${formatWhen(note.doneAt)}`
       : `Archived ${formatWhen(note.archivedAt)}`;
 
+  // Drag by the ⠿ handle onto another note in the same dictionary to take
+  // its place. Mouse only; phones use the arrows. A note dragged over a
+  // text box never drops its text in.
+  const canDrop = isActive && dragging !== null && dragging.id !== note.id && dragging.dictionaryId === note.dictionaryId;
+
   return (
-    <li className="flex flex-col gap-2 py-3">
+    <li
+      onDragOver={(e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = canDrop ? "move" : "none";
+      }}
+      onDrop={(e) => {
+        if (!dragging) return;
+        e.preventDefault();
+        if (canDrop) onRun("/api/notes/reorder", { noteId: dragging.id, targetId: note.id });
+        onDragChange(null);
+      }}
+      className={`flex flex-col gap-2 py-3 ${dragging?.id === note.id ? "opacity-40" : ""} ${canDrop ? "hover:bg-blue-50" : ""}`}
+    >
       <textarea
         defaultValue={note.body}
         rows={Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
@@ -292,6 +317,20 @@ function NoteItem({
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {isActive && (
           <div className="flex items-center">
+            <span
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", "");
+                onDragChange(note);
+              }}
+              onDragEnd={() => onDragChange(null)}
+              title="Drag to move"
+              aria-hidden="true"
+              className="hidden cursor-grab select-none px-1 text-neutral-400 hover:text-neutral-900 sm:inline"
+            >
+              ⠿
+            </span>
             <button
               type="button"
               disabled={isFirst}
@@ -299,7 +338,7 @@ function NoteItem({
               className="px-1 text-neutral-500 hover:text-neutral-900 disabled:opacity-30"
               aria-label="Move up"
             >
-              ↑
+              ▲
             </button>
             <button
               type="button"
@@ -308,7 +347,7 @@ function NoteItem({
               className="px-1 text-neutral-500 hover:text-neutral-900 disabled:opacity-30"
               aria-label="Move down"
             >
-              ↓
+              ▼
             </button>
           </div>
         )}
