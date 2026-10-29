@@ -25,6 +25,12 @@ type Dictionary = {
 
 export type SelectedDictionary = { id: string; name: string; displayKind: string };
 
+// Your copy of a template is stored as "Peacemaker's Notes". Everything
+// in your list is already yours, so the app shows just "Notes".
+function shortName(name: string): string {
+  return name.replace(/^.{1,40}?['’]s\s+/, "") || name;
+}
+
 export function Module1DictionarySelect({
   isLoggedIn,
   onSelectionChange,
@@ -81,7 +87,7 @@ export function Module1DictionarySelect({
         .filter((d) => d.optedIn)
         .map((d) =>
           d.instance
-            ? { id: d.instance.id, name: d.instance.name, displayKind: d.instance.displayKind }
+            ? { id: d.instance.id, name: shortName(d.instance.name), displayKind: d.instance.displayKind }
             : { id: d.id, name: d.name, displayKind: d.displayKind },
         ),
     );
@@ -165,7 +171,7 @@ export function Module1DictionarySelect({
           d.optedIn ? "bg-neutral-900 text-white" : "border border-neutral-300 text-neutral-600"
         } disabled:cursor-default`}
       >
-        {d.instance?.name ?? d.name}
+        {d.instance ? shortName(d.instance.name) : d.name}
       </button>
     </li>
   );
@@ -207,7 +213,10 @@ export function Module1DictionarySelect({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <ul className="flex flex-wrap gap-1.5">{mine.map(chip)}</ul>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-xs font-medium text-neutral-500">Mine</span>
+        <ul className="flex flex-wrap gap-1.5">{mine.map(chip)}</ul>
+      </div>
 
       {!storeHidden && (
         <div className="flex flex-col gap-2 rounded-md bg-neutral-50 p-3">

@@ -439,9 +439,9 @@ function NoteItem({
               <button
                 type="button"
                 onClick={() => onRun("/api/notes/done", { noteId: note.id })}
-                className="rounded-full bg-neutral-900 px-2 py-0.5 font-medium text-white"
+                className="rounded-full border border-neutral-300 px-2 py-0.5 font-medium hover:border-neutral-900"
               >
-                Done
+                Mark done
               </button>
               <button
                 type="button"
