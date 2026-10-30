@@ -53,13 +53,12 @@ export function boardNoun(board: BoardConfig): NounDef {
     dictionary: board.address,
     description: board.nounDescription,
     notes:
-      "Only Add, Edit, Archive, Restore, Delete, and Renew your own posts. Each kind takes only its own fields; Find shows what's there. " +
-      "If a post's wording would turn people away (fair housing, fair hiring), the tool says why: reword it, never argue.",
+      "Only Add, Edit, Archive, Restore, Delete, and Renew your own posts. Each kind takes only its own fields; Find shows what's there.",
     verbs: {
       Add: {
         params: baseParams(board, true),
         run: async ({ ctx, dictionary, values }) =>
-          toVerb(await savePost(ctx.supabase, ctx.userId, board, dictionary!.id, splitValues(board, values), { strict: true }), `Posted "${values.title}".`),
+          toVerb(await savePost(ctx.supabase, ctx.userId, board, dictionary!.id, splitValues(board, values)), `Posted "${values.title}".`),
       },
       Edit: {
         description: "Changes only the fields given.",
@@ -80,7 +79,7 @@ export function boardNoun(board: BoardConfig): NounDef {
             ...split,
             details: { ...(current.details ?? {}), ...split.details },
           };
-          return toVerb(await savePost(ctx.supabase, ctx.userId, board, dictionary!.id, merged, { id: id!, strict: true }), "Updated the post.");
+          return toVerb(await savePost(ctx.supabase, ctx.userId, board, dictionary!.id, merged, { id: id! }), "Updated the post.");
         },
       },
       Find: {

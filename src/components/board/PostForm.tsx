@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { kindOf, postText, type BoardConfig, type BoardField } from "@/lib/boards";
+import { kindOf, type BoardConfig, type BoardField } from "@/lib/boards";
 import type { Board, Post } from "@/lib/posts";
 import { NEIGHBORHOODS } from "@/lib/seattle";
-import { checkWording, hasContactInfo, type WordingIssue } from "@/lib/wording";
+import { hasContactInfo } from "@/lib/wording";
 import { removeUploaded, uploadPhoto } from "@/lib/photos-client";
 import { chip, input, link, primary, type Send } from "./parts";
 
@@ -38,8 +38,6 @@ export function draftFrom(post: Post | null, kind: string): Draft {
 }
 
 // The form for a new post or an edit, built from the kind's own fields.
-// Wording checks run before it posts: the poster sees the rule and can fix
-// it or post as is.
 export function PostForm({
   config,
   board,
@@ -63,7 +61,6 @@ export function PostForm({
     .map((k) => k.name)
     .filter((n) => !kindNames || kindNames.includes(n));
   const [draft, setDraft] = useState<Draft>(() => draftFrom(editing, startKind ?? openKinds[0] ?? ""));
-  const [issues, setIssues] = useState<WordingIssue[] | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -94,15 +91,8 @@ export function PostForm({
     }
   }
 
-  async function submit(skipCheck: boolean) {
+  async function submit() {
     if (!kind) return;
-    if (!skipCheck && kind.check) {
-      const found = checkWording(kind.check, postText({ title: draft.title, body: draft.body, details: draft.details }));
-      if (found.length > 0) {
-        setIssues(found);
-        return;
-      }
-    }
     setSaving(true);
     const post = { ...draft, photos: draft.photos.map((p) => p.path), organizationId: draft.organizationId || null };
     const res = await send(editing ? { action: "edit", id: editing.id, post } : { action: "add", post });
@@ -122,7 +112,7 @@ export function PostForm({
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        submit(false);
+        submit();
       }}
       className="flex flex-col gap-2.5 rounded-md bg-neutral-50 p-3"
     >
@@ -250,25 +240,6 @@ export function PostForm({
             ))}
           </select>
         </label>
-      )}
-
-      {issues && (
-        <div className="flex flex-col gap-1.5 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-sm text-amber-950">
-          <p className="font-medium">Before this goes up:</p>
-          {issues.map((i) => (
-            <p key={i.why}>
-              &ldquo;{i.phrase}&rdquo;: {i.why}
-            </p>
-          ))}
-          <div className="flex gap-3">
-            <button type="button" className={primary} onClick={() => setIssues(null)}>
-              I&apos;ll fix it
-            </button>
-            <button type="button" className={link} onClick={() => submit(true)}>
-              Post as is
-            </button>
-          </div>
-        </div>
       )}
 
       <div className="flex items-center gap-3">

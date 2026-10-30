@@ -69,6 +69,15 @@ export function useBoard(dictionaryId: string, filters: Filters, reloadKey: numb
     };
   }, [dictionaryId, key, refreshToken, reloadKey]);
 
+  // New messages show up on their own: a quiet reload every 20 seconds
+  // while the page is open in front of you.
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") setRefreshToken((t) => t + 1);
+    }, 20000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Sends one action. Resolves to the response's data, or null on failure
   // (the error shows on the board).
   async function send(body: Record<string, unknown>): Promise<Record<string, unknown> | null> {

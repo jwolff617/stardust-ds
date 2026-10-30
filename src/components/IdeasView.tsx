@@ -1,125 +1,52 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { IDEA_INDEX, kindOf } from "@/lib/boards";
+import { IDEA_INDEX } from "@/lib/boards";
 import type { Comment, Join, Post } from "@/lib/posts";
-import { useBoard, EMPTY_FILTERS, type Filters } from "./board/useBoard";
-import { PostForm } from "./board/PostForm";
-import {
-  BlockedList,
-  BoardTop,
-  EmptyNote,
-  FilterBar,
-  Labels,
-  OrgBadge,
-  OtherActions,
-  OwnerActions,
-  PostThreads,
-  ReportPanel,
-  ReviewList,
-  ViewTabs,
-  chip,
-  input,
-  link,
-  primary,
-  quiet,
-  timeAgo,
-  type Send,
-} from "./board/parts";
+import { BoardView } from "./board/BoardView";
+import { ReportPanel, input, link, primary, quiet, timeAgo, type Send } from "./board/parts";
 
-// Idea Index: ideas as cards with sparks (no downvotes), open comments,
-// and I'm In. Sort by newest or most sparked, never by who's "top".
+// Idea Index on the shared board layout, plus what only ideas have: a spark
+// beside each idea (no downvotes), and under an open idea, who's in and the
+// open comments.
 export function IdeasView({ dictionary, reloadKey = 0 }: { dictionary: { id: string; name: string }; reloadKey?: number }) {
-  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const { board, loaded, error, send } = useBoard(dictionary.id, filters, reloadKey);
-  const [form, setForm] = useState<{ editing: Post | null } | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const set = (change: Partial<Filters>) => setFilters((f) => ({ ...f, ...change }));
+  return (
+    <BoardView
+      dictionary={dictionary}
+      reloadKey={reloadKey}
+      config={IDEA_INDEX}
+      sorts
+      side={(p, send) => <SparkButton post={p} send={send} />}
+      extra={(p, send) => <IdeaExtras post={p} send={send} />}
+    />
+  );
+}
+
+// Who's in and the comments load when an idea opens.
+function IdeaExtras({ post: p, send }: { post: Post; send: Send }) {
+  const [extras, setExtras] = useState<{ comments: Comment[]; joins: Join[] } | null>(null);
+  const [token, setToken] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/posts/extras?postId=${p.id}`, { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => !data.error && setExtras(data))
+      .catch(() => {});
+    return () => controller.abort();
+  }, [p.id, token, p.commentCount, p.joinCount]);
+
+  const act: Send = async (body) => {
+    const res = await send(body);
+    setToken((t) => t + 1);
+    return res;
+  };
 
   return (
-    <div className="flex flex-col gap-3">
-      <BoardTop
-        name={dictionary.name}
-        intro={board.intro}
-        safety={IDEA_INDEX.safety}
-        action={
-          <button type="button" className={primary} onClick={() => setForm(form ? null : { editing: null })}>
-            {form && !form.editing ? "Cancel" : `+ ${IDEA_INDEX.newPost}`}
-          </button>
-        }
-      />
-
-      {form && (
-        <PostForm
-          key={form.editing?.id ?? "new"}
-          config={IDEA_INDEX}
-          board={board}
-          editing={form.editing}
-          send={send}
-          onDone={(id) => {
-            setForm(null);
-            if (id) setOpenId(id);
-          }}
-        />
-      )}
-
-      <ViewTabs view={filters.view} onView={(view) => set({ view })} board={board} names={{ mine: "Your ideas" }} />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-
-      {filters.view === "all" && (
-        <FilterBar
-          kinds={board.kinds.map((k) => k.name)}
-          selectedKinds={filters.kinds}
-          onKinds={(kinds) => set({ kinds })}
-          labels={board.labels}
-          selectedLabels={filters.labels}
-          onLabels={(labels) => set({ labels })}
-          neighborhoods={board.neighborhoods}
-          neighborhood={filters.neighborhood}
-          onNeighborhood={(neighborhood) => set({ neighborhood })}
-          q={filters.q}
-          onQ={(q) => set({ q })}
-          searchPlaceholder="Search ideas"
-          extra={
-            <span className="ml-auto flex gap-1.5">
-              <button type="button" aria-pressed={filters.sort === "new"} onClick={() => set({ sort: "new" })} className={chip(filters.sort === "new")}>
-                Newest
-              </button>
-              <button type="button" aria-pressed={filters.sort === "votes"} onClick={() => set({ sort: "votes" })} className={chip(filters.sort === "votes")}>
-                Most sparked
-              </button>
-            </span>
-          }
-        />
-      )}
-
-      {filters.view === "review" ? (
-        <ReviewList board={board} send={send} render={(p) => <IdeaCard post={p} />} />
-      ) : !loaded ? (
-        <p className="text-sm text-neutral-500">Loading...</p>
-      ) : board.posts.length === 0 ? (
-        <EmptyNote view={filters.view} empty="No ideas yet. Post the one you keep thinking about, even if it's small." />
-      ) : (
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {board.posts.map((p) => {
-            const open = openId === p.id;
-            return (
-              <li key={p.id} className={`flex flex-col gap-2 rounded-md border border-neutral-200 p-3 ${open ? "sm:col-span-2" : ""}`}>
-                <div className="flex gap-3">
-                  <SparkButton post={p} send={send} />
-                  <button type="button" onClick={() => setOpenId(open ? null : p.id)} aria-expanded={open} className="min-w-0 flex-1 text-left">
-                    <IdeaCard post={p} />
-                  </button>
-                </div>
-                {open && <IdeaDetail post={p} send={send} onEdit={() => setForm({ editing: p })} />}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      <BlockedList board={board} send={send} />
-    </div>
+    <>
+      <WhosIn post={p} joins={extras?.joins ?? []} send={act} />
+      <Comments post={p} comments={extras?.comments ?? null} send={act} />
+    </>
   );
 }
 
@@ -141,99 +68,6 @@ function SparkButton({ post: p, send }: { post: Post; send: Send }) {
       </span>
       {p.voteCount}
     </button>
-  );
-}
-
-function IdeaCard({ post: p }: { post: Post }) {
-  const d = p.details as Record<string, string | undefined>;
-  const line = p.kind === "Need" ? d.would_help : p.kind === "Building" ? [d.stage, d.looking_for && `Looking for: ${d.looking_for}`].filter(Boolean).join(" · ") : d.first_step && `First step: ${d.first_step}`;
-  return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <div className="flex flex-wrap items-baseline gap-x-2">
-        <span
-          className={`rounded px-1.5 text-[11px] font-medium uppercase tracking-wide ${
-            p.kind === "Building" ? "bg-emerald-100 text-emerald-800" : p.kind === "Need" ? "bg-sky-100 text-sky-800" : "bg-amber-100 text-amber-900"
-          }`}
-        >
-          {p.kind}
-        </span>
-        <span className={`font-semibold ${p.status === "closed" ? "text-neutral-400 line-through" : ""}`}>{p.title}</span>
-      </div>
-      {p.body && <p className="line-clamp-2 text-sm text-neutral-700">{p.body}</p>}
-      {line && <p className="text-xs text-neutral-600">{line}</p>}
-      <p className="text-xs text-neutral-500">
-        {[
-          p.mine ? "You" : p.organization ? null : p.authorName,
-          p.neighborhood,
-          timeAgo(p.createdAt),
-          p.joinCount > 0 ? `${p.joinCount} in` : null,
-          p.commentCount > 0 ? `${p.commentCount} comment${p.commentCount === 1 ? "" : "s"}` : null,
-        ]
-          .filter(Boolean)
-          .join(" · ")}{" "}
-        <OrgBadge org={p.organization} />
-      </p>
-      {p.hidden && <p className="text-xs text-red-700">{p.review === "removed" ? "Removed by a steward." : "Hidden after reports. A steward will look at it."}</p>}
-      {p.threads.some((t) => t.yourTurn) && <p className="text-xs font-medium text-blue-700">Your turn to answer a message</p>}
-    </div>
-  );
-}
-
-function IdeaDetail({ post: p, send, onEdit }: { post: Post; send: Send; onEdit: () => void }) {
-  const kind = kindOf(IDEA_INDEX, p.kind);
-  const [extras, setExtras] = useState<{ comments: Comment[]; joins: Join[] } | null>(null);
-  const [token, setToken] = useState(0);
-  const [showMessages, setShowMessages] = useState(p.threads.length > 0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/posts/extras?postId=${p.id}`, { signal: controller.signal })
-      .then((res) => res.json())
-      .then((data) => !data.error && setExtras(data))
-      .catch(() => {});
-    return () => controller.abort();
-  }, [p.id, token, p.commentCount, p.joinCount]);
-
-  // Actions here also reload the open conversation.
-  const act: Send = async (body) => {
-    const res = await send(body);
-    setToken((t) => t + 1);
-    return res;
-  };
-
-  const fields = (kind?.fields ?? [])
-    .map((f) => ({ label: f.label, value: p.details[f.key] }))
-    .filter((f): f is { label: string; value: string } => typeof f.value === "string" && Boolean(f.value));
-
-  return (
-    <div className="flex flex-col gap-3">
-      {p.body && <p className="whitespace-pre-wrap text-sm text-neutral-800">{p.body}</p>}
-      {fields.length > 0 && (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm">
-          {fields.map((f) => (
-            <div key={f.label} className="contents">
-              <dt className="text-neutral-500">{f.label}</dt>
-              <dd className="whitespace-pre-wrap">{f.value}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      <Labels labels={p.labels} />
-
-      <WhosIn post={p} joins={extras?.joins ?? []} send={act} />
-
-      {p.mine ? <OwnerActions post={p} kind={kind} send={send} onEdit={onEdit} /> : <OtherActions post={p} send={send} />}
-
-      <Comments post={p} comments={extras?.comments ?? null} send={act} />
-
-      {p.mine || showMessages ? (
-        <PostThreads post={p} send={send} emptyMine="No private messages yet." startLabel={`Message ${p.authorName} privately`} />
-      ) : (
-        <button type="button" className={`${link} self-start`} onClick={() => setShowMessages(true)}>
-          Message {p.authorName} privately
-        </button>
-      )}
-    </div>
   );
 }
 

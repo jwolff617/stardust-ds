@@ -107,7 +107,7 @@ export function ManifestoView({ dictionary, reloadKey = 0 }: { dictionary: { id:
             <p className="text-sm text-neutral-600">Yours is paused, so you don&apos;t show up and you won&apos;t see others here. Unpause when you&apos;re ready.</p>
           ) : (
             <>
-              <ViewTabs view={filters.view} onView={(view) => setFilters((f) => ({ ...f, view }))} board={board} names={{ all: "Matches", mine: "Yours" }} />
+              <ViewTabs view={filters.view} onView={(view) => setFilters((f) => ({ ...f, view }))} board={board} />
               {filters.view === "review" ? (
                 <ReviewList board={board} send={sendMain} render={(p) => <p className="font-medium">{p.title} · {p.authorName}</p>} />
               ) : filters.view === "mine" ? (

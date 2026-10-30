@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { kindOf, postText, type BoardConfig } from "./boards";
+import type { BoardConfig } from "./boards";
 import { cleanPost, PHOTO_BUCKET } from "./posts";
-import { checkWording } from "./wording";
 
 // Writing posts, shared by the Posts API and Sage AI so both run the same
 // checks. Every call runs as the signed-in spark, under RLS.
@@ -24,27 +23,18 @@ async function removePhotos(supabase: SupabaseClient, paths: string[]) {
   if (paths.length > 0) await supabase.storage.from(PHOTO_BUCKET).remove(paths);
 }
 
-// Adds or edits a post. With strict on (Sage AI), a wording issue is an
-// error to fix; the form shows it to the person instead and lets them decide.
+// Adds or edits a post.
 export async function savePost(
   supabase: SupabaseClient,
   userId: string,
   config: BoardConfig,
   dictionaryId: string,
   input: Record<string, unknown>,
-  opts: { id?: string; strict?: boolean } = {},
+  opts: { id?: string } = {},
 ): Promise<Result> {
   const cleaned = cleanPost(config, input, userId);
   if ("error" in cleaned) return { ok: false, error: cleaned.error };
   const post = cleaned.post;
-
-  if (opts.strict) {
-    const kind = kindOf(config, post.kind);
-    const issues = kind?.check ? checkWording(kind.check, postText(post)) : [];
-    if (issues.length > 0) {
-      return { ok: false, error: `Reword this first. ${issues.map((i) => `"${i.phrase}": ${i.why}`).join(" ")}` };
-    }
-  }
 
   if (!opts.id) {
     const { data, error } = await supabase

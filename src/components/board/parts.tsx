@@ -60,18 +60,16 @@ export function ViewTabs({
   view,
   onView,
   board,
-  names,
 }: {
   view: BoardView;
   onView: (v: BoardView) => void;
   board: Board;
-  names?: Partial<Record<BoardView, string>>;
 }) {
   const tabs: { key: BoardView; label: string }[] = [
-    { key: "all", label: names?.all ?? "Browse" },
-    { key: "inbox", label: board.waiting > 0 ? `Your turn (${board.waiting})` : names?.inbox ?? "Messages" },
-    { key: "saved", label: names?.saved ?? "Saved" },
-    { key: "mine", label: names?.mine ?? "Yours" },
+    { key: "all", label: "Browse" },
+    { key: "inbox", label: board.waiting > 0 ? `Your turn (${board.waiting})` : "Messages" },
+    { key: "saved", label: "Saved" },
+    { key: "mine", label: "Yours" },
   ];
   if (board.me.isSteward) tabs.push({ key: "review", label: "Review" });
   return (
@@ -100,7 +98,8 @@ export function ViewTabs({
 
 export const toggle = (list: string[], value: string) => (list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
 
-// Kind chips, label chips, neighborhood, and search.
+// Kind chips, label chips, search, neighborhood, and (where a board has
+// sparks) newest or most sparked.
 export function FilterBar({
   kinds,
   selectedKinds,
@@ -113,8 +112,8 @@ export function FilterBar({
   onNeighborhood,
   q,
   onQ,
-  searchPlaceholder = "Search",
-  extra,
+  sort,
+  onSort,
 }: {
   kinds: string[];
   selectedKinds: string[];
@@ -127,8 +126,8 @@ export function FilterBar({
   onNeighborhood: (v: string) => void;
   q: string;
   onQ: (v: string) => void;
-  searchPlaceholder?: string;
-  extra?: ReactNode;
+  sort?: "new" | "votes";
+  onSort?: (v: "new" | "votes") => void;
 }) {
   const shownLabels = [...new Set([...selectedLabels, ...labels])].slice(0, 16);
   const shownPlaces = [...new Set([neighborhood, ...neighborhoods].filter(Boolean))];
@@ -141,7 +140,6 @@ export function FilterBar({
               {k}
             </button>
           ))}
-          {extra}
         </div>
       )}
       {shownLabels.length > 0 && (
@@ -154,7 +152,7 @@ export function FilterBar({
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        <input value={q} onChange={(e) => onQ(e.target.value)} placeholder={searchPlaceholder} aria-label="Search" className={`${input} min-w-0 flex-1 sm:max-w-xs`} />
+        <input value={q} onChange={(e) => onQ(e.target.value)} placeholder="Search" aria-label="Search" className={`${input} min-w-0 flex-1 sm:max-w-xs`} />
         {shownPlaces.length > 0 && (
           <select value={neighborhood} onChange={(e) => onNeighborhood(e.target.value)} aria-label="Neighborhood" className={`${input} max-w-[11rem]`}>
             <option value="">Anywhere</option>
@@ -163,6 +161,12 @@ export function FilterBar({
                 {n}
               </option>
             ))}
+          </select>
+        )}
+        {sort && onSort && (
+          <select value={sort} onChange={(e) => onSort(e.target.value === "votes" ? "votes" : "new")} aria-label="Sort" className={`${input} max-w-[11rem]`}>
+            <option value="new">Newest</option>
+            <option value="votes">Most sparked</option>
           </select>
         )}
       </div>
@@ -613,7 +617,7 @@ export function AdultGate({ rules, send, onCancel }: { rules: string[]; send: Se
   );
 }
 
-export function EmptyNote({ view, empty }: { view: BoardView; empty: string }) {
+export function EmptyNote({ view, empty = "Nothing here yet. Post the first one." }: { view: BoardView; empty?: string }) {
   const text: Record<BoardView, string> = {
     all: empty,
     inbox: "No messages yet. When you write to someone, or someone writes to you, it shows here.",
