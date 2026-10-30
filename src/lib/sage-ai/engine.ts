@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { mondayOf, toIsoDate } from "@/lib/after-school";
+import { CUSTOM_ADDRESS, isCustomAddress } from "@/lib/custom";
 
 // Sage AI's verb engine. Every tool is one Core verb. Every dictionary
 // registers its nouns (what a thing is called, what fields it takes, which
@@ -231,7 +232,8 @@ export async function loadCopies(supabase: SupabaseClient): Promise<DictionaryCo
   return rows.map((d) => ({
     id: d.id,
     name: d.name,
-    address: (d.template_id && addressById.get(d.template_id)) || d.address,
+    // Every dictionary someone built shares one noun.
+    address: isCustomAddress(d.address) ? CUSTOM_ADDRESS : (d.template_id && addressById.get(d.template_id)) || d.address,
     scope: d.scope,
   }));
 }

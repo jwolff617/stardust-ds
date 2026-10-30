@@ -89,8 +89,8 @@ export async function searchDictionaries(
     query = query.or(filters.join(","));
   } else {
     // Shared dictionaries and templates, plus groups you're in (RLS hides
-    // groups you aren't in).
-    query = query.or("kind.neq.instance,scope.eq.group");
+    // groups you aren't in), plus dictionaries you built with Sage AI.
+    query = query.or("kind.neq.instance,scope.eq.group,display_kind.eq.custom");
   }
 
   const { data, error } = await query;
@@ -127,6 +127,8 @@ export async function searchDictionaries(
     // Your own copy of a template shows through its template, personal or
     // group alike. Someone else's group you were added to shows on its own.
     if (d.scope === "group") return d.owner_user_id !== userId;
+    // A dictionary you built has no template, so it shows as itself.
+    if (d.display_kind === "custom") return d.owner_user_id === userId;
     return (
       Boolean(userId) &&
       d.owner_user_id !== userId &&
