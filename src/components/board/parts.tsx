@@ -8,12 +8,8 @@ import { scamWarning } from "@/lib/wording";
 // Shared pieces every board's Display View is built from. Each board lays
 // them out its own way.
 
-export const input = "rounded-md border border-neutral-300 px-2 py-1.5 text-sm";
-export const primary = "rounded-full bg-neutral-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40";
-export const quiet = "rounded-full border border-neutral-300 px-3 py-1.5 text-xs font-medium text-neutral-700 disabled:opacity-40";
-export const link = "text-xs text-neutral-600 underline";
-export const chip = (on: boolean) =>
-  `rounded-full px-2.5 py-1 text-xs ${on ? "bg-blue-600 text-white" : "border border-neutral-300 text-neutral-700"}`;
+export { input, primary, quiet, link, chip } from "../ui";
+import { input, primary, quiet, link, chip } from "../ui";
 
 export type Send = (body: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
 

@@ -15,6 +15,7 @@ import {
   type Principle,
   type WorthyKind,
 } from "@/lib/worthy";
+import { DeleteButton, Entry as EntryLine, UndoBar, formatDate, tag, useUndoDelete } from "./ui";
 
 type WorthyDictionary = { id: string; name: string };
 type Entry = { id: string; kind: WorthyKind; amount: number; note: string | null; occurredAt: string };
@@ -149,6 +150,9 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
     { label: "Loss", value: money(summary.loss), hint: "Deposits − balance − savings" },
   ];
 
+  const deletingEntry = useUndoDelete<Entry>((e) => run("/api/worthy/delete", { entryId: e.id }));
+  const deletingStory = useUndoDelete<Story>((st) => run("/api/worthy/delete", { storyId: st.id }));
+
   return (
     <div className="flex flex-col gap-4">
       <h3 className="text-xs font-medium text-neutral-500">{dictionary.name}</h3>
@@ -235,25 +239,23 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
             Add
           </button>
         </div>
+        {deletingEntry.pending && <UndoBar text={`${WORTHY_KIND_LABELS[deletingEntry.pending.kind]} ${money(deletingEntry.pending.amount)}`} onUndo={deletingEntry.undo} />}
         {entriesInRange.length > 0 && (
           <ul className="flex flex-col divide-y divide-neutral-100">
-            {entriesInRange.map((entry) => (
-              <li key={entry.id} className="flex items-center gap-3 py-2 text-sm">
-                <span className="w-36 shrink-0 text-xs text-neutral-400">
-                  {new Date(entry.occurredAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-                </span>
-                <span className="w-16 shrink-0">{WORTHY_KIND_LABELS[entry.kind]}</span>
-                <span className="w-24 shrink-0 font-medium">{money(entry.amount)}</span>
-                <span className="min-w-0 flex-1 text-neutral-700">{entry.note}</span>
-                <button
-                  type="button"
-                  onClick={() => window.confirm("Delete this entry for good?") && run("/api/worthy/delete", { entryId: entry.id })}
-                  className="text-neutral-400 hover:text-red-600"
-                  aria-label="Delete entry"
-                >
-                  ✕
-                </button>
-              </li>
+            {deletingEntry.hide(entriesInRange).map((entry) => (
+              <EntryLine
+                key={entry.id}
+                meta={
+                  <>
+                    <span>{formatDate(entry.occurredAt, true)}</span>
+                    <span className={tag}>{WORTHY_KIND_LABELS[entry.kind]}</span>
+                  </>
+                }
+                actions={<DeleteButton onClick={() => deletingEntry.remove(entry)} />}
+              >
+                <span className="font-medium">{money(entry.amount)}</span>
+                {entry.note && <span className="text-neutral-700"> · {entry.note}</span>}
+              </EntryLine>
             ))}
           </ul>
         )}
@@ -310,33 +312,29 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
           </button>
         </div>
 
+        {deletingStory.pending && <UndoBar text={deletingStory.pending.body.split("\n")[0]} onUndo={deletingStory.undo} />}
         {stories.length === 0 ? (
           <p className="text-sm text-neutral-400">No bet stories yet.</p>
         ) : (
           <ul className="flex flex-col divide-y divide-neutral-100">
-            {stories.map((story) => (
-              <li key={story.id} className="flex flex-col gap-1 py-2 text-sm">
-                <div className="flex items-center gap-2 text-xs text-neutral-500">
-                  <span>{story.occurredOn}</span>
-                  <span className="font-medium text-neutral-700">{BET_OUTCOME_LABELS[story.outcome]}</span>
-                  {story.principles.map((p) => (
-                    <span key={p} className="rounded-full bg-neutral-100 px-2 py-0.5">
-                      {PRINCIPLE_SHORT[p]}
-                    </span>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      window.confirm("Delete this story for good?") && run("/api/worthy/delete", { storyId: story.id })
-                    }
-                    className="ml-auto text-neutral-400 hover:text-red-600"
-                    aria-label="Delete story"
-                  >
-                    ✕
-                  </button>
-                </div>
-                <p className="whitespace-pre-wrap text-neutral-700">{story.body}</p>
-              </li>
+            {deletingStory.hide(stories).map((story) => (
+              <EntryLine
+                key={story.id}
+                meta={
+                  <>
+                    <span>{formatDate(story.occurredOn)}</span>
+                    <span className={tag}>{BET_OUTCOME_LABELS[story.outcome]}</span>
+                    {story.principles.map((p) => (
+                      <span key={p} className={tag}>
+                        {PRINCIPLE_SHORT[p]}
+                      </span>
+                    ))}
+                  </>
+                }
+                actions={<DeleteButton onClick={() => deletingStory.remove(story)} what="story" />}
+              >
+                <p className="whitespace-pre-wrap">{story.body}</p>
+              </EntryLine>
             ))}
           </ul>
         )}
