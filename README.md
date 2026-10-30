@@ -80,7 +80,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0027 applied (2026-10-29), plus the first steward. Pending: 0028 (dictionaries built with Sage AI). See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0028 applied (2026-10-29), plus the first steward. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
