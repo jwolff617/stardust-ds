@@ -37,21 +37,38 @@ export function Module3SageAI({
   onChange,
   collapsed = false,
   onCollapsedChange,
+  draft,
 }: {
   isLoggedIn: boolean;
   onChange?: () => void;
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
+  // Text to put in the message box, ready to finish and send.
+  draft?: { text: string; n: number } | null;
 }) {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isSending, startSending] = useTransition();
   const [isListBusy, startListBusy] = useTransition();
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const [showConversations, setShowConversations] = useState(false);
+  const [lastDraft, setLastDraft] = useState(0);
+  if (draft && draft.n !== lastDraft) {
+    setLastDraft(draft.n);
+    setInput(draft.text);
+    setShowConversations(false);
+  }
+  useEffect(() => {
+    if (!draft || collapsed) return;
+    const el = inputRef.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, [draft, collapsed]);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // Keep the newest message in view.
@@ -301,12 +318,20 @@ export function Module3SageAI({
           }}
           className="flex items-center gap-2"
         >
-          <input
-            type="text"
+          <textarea
+            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(input);
+              }
+            }}
+            rows={input.length > 60 ? 3 : 1}
             placeholder="note write groceries milk, eggs, bread"
-            className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-2 text-sm"
+            aria-label="Message Sage AI"
+            className="min-w-0 flex-1 resize-none rounded border border-neutral-300 px-3 py-2 text-sm"
           />
           {hasSpeechSupport && (
             <button

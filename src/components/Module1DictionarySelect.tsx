@@ -49,6 +49,7 @@ export function Module1DictionarySelect({
   collapsed = false,
   onCollapsedChange,
   onStoreHiddenChange,
+  onCreateOwn,
 }: {
   isLoggedIn: boolean;
   onSelectionChange?: (dictionaries: SelectedDictionary[]) => void;
@@ -58,6 +59,8 @@ export function Module1DictionarySelect({
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onStoreHiddenChange?: (hidden: boolean) => void;
+  // Opens Sage AI with a starting prompt for building a dictionary.
+  onCreateOwn?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [label, setLabel] = useState<string | null>(null);
@@ -212,6 +215,15 @@ export function Module1DictionarySelect({
         >
           {storeHidden ? `Show library (${store.length})` : "Hide library"}
         </button>
+        {isLoggedIn && onCreateOwn && (
+          <button
+            type="button"
+            onClick={onCreateOwn}
+            className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white"
+          >
+            + Create my own
+          </button>
+        )}
         {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}
           </>
         )}
