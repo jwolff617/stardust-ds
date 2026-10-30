@@ -80,7 +80,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0021 applied (2026-10-29). Pending, in order: 0022 (Posts and Marketplace), 0023 (post photos bucket), 0024 (Job Match), 0025 (Idea Index), 0026 (Manifesto Match), 0027 (Idea House). Until they run, the boards don't show in the library. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0027 applied (2026-10-29), plus the first steward. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
