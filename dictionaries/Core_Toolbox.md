@@ -1,64 +1,57 @@
 # Core Toolbox
 
-Every dictionary in Stardust DS is written in words, and every word it uses to work comes from Core. I build each Core word once, test it, and make it look like Stardust. Anyone writes a dictionary by naming Core words: in Claude, in a notes app, or by talking to Sage. Sage builds only from Core, and when someone asks for something Core doesn't have, Sage says so and adds it to the Wanted list.
+Every dictionary in Stardust DS is written in words, and the words come from Core. Core has two lists: **nouns** (things) and **verbs** (what you do). I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
 
-Core holds three kinds of words:
+Sage follows one rule: every word in a dictionary must be a Core noun or verb. When someone asks for something Core doesn't have, Sage says so plainly, offers the closest thing, and adds the missing word to the Wanted list.
 
-- **Nouns**: the things a dictionary keeps.
-- **Tools**: the parts a noun is made of. Each one holds something and knows how to show it.
-- **Verbs**: what you can do with a noun. Each one does the work.
-
-Status: this is the paper test (step 1). Nothing here is built as a written dictionary yet. Words marked **(new)** don't exist anywhere in the app.
+Status: this is the paper test. Nothing here is built as a written dictionary yet. Words marked **(new)** don't exist anywhere in the app.
 
 ## Nouns
 
-A dictionary's own nouns are each built on one Core noun, so Stardust and Sage already know what they are.
-
 | Noun | What it is |
 |---|---|
-| **Note** | Something you write and keep. The base for most things. |
-| **Entry** | One line in a record: a time, an amount, a check-in. |
-| **Post** | Something others can see and answer: a listing, a job, an idea. |
-| **Person** | One human being. Linked to a spark, or just a name. |
-| **Group** | Sparks who share a dictionary. |
-| **Place** | A spot in the world: a neighborhood, an address, a room. |
-| **Event** | Something that happens at a time. |
-
-## Tools
-
-| Tool | Holds | Shows as |
-|---|---|---|
-| **Text** | A few words | A line |
-| **Long Text** | Paragraphs | A paragraph |
-| **Number** | A number, or a word | The number |
-| **Money** | An amount, or "free" | `$40` |
-| **Date** | A day | `Oct 30` |
-| **Time** | A time of day | `7:30 PM` |
-| **Timer** (new) | How long something took | A running clock with Start and Stop |
-| **Days** (new) | Days until or since a date | "in 12 days", "41 days" |
-| **Repeat** (new) | Every day, week, month, or year | The next time it comes |
-| **Choice** | One or more from a short list | A tag |
-| **Check** (new) | Yes or no | A box |
-| **Rating** (new) | 1 to 5 | Stars |
-| **Photo** | Up to 4 pictures | A thumbnail |
-| **Person** | A member, or a name | Their name |
-| **Phone**, **Email**, **Link** | A way to reach someone or something | Tap to call, write, or open |
-| **Labels** | Short words for finding things | `#label` chips |
-| **Time Frame** | How long it lives: day to life | When it archives itself |
+| **Note** | Something you write and keep |
+| **Entry** | One line in a record: a time, an amount, a visit |
+| **Post** | Something others can see and answer |
+| **Person** | One human being, a member or just a name |
+| **Group** | Sparks who share a dictionary |
+| **Place** | A spot in the world |
+| **Event** | Something that happens at a time |
+| **Text** | A few words |
+| **Long Text** | Paragraphs |
+| **Number** | A number, or a word in its place |
+| **Money** | An amount, or "free" |
+| **Date** | A day, shown as `Oct 30` |
+| **Time** | A time of day |
+| **Timer** (new) | How long something took, with a running clock |
+| **Days** (new) | Days until or since a date |
+| **Repeat** (new) | Every day, week, month, or year |
+| **Status** | One choice from a short list, like Open or Taken |
+| **Choice** | One or more from a short list |
+| **Check** (new) | Yes or no |
+| **Rating** (new) | 1 to 5 |
+| **Photo** | Up to 4 pictures |
+| **Phone** | A number you can tap to call |
+| **Email** | An address you can tap to write |
+| **Link** | A web address you can tap to open |
+| **Label** | A short word for finding things, shown as `#label` |
+| **Time Frame** | How long something lives, from a day to a life |
 
 ## Verbs
 
-Every noun gets the Core verbs: **Add, Edit, Find, Filter, Archive, Restore, Delete, Label**. A dictionary names only the extra ones it uses.
+Every noun can be **Added, Edited, Found, Filtered, Archived, Restored, Deleted,** and **Labeled**. A dictionary names only the other verbs it uses.
 
-| Verb | What it does | Built in |
+| Verb | What it does | Already in |
 |---|---|---|
 | **Done** | Check it off | Night DS |
 | **Order** | Drag to arrange | Night DS |
 | **Start**, **Stop** (new) | Run a Timer | |
-| **Total** | Add up Money, Numbers, Timers, or count entries, by label or time | Worthy |
+| **Total** | Add up Money, Numbers, or Timers, or count, by label or time | Worthy |
+| **Group by** (new) | Show the list in sections, by Status or Person | |
 | **Assign** (new) | Give it to a Person | |
-| **Request**, **Approve** (new) | A member asks, an admin says yes | Lockers, by hand |
-| **Remind** (new) | Alert you before a Date | Needs phone or email alerts |
+| **Request**, **Approve** (new) | A member asks, an admin says yes | |
+| **Remind** (new) | Alert you before a Date. Needs phone or email alerts first | |
+| **Call**, **Email** | Reach someone from their Phone or Email | |
 | **Share** | Who sees it | Everywhere |
 | **Post**, **Message** | Others see it and write to you privately | Boards |
 | **Comment**, **Spark**, **Join** | Others answer in the open | Idea Index |
@@ -66,248 +59,205 @@ Every noun gets the Core verbs: **Add, Edit, Find, Filter, Archive, Restore, Del
 | **Save**, **Renew**, **Report**, **Block** | Keep it, keep it up, flag it, stop someone | Boards |
 | **Generate** | Sage fills it in for you | Wolffie Games |
 
-## Who
+## Who sees it
 
 | Share | Who reads | Who writes |
 |---|---|---|
 | **Just me** | You | You |
-| **Group** | Members | Pick one: everyone edits everything, each edits their own, or admins edit everything and members add |
+| **Group** | Members | Everyone edits, or each edits their own, or admins edit and members add |
 | **Public** | Everyone | Each spark posts their own; a steward reviews reports |
 
-Just me and Group go live at once. Public waits for a steward, who reviews what it's for, not whether it works.
+Just me and Group go live at once. Public waits for a steward, who reviews what it's for.
 
 ## How a dictionary is written
 
 ```
-Name of the dictionary
+Name
 For: one line on what it's for.
-Share: Just me | Group (who writes) | Public
+Share: Just me, Group (who writes), or Public
 
-Noun name (a Core noun): one line on what it is.
-  Field name: Tool
-  Field name: Tool
-  Verbs: any extra verbs
-  Show: how the list is sorted or grouped
+Noun: one line on what it is.
+  has a ..., a ..., a ...
+  you can ...
 ```
-
-Rules Sage checks before building:
-
-1. Every noun is built on a Core noun.
-2. Every field uses a Core tool.
-3. Every verb is a Core verb.
-4. Keep it lean: the fewest fields that do the job, most important first.
-
-If something isn't in Core, Sage says so plainly, offers the closest thing, and adds the missing word to the Wanted list.
 
 ## Paper test: 10 real dictionaries
 
-### 1. Focus Timer (just me)
+### 1. Focus Timer
 
 ```
 Focus Timer
 For: seeing where my hours go.
 Share: Just me
 
-Session (an Entry): something I timed.
-  Task: Text
-  Time: Timer
-  Labels
-  Verbs: Start, Stop, Total (Time, by label, this week)
+Session: something I timed.
+  has a Task (Text), a Time (Timer), Labels
+  you can Start, Stop, Total the Time by label this week
 ```
 
 Needs: Timer, Start, Stop.
 
-### 2. Night DS (just me)
+### 2. Night DS
 
 ```
 Night DS
 For: clearing my mind before sleep.
 Share: Just me
 
-Note (a Note): a thought to let go of.
-  Note: Long Text
-  Lives for: Time Frame
-  Labels
-  Verbs: Done, Order
-  Show: shortest time frame first
+Note: a thought to let go of.
+  has a Note (Long Text), a Time Frame, a Label
+  you can mark it Done, Order it
+  shortest time frame first
 ```
 
 Needs nothing new.
 
-### 3. Worthy (just me)
+### 3. Worthy
 
 ```
 Worthy
-For: what I earn, spend, and save, and the stories behind my bets.
+For: what I earn, spend, and save, and what my bets teach me.
 Share: Just me
 
-Entry (an Entry): money in or out.
-  Amount: Money
-  Kind: Choice (Earn, Spend, Save, Bet)
-  When: Date
-  Note: Text
-  Verbs: Total (Amount, by kind, this month)
-Bet Story (a Note): what a bet taught me.
-  Story: Long Text
-  Outcome: Choice (Won, Lost, Pushed)
-  Principles: Choice, pick many (Good Reason, Find Value, Brave Bet)
+Entry: money in or out.
+  has an Amount (Money), a Kind (Status: Earn, Spend, Save, Bet), a Date, a Note (Text)
+  you can Total the Amount by kind this month
+Bet Story: what a bet taught me.
+  has a Story (Long Text), an Outcome (Status: Won, Lost, Pushed), Principles (Choice: Good Reason, Find Value, Brave Bet)
 ```
 
 Needs nothing new.
 
-### 4. SHARE Lockers (group)
+### 4. SHARE Lockers
 
 ```
 SHARE Lockers
 For: who has which locker, and when it's due back.
-Share: Group (admins edit everything, members add)
+Share: Group (admins edit, members add)
 
-Locker (a Note): one locker.
-  Number: Text
-  Status: Choice (Open, Taken, Broken)
-  Holder: Person
-  Due back: Date
-  Verbs: Assign, Request, Approve, Remind (2 days before Due back)
-  Show: grouped by Status
-Rule (a Post): something everyone should know.
-  Rule: Long Text
+Locker: one locker.
+  has a Number, a Status (Open, Taken, Broken), a Holder (Person), a Due Back (Date)
+  you can Assign, Request, Approve, Remind 2 days before Due Back, Group by Status
+Rule: something everyone should know.
+  has a Rule (Long Text)
 ```
 
-Needs: Assign, Request, Approve, Remind, grouping by a Choice.
+Needs: Assign, Request, Approve, Remind, Group by.
 
-### 5. YMCA Check-in (group)
+### 5. Kid Zone Check-in
 
 ```
 Kid Zone Check-in
 For: who came in today, and when they left.
 Share: Group (each edits their own)
 
-Check-in (an Entry): one kid, one visit.
-  Kid: Person
-  In: Time
-  Out: Time
-  Verbs: Total (count, by day)
-  Show: today first
+Check-in: one kid, one visit.
+  has a Kid (Person), an In (Time), an Out (Time)
+  you can Total the count by day
+  today first
 ```
 
-Needs nothing new. Out could be a Timer if we want time spent.
+Needs nothing new.
 
-### 6. Small Shop Orders (group)
+### 6. Bakery Orders
 
 ```
 Corner Bakery Orders
 For: custom cake orders and pickups.
 Share: Group (everyone edits)
 
-Order (a Note): one cake.
-  Customer: Text
-  Phone: Phone
-  Cake: Long Text
-  Price: Money
-  Pickup: Date
-  Status: Choice (New, Baking, Ready, Picked up)
-  Verbs: Remind (1 day before Pickup), Total (Price, this week)
-  Show: grouped by Status
+Order: one cake.
+  has a Customer (Text), a Phone, a Cake (Long Text), a Price (Money), a Pickup (Date), a Status (New, Baking, Ready, Picked Up)
+  you can Call, Remind 1 day before Pickup, Total the Price this week, Group by Status
 ```
 
-Needs: Remind, grouping. Phone needs to tap to call.
+Needs: Remind, Group by.
 
-### 7. Birthdays (just me)
+### 7. Birthdays
 
 ```
 Birthdays
 For: never missing one.
 Share: Just me
 
-Birthday (a Note): someone to celebrate.
-  Name: Text
-  Day: Date, Repeat (every year)
-  Until: Days
-  Verbs: Remind (3 days before)
-  Show: soonest first
+Birthday: someone to celebrate.
+  has a Name (Text), a Day (Date, Repeat every year), Days until
+  you can Remind 3 days before
+  soonest first
 ```
 
 Needs: Repeat, Days, Remind.
 
-### 8. House Chores (group)
+### 8. House Chores
 
 ```
 House Chores
 For: who does what this week.
 Share: Group (everyone edits)
 
-Chore (a Note): one job around the house.
-  Chore: Text
-  Who: Person
-  Every: Repeat (weekly)
-  Verbs: Done, Assign
-  Show: grouped by Who
+Chore: one job around the house.
+  has a Chore (Text), a Who (Person), a Repeat (weekly)
+  you can mark it Done, Assign, Group by Who
 ```
 
-Needs: Repeat (Done comes back next week), Assign, grouping.
+Needs: Repeat, Assign, Group by.
 
-### 9. Recovery Steps (just me)
+### 9. My Recovery
 
 ```
 My Recovery
 For: the steps I'm working and the days I've kept.
 Share: Just me
 
-Clean Since (an Event): the day I started.
-  Day: Date
-  Days: Days (since)
-Step (a Note): one step.
-  Step: Number
-  What it means to me: Long Text
-  Verbs: Done
-  Show: by Step
+Clean Since: the day I started.
+  has a Day (Date), Days since
+Step: one step.
+  has a Step (Number), What It Means to Me (Long Text)
+  you can mark it Done
 ```
 
 Needs: Days.
 
-### 10. Job Match (public)
+### 10. Job Match
 
 ```
 Job Match
 For: work in Seattle, with pay up front.
 Share: Public
 
-Job Post (a Post): a job, or someone looking.
-  Kind: Choice (Job, Looking)
-  Pay: Money
-  Labels
-  Verbs: Post, Message, Match (Looking with Job, by labels), Save, Renew, Report, Block
+Job Post: a job, or someone looking.
+  has a Kind (Status: Job, Looking), a Pay (Money), Labels
+  you can Post, Message, Match Looking with Job by labels, Save, Renew, Report, Block
 ```
 
 Needs nothing new. It's the boards we built.
 
 ## What the paper test found
 
-All 10 fit. Every missing word is small and shared, so building it once helps many dictionaries:
+All 10 fit. The missing words are few and shared, so building each once helps many dictionaries:
 
 | Missing | Used by |
 |---|---|
-| **Remind** | Lockers, Bakery, Birthdays. Needs phone or email alerts first, which Stardust doesn't have yet. |
-| **Repeat** | Birthdays, Chores |
-| **Days** | Birthdays, Recovery |
-| **Timer**, **Start**, **Stop** | Focus Timer, Check-in |
+| **Timer**, **Start**, **Stop** | Focus Timer |
+| **Repeat**, **Days** | Birthdays, Chores, Recovery |
 | **Assign** | Lockers, Chores |
+| **Group by** | Lockers, Bakery, Chores |
 | **Request**, **Approve** | Lockers |
-| **Show: grouped by a Choice** | Lockers, Bakery, Chores |
-| **Check**, **Rating** | None of the 10 yet. Hold them until someone needs them. |
+| **Remind** | Lockers, Bakery, Birthdays. Needs alerts first |
+| **Check**, **Rating** | None yet. Hold until someone needs them |
 
-Things that still need a dictionary built by hand, because no small word covers them: Idea House judging, Manifesto Match's matching by shared words, and Wolffie's printable packets. Each reuses Core words wherever it can.
+Still built by hand, because no small word covers them: Idea House judging, Manifesto Match's matching by shared words, and Wolffie's printable packets. Each reuses Core words wherever it can.
 
 ## Build order
 
-1. Add the Nouns, Tools, and Verbs above to the Core dictionary as terms, so anyone can read the toolbox in Core's Term View.
-2. The engine: a written dictionary becomes a working one, using the Stardust style. Start with Just me, the tools that exist, Done, Order, Total.
+1. Add these nouns and verbs to the Core dictionary, so anyone can read them in Core's Term View.
+2. The engine: a written dictionary becomes a working one in the Stardust style. Start with Just me and the words that already exist.
 3. Timer, Start, Stop. Then Focus Timer works.
-4. Sage writes dictionaries: asks what you need, points you to Core, writes the page, shows a preview, builds it on yes. Missing words go to the Wanted list.
-5. Groups and who writes. Then Assign, grouping, Request and Approve. Then Lockers works.
-6. Repeat and Days. Then Birthdays, Chores, and Recovery work.
+4. Sage writes dictionaries with you: asks what you need, points you to Core, writes the page, shows a preview, builds on yes. Missing words go to the Wanted list.
+5. Groups and who writes, then Assign, Group by, Request, Approve. Then Lockers works.
+6. Repeat and Days.
 7. Alerts, then Remind.
 8. Public dictionaries with steward review.
 9. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
 
-The built-dictionary form from 0028 (+ Create my own) becomes step 2's starting point: it already stores a dictionary's fields and entries in the Stardust style.
+The + Create my own builder from 0028 is the starting point for step 2: it already stores a dictionary's fields and entries in the Stardust style.
