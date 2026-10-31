@@ -4,7 +4,7 @@ Every dictionary in Stardust DS is written in words, and the words come from Cor
 
 Sage follows one rule: every word in a dictionary must be a Core noun or verb. When someone asks for something Core doesn't have, Sage says so plainly, offers the closest thing, and adds the missing word to the Wanted list.
 
-Status: this is the paper test. Nothing here is built as a written dictionary yet. Words marked **(new)** don't exist anywhere in the app.
+Status: the words are in Core as of migration 0029. The engine that builds a dictionary from them isn't built yet. Nothing here is built as a written dictionary yet. Words marked **(new)** don't exist anywhere in the app.
 
 ## Nouns
 
@@ -31,8 +31,8 @@ Status: this is the paper test. Nothing here is built as a written dictionary ye
 | **Check** (new) | Yes or no |
 | **Rating** (new) | 1 to 5 |
 | **Photo** | Up to 4 pictures |
-| **Phone** | A number you can tap to call |
-| **Email** | An address you can tap to write |
+| **Phone Number** | A number you can tap to call |
+| **Email Address** | An address you can tap to write |
 | **Link** | A web address you can tap to open |
 | **Label** | A short word for finding things, shown as `#label` |
 | **Time Frame** | How long something lives, from a day to a life |
@@ -47,14 +47,14 @@ Every noun can be **Added, Edited, Found, Filtered, Archived, Restored, Deleted,
 | **Order** | Drag to arrange | Night DS |
 | **Start**, **Stop** (new) | Run a Timer | |
 | **Total** | Add up Money, Numbers, or Timers, or count, by label or time | Worthy |
-| **Group by** (new) | Show the list in sections, by Status or Person | |
+| **Group By** (new) | Show the list in sections, by Status or Person | |
 | **Assign** (new) | Give it to a Person | |
 | **Request**, **Approve** (new) | A member asks, an admin says yes | |
 | **Remind** (new) | Alert you before a Date. Needs phone or email alerts first | |
-| **Call**, **Email** | Reach someone from their Phone or Email | |
+| **Call**, **Email** | Reach someone from their Phone Number or Email Address | |
 | **Share** | Who sees it | Everywhere |
 | **Post**, **Message** | Others see it and write to you privately | Boards |
-| **Comment**, **Spark**, **Join** | Others answer in the open | Idea Index |
+| **Comment**, **Join** (and Idea Index's spark) | Others answer in the open | Idea Index |
 | **Match** | Find others who share labels or words | Job Match, Manifesto Match |
 | **Save**, **Renew**, **Report**, **Block** | Keep it, keep it up, flag it, stop someone | Boards |
 | **Generate** | Sage fills it in for you | Wolffie Games |

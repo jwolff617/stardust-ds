@@ -20,6 +20,7 @@ Stardust DS starts in one city: Seattle.
 - Verbs: Add, Remove, Edit, Delete, Archive, Restore, Find, Filter, Share, Connect, Match, Message, Email, Call, Vote, Buy, Sell, Trade, Give, Report, Block, Save, Renew
 - Both: Label, View
 - Nouns: Spark, Person, Business, Nonprofit, Government, Dictionary, Term, Definition, Private Profile, Public Profile, Place, City, Neighborhood, Email Address, Phone Number, Hours, Price, Note, Account, Time Frame, Connection, Post, Reply, Kind, Steward
+- The Core Toolbox (0029): the nouns and verbs every dictionary is written from, like Entry, Date, Money, Timer, Status, Done, Total, Assign, and Remind. See `dictionaries/Core_Toolbox.md`.
 
 **Classes.** Every dictionary has one class, which sets who sees it by default:
 
@@ -80,7 +81,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0028 applied (2026-10-29), plus the first steward. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0028 applied (2026-10-29), plus the first steward. Pending: 0029 (Core Toolbox words). See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
