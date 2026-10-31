@@ -3,7 +3,11 @@
 import { useEffect, useState, useTransition } from "react";
 import { TIME_FRAME_LABELS, rangeStart, type TimeFrame } from "@/lib/time-frames";
 import {
+  BET_CARD_PARTS,
+  BET_CARD_RULE,
   BET_OUTCOMES,
+  betCardText,
+  type BetCard,
   BET_OUTCOME_LABELS,
   PRINCIPLES,
   PRINCIPLE_LABELS,
@@ -63,7 +67,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
   const [entryNote, setEntryNote] = useState("");
 
   const [storyDate, setStoryDate] = useState(today);
-  const [storyOutcome, setStoryOutcome] = useState<BetOutcome>("win");
+  const [storyOutcome, setStoryOutcome] = useState<BetOutcome>("card");
+  const [card, setCard] = useState<BetCard>({ bet: "", read: "", think: "", feel: "" });
+  const isCard = storyOutcome === "card";
+  const cardFull = BET_CARD_PARTS.every((part) => card[part.key].trim());
   const [storyBody, setStoryBody] = useState("");
   const [storyPrinciples, setStoryPrinciples] = useState<Principle[]>([]);
 
@@ -110,17 +117,18 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
   }
 
   async function addStory() {
-    if (!storyBody.trim()) return;
+    if (isCard ? !cardFull : !storyBody.trim()) return;
     const ok = await run("/api/worthy", {
       dictionaryId: dictionary.id,
       type: "story",
       occurredOn: storyDate,
       outcome: storyOutcome,
-      body: storyBody,
+      body: isCard ? betCardText(card) : storyBody,
       principles: storyPrinciples,
     });
     if (ok) {
       setStoryBody("");
+      setCard({ bet: "", read: "", think: "", feel: "" });
       setStoryPrinciples([]);
     }
   }
@@ -267,6 +275,7 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
         <p className="text-xs text-neutral-500">
           Bet days: Saturday 40%, Monday 40%, Thursday 20% of your budget. Other days, no research, no bets. Skip a day if nothing is worth it.
         </p>
+        <p className="text-xs font-medium text-neutral-700">{BET_CARD_RULE}</p>
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="date"
@@ -286,13 +295,28 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
             ))}
           </select>
         </div>
-        <textarea
-          value={storyBody}
-          onChange={(e) => setStoryBody(e.target.value)}
-          placeholder="What happened, and what you felt..."
-          rows={3}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
-        />
+        {isCard ? (
+          BET_CARD_PARTS.map((part) => (
+            <label key={part.key} className="flex flex-col gap-1 text-xs text-neutral-600">
+              {part.label}
+              <textarea
+                value={card[part.key]}
+                onChange={(e) => setCard((c) => ({ ...c, [part.key]: e.target.value }))}
+                placeholder={part.placeholder}
+                rows={part.key === "bet" ? 1 : 2}
+                className="rounded-md border border-neutral-300 px-2 py-1 text-sm text-neutral-900"
+              />
+            </label>
+          ))
+        ) : (
+          <textarea
+            value={storyBody}
+            onChange={(e) => setStoryBody(e.target.value)}
+            placeholder="What happened, and what you felt..."
+            rows={3}
+            className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          />
+        )}
         <div className="flex flex-wrap items-center gap-1">
           {PRINCIPLES.map((p) => (
             <button
@@ -308,11 +332,11 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
           ))}
           <button
             type="button"
-            disabled={!storyBody.trim()}
+            disabled={isCard ? !cardFull : !storyBody.trim()}
             onClick={addStory}
             className="ml-auto rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-40"
           >
-            Save story
+            {isCard ? "Card done, place the bet" : "Save story"}
           </button>
         </div>
 

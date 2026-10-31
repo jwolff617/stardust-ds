@@ -127,7 +127,7 @@ export const betStoryNoun: NounDef = {
   verbs: {
     Add: {
       params: [
-        { name: "outcome", type: "enum", options: BET_OUTCOMES, required: true, description: "missed is a bet they thought of but didn't make." },
+        { name: "outcome", type: "enum", options: BET_OUTCOMES, required: true, description: "card is the bet card made before a bet. missed is a bet they thought of but didn't make." },
         { name: "body", type: "text", required: true },
         { name: "principles", type: "enum[]", options: PRINCIPLES },
         { name: "date", type: "date", description: "Default today." },

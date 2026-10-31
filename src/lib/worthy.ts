@@ -11,10 +11,11 @@ export const WORTHY_KIND_LABELS: Record<WorthyKind, string> = {
   balance: "Balance",
 };
 
-export const BET_OUTCOMES = ["win", "loss", "missed", "other"] as const;
+export const BET_OUTCOMES = ["card", "win", "loss", "missed", "other"] as const;
 export type BetOutcome = (typeof BET_OUTCOMES)[number];
 
 export const BET_OUTCOME_LABELS: Record<BetOutcome, string> = {
+  card: "Bet card",
   win: "Win",
   loss: "Loss",
   missed: "Missed opportunity",
@@ -113,4 +114,20 @@ export function summarize(entries: WorthyEntry[], start: Date | null): WorthySum
     savingsPctOfDeposits: pct(savings),
     balancePctOfDeposits: pct(currentBalance),
   };
+}
+
+// The rule: every bet gets a card first.
+export const BET_CARD_RULE = "Every bet gets a bet card first. Take 10 minutes: read an article or a blog, think, and feel what your body feels. Then bet. No card, no bet.";
+
+export const BET_CARD_PARTS = [
+  { key: "bet", label: "The bet", placeholder: "Bears +3.5, $10" },
+  { key: "read", label: "What I read", placeholder: "An article or blog, and what it said" },
+  { key: "think", label: "What I think", placeholder: "Why this bet, in my own words" },
+  { key: "feel", label: "What my body feels", placeholder: "Calm, tight chest, excited, unsure" },
+] as const;
+
+export type BetCard = Record<(typeof BET_CARD_PARTS)[number]["key"], string>;
+
+export function betCardText(card: BetCard): string {
+  return BET_CARD_PARTS.map((p) => `${p.label}: ${card[p.key].trim()}`).join("\n");
 }
