@@ -23,7 +23,6 @@ Status: the words are in Core as of migration 0029. The engine that builds a dic
 | **Money** | An amount, or "free" |
 | **Date** | A day, shown as `Oct 30` |
 | **Time** | A time of day |
-| **Timer** (new) | How long something took, with a running clock |
 | **Days** (new) | Days until or since a date |
 | **Repeat** (new) | Every day, week, month, or year |
 | **Status** | One choice from a short list, like Open or Taken |
@@ -45,8 +44,7 @@ Every noun can be **Added, Edited, Found, Filtered, Archived, Restored, Deleted,
 |---|---|---|
 | **Done** | Check it off | Night DS |
 | **Order** | Drag to arrange | Night DS |
-| **Start**, **Stop** (new) | Run a Timer | |
-| **Total** | Add up Money, Numbers, or Timers, or count, by label or time | Worthy |
+| **Total** | Add up Money or Numbers, or count, by label or time | Worthy |
 | **Group By** (new) | Show the list in sections, by Status or Person | |
 | **Assign** (new) | Give it to a Person | |
 | **Request**, **Approve** (new) | A member asks, an admin says yes | |
@@ -81,23 +79,9 @@ Noun: one line on what it is.
   you can ...
 ```
 
-## Paper test: 10 real dictionaries
+## Paper test: 9 real dictionaries
 
-### 1. Focus Timer
-
-```
-Focus Timer
-For: seeing where my hours go.
-Share: Just me
-
-Session: something I timed.
-  has a Task (Text), a Time (Timer), Labels
-  you can Start, Stop, Total the Time by label this week
-```
-
-Needs: Timer, Start, Stop.
-
-### 2. Night DS
+### 1. Night DS
 
 ```
 Night DS
@@ -112,7 +96,7 @@ Note: a thought to let go of.
 
 Needs nothing new.
 
-### 3. Worthy
+### 2. Worthy
 
 ```
 Worthy
@@ -128,7 +112,7 @@ Bet Story: what a bet taught me.
 
 Needs nothing new.
 
-### 4. SHARE Lockers
+### 3. SHARE Lockers
 
 ```
 SHARE Lockers
@@ -144,7 +128,7 @@ Rule: something everyone should know.
 
 Needs: Assign, Request, Approve, Remind, Group by.
 
-### 5. Kid Zone Check-in
+### 4. Kid Zone Check-in
 
 ```
 Kid Zone Check-in
@@ -159,7 +143,7 @@ Check-in: one kid, one visit.
 
 Needs nothing new.
 
-### 6. Bakery Orders
+### 5. Bakery Orders
 
 ```
 Corner Bakery Orders
@@ -173,7 +157,7 @@ Order: one cake.
 
 Needs: Remind, Group by.
 
-### 7. Birthdays
+### 6. Birthdays
 
 ```
 Birthdays
@@ -188,7 +172,7 @@ Birthday: someone to celebrate.
 
 Needs: Repeat, Days, Remind.
 
-### 8. House Chores
+### 7. House Chores
 
 ```
 House Chores
@@ -202,7 +186,7 @@ Chore: one job around the house.
 
 Needs: Repeat, Assign, Group by.
 
-### 9. My Recovery
+### 8. My Recovery
 
 ```
 My Recovery
@@ -218,7 +202,7 @@ Step: one step.
 
 Needs: Days.
 
-### 10. Job Match
+### 9. Job Match
 
 ```
 Job Match
@@ -234,11 +218,10 @@ Needs nothing new. It's the boards we built.
 
 ## What the paper test found
 
-All 10 fit. The missing words are few and shared, so building each once helps many dictionaries:
+All 9 fit. The missing words are few and shared, so building each once helps many dictionaries:
 
 | Missing | Used by |
 |---|---|
-| **Timer**, **Start**, **Stop** | Focus Timer |
 | **Repeat**, **Days** | Birthdays, Chores, Recovery |
 | **Assign** | Lockers, Chores |
 | **Group by** | Lockers, Bakery, Chores |
@@ -252,12 +235,11 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
 
 1. Add these nouns and verbs to the Core dictionary, so anyone can read them in Core's Term View.
 2. The engine: a written dictionary becomes a working one in the Stardust style. Start with Just me and the words that already exist.
-3. Timer, Start, Stop. Then Focus Timer works.
-4. Sage writes dictionaries with you: asks what you need, points you to Core, writes the page, shows a preview, builds on yes. Missing words go to the Wanted list.
-5. Groups and who writes, then Assign, Group by, Request, Approve. Then Lockers works.
-6. Repeat and Days.
-7. Alerts, then Remind.
-8. Public dictionaries with steward review.
-9. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
+3. Sage writes dictionaries with you: asks what you need, points you to Core, writes the page, shows a preview, builds on yes. Missing words go to the Wanted list.
+4. Groups and who writes, then Assign, Group by, Request, Approve. Then Lockers works.
+5. Repeat and Days.
+6. Alerts, then Remind.
+7. Public dictionaries with steward review.
+8. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
 
 The + Create my own builder from 0028 is the starting point for step 2: it already stores a dictionary's fields and entries in the Stardust style.
