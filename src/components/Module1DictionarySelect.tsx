@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { createGroup, toggleDictionary } from "@/app/actions/dictionaries";
+import { createGroup, createPage, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
 
 type Instance = { id: string; name: string; displayKind: string };
 
@@ -21,7 +21,11 @@ type Dictionary = {
   ownLabels: string[];
   isOtherProfile: boolean;
   displayKind: string;
+  pageStatus: string | null;
 };
+
+// The Business Page template makes a new page each time you add it.
+const PAGE_TEMPLATE = "business-page";
 
 // Who a dictionary belongs to, so the lists can say so:
 // personal (your own copy), group (shared with members), or public.
@@ -66,6 +70,8 @@ export function Module1DictionarySelect({
   const [label, setLabel] = useState<string | null>(null);
   const [allLabels, setAllLabels] = useState(false);
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
+  const [isModerator, setIsModerator] = useState(false);
+  const [moderating, setModerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
   const [isToggling, startToggle] = useTransition();
@@ -75,6 +81,7 @@ export function Module1DictionarySelect({
       const res = await fetch(`/api/dictionaries/search?q=${encodeURIComponent(query)}`, { signal });
       const data = await res.json();
       setDictionaries(data.dictionaries ?? []);
+      setIsModerator(Boolean(data.isModerator));
     },
     [query],
   );
@@ -110,6 +117,23 @@ export function Module1DictionarySelect({
 
     if (!isLoggedIn) {
       setError("Log in to add or remove dictionaries.");
+      return;
+    }
+
+    // The Business Page template makes a new, named page every time.
+    if (dictionary.address === PAGE_TEMPLATE) {
+      const name = window.prompt("Name your page (your business, project, or nonprofit):");
+      if (!name?.trim()) return;
+      setError(null);
+      startToggle(async () => {
+        try {
+          await createPage(name);
+          await runSearch();
+          onChange?.();
+        } catch (err) {
+          setError((err as Error).message || "Couldn't make that page.");
+        }
+      });
       return;
     }
 
@@ -171,8 +195,22 @@ export function Module1DictionarySelect({
   if (label && !suggestions.includes(label)) suggestions.unshift(label);
   const showLabels = store.length >= LABELS_FROM || label !== null;
 
+  function remove(d: Dictionary) {
+    if (!window.confirm(`Delete "${d.name}" from Stardust for everyone? Every copy of it and everything in them goes too. This can't be undone.`)) return;
+    setError(null);
+    startToggle(async () => {
+      try {
+        await moderatorDelete(d.id);
+        await runSearch();
+        onChange?.();
+      } catch (err) {
+        setError((err as Error).message || "Couldn't delete that.");
+      }
+    });
+  }
+
   const chip = (d: Dictionary) => (
-    <li key={d.id}>
+    <li key={d.id} className="flex items-center gap-1">
       <button
         type="button"
         disabled={d.locked || isToggling}
@@ -184,7 +222,14 @@ export function Module1DictionarySelect({
         } disabled:cursor-default`}
       >
         {d.instance ? shortName(d.instance.name) : d.name}
+        {d.pageStatus === "official" && <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">· official</span>}
+        {d.pageStatus === "applied" && <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">· waiting</span>}
       </button>
+      {moderating && !d.locked && d.address !== "core" && d.address !== "stardust" && (
+        <button type="button" onClick={() => remove(d)} aria-label={`Delete ${d.name}`} className="px-1 text-xs text-neutral-400 hover:text-red-600">
+          ✕
+        </button>
+      )}
     </li>
   );
 
@@ -222,6 +267,16 @@ export function Module1DictionarySelect({
             className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white"
           >
             + Create my own
+          </button>
+        )}
+        {isModerator && (
+          <button
+            type="button"
+            onClick={() => setModerating(!moderating)}
+            aria-pressed={moderating}
+            className={`rounded-full px-3 py-1 text-xs font-medium ${moderating ? "bg-red-600 text-white" : "border border-neutral-300 text-neutral-600"}`}
+          >
+            {moderating ? "Done moderating" : "Moderate"}
           </button>
         )}
         {isSearching && <span className="text-xs text-neutral-400">Loading...</span>}

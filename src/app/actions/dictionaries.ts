@@ -114,3 +114,23 @@ export async function createGroup(templateId: string, name: string) {
   revalidatePath("/");
   return data as string;
 }
+
+// Makes a new Business Page from the template and turns it on. Any number
+// of them, each with its own name.
+export async function createPage(name: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Log in to make a page.");
+  const { data, error } = await supabase.rpc("create_page", { p_name: name });
+  if (error || !data) throw new Error(error?.message ?? "Couldn't make that page.");
+  revalidatePath("/");
+  return data as string;
+}
+
+// A moderator deletes a dictionary from the Library, for everyone.
+export async function moderatorDelete(dictionaryId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("moderator_delete_dictionary", { p_id: dictionaryId });
+  if (error) throw new Error(error.message);
+  revalidatePath("/");
+}

@@ -13,7 +13,8 @@ export async function GET(request: Request) {
 
   try {
     const dictionaries = await searchDictionaries(supabase, q, user?.id ?? null);
-    return Response.json({ dictionaries });
+    const { data: isModerator } = user ? await supabase.rpc("is_moderator") : { data: false };
+    return Response.json({ dictionaries, isModerator: Boolean(isModerator) });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 500 });
   }
