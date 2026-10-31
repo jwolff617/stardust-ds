@@ -263,6 +263,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
 
       <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
         <p className="text-sm font-medium">Bet Stories</p>
+        {/* Bet days: research and bet only on game days, split by percent of your budget. */}
+        <p className="text-xs text-neutral-500">
+          Bet days: Saturday 40%, Monday 40%, Thursday 20% of your budget. Other days, no research, no bets. Skip a day if nothing is worth it.
+        </p>
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="date"
