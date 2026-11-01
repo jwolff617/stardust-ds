@@ -35,17 +35,17 @@ function emptyWeek(weekStart: string): Week {
 }
 
 // After School DS Display View: one week of Monday-to-Friday lesson notes
-// at a time, and a theme calendar listing a whole year, shared by everyone
-// in the group.
+// at a time, a theme calendar listing a whole year, and a daily schedule,
+// shared by everyone in the group.
 export function AfterSchoolView({ dictionary, reloadKey = 0 }: { dictionary: GroupDictionary; reloadKey?: number }) {
-  const [tab, setTab] = useState<"lessons" | "calendar">("lessons");
+  const [tab, setTab] = useState<"lessons" | "calendar" | "schedule">("lessons");
   const [error, setError] = useState<string | null>(null);
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="text-xs font-medium text-neutral-500">{dictionary.name}</h3>
-        {(["lessons", "calendar"] as const).map((t) => (
+        {(["lessons", "calendar", "schedule"] as const).map((t) => (
           <button
             key={t}
             type="button"
@@ -54,18 +54,16 @@ export function AfterSchoolView({ dictionary, reloadKey = 0 }: { dictionary: Gro
               tab === t ? "bg-neutral-900 text-white" : "border border-neutral-300 text-neutral-600"
             }`}
           >
-            {t === "lessons" ? "Lessons" : "Calendar"}
+            {t === "lessons" ? "Lessons" : t === "calendar" ? "Calendar" : "Daily schedule"}
           </button>
         ))}
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {tab === "lessons" ? (
-        <LessonWeeks dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />
-      ) : (
-        <ThemeCalendar dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />
-      )}
+      {tab === "lessons" && <LessonWeeks dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />}
+      {tab === "calendar" && <ThemeCalendar dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />}
+      {tab === "schedule" && <DailySchedule dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />}
 
       <GroupMembers dictionaryId={dictionary.id} reloadKey={reloadKey} onError={setError} />
     </div>
@@ -316,6 +314,143 @@ function ThemeCalendar({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+type ScheduleRow = { id: string; time: string; activity: string; notes: string };
+
+async function scheduleCall(dictionaryId: string, body: Record<string, unknown>) {
+  await post("/api/after-school/schedule", { dictionaryId, ...body });
+}
+
+// The daily schedule: one row per block of the day, time then activity
+// then notes. Type in a cell; it saves when you click away. Arrows move a
+// row; ✕ deletes it.
+function DailySchedule({
+  dictionaryId,
+  reloadKey,
+  onError,
+}: {
+  dictionaryId: string;
+  reloadKey: number;
+  onError: (message: string | null) => void;
+}) {
+  const [rows, setRows] = useState<ScheduleRow[]>([]);
+  const [loads, setLoads] = useState(0);
+  const [token, setToken] = useState(0);
+  const [isLoading, startLoading] = useTransition();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    startLoading(async () => {
+      try {
+        const res = await fetch(`/api/after-school/schedule?dictionaryId=${dictionaryId}`, { signal: controller.signal });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Couldn't load the schedule.");
+        setRows(data.items ?? []);
+        setLoads((n) => n + 1);
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") onError((err as Error).message);
+      }
+    });
+    return () => controller.abort();
+  }, [dictionaryId, reloadKey, token, onError]);
+
+  async function run(body: Record<string, unknown>, reload = true) {
+    onError(null);
+    try {
+      await scheduleCall(dictionaryId, body);
+      if (reload) setToken((t) => t + 1);
+    } catch (err) {
+      onError((err as Error).message);
+    }
+  }
+
+  function save(row: ScheduleRow, change: Partial<ScheduleRow>) {
+    const next = { ...row, ...change };
+    if (next.time === row.time && next.activity === row.activity && next.notes === row.notes) return;
+    setRows((rs) => rs.map((r) => (r.id === row.id ? next : r)));
+    run({ action: "save", ...next }, false);
+  }
+
+  function move(i: number, j: number) {
+    if (j < 0 || j >= rows.length) return;
+    const next = [...rows];
+    const [row] = next.splice(i, 1);
+    next.splice(j, 0, row);
+    setRows(next);
+    run({ action: "move", ids: next.map((r) => r.id) }, false);
+  }
+
+  const cell = "w-full min-w-0 rounded border border-transparent px-1.5 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300";
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="hidden grid-cols-[7rem_1fr_1.4fr_auto] gap-2 px-1 text-xs font-medium text-neutral-500 sm:grid">
+        <span>Time</span>
+        <span>Activity</span>
+        <span>Notes</span>
+        <span className="w-16" />
+      </div>
+      {rows.length === 0 && !isLoading && (
+        <p className="rounded-md border border-dashed border-neutral-300 px-3 py-4 text-center text-sm text-neutral-500">
+          No schedule yet. Add the first row: a time, what happens, and any notes.
+        </p>
+      )}
+      <ul className="flex flex-col divide-y divide-neutral-100">
+        {rows.map((row, i) => (
+          <li key={`${row.id}-${loads}`} className="grid grid-cols-[5.5rem_1fr_auto] gap-x-2 gap-y-0.5 py-1 sm:grid-cols-[7rem_1fr_1.4fr_auto]">
+            <input
+              defaultValue={row.time}
+              maxLength={40}
+              placeholder="2:15"
+              aria-label="Time"
+              onBlur={(e) => save(row, { time: e.target.value })}
+              className={`${cell} font-medium`}
+            />
+            <input
+              defaultValue={row.activity}
+              maxLength={200}
+              placeholder="Activity"
+              aria-label="Activity"
+              onBlur={(e) => save(row, { activity: e.target.value })}
+              className={cell}
+            />
+            <textarea
+              defaultValue={row.notes}
+              maxLength={2000}
+              rows={1}
+              placeholder="Notes"
+              aria-label="Notes"
+              onBlur={(e) => save(row, { notes: e.target.value })}
+              className={`${cell} col-span-2 col-start-1 row-start-2 resize-y text-neutral-700 sm:col-span-1 sm:col-start-auto sm:row-start-auto`}
+            />
+            <div className="row-start-1 flex items-center gap-1 text-neutral-400 sm:row-start-auto">
+              <button type="button" disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Move up" className="px-1 hover:text-neutral-900 disabled:opacity-30">
+                ▲
+              </button>
+              <button type="button" disabled={i === rows.length - 1} onClick={() => move(i, i + 1)} aria-label="Move down" className="px-1 hover:text-neutral-900 disabled:opacity-30">
+                ▼
+              </button>
+              <button
+                type="button"
+                onClick={() => window.confirm("Delete this row?") && run({ action: "delete", id: row.id })}
+                aria-label="Delete row"
+                className="ml-1 px-1 hover:text-red-600"
+              >
+                ✕
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <div className="flex items-center gap-3">
+        <button type="button" onClick={() => run({ action: "add" })} className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium hover:border-neutral-900">
+          + Add row
+        </button>
+        {isLoading && <span className="text-xs text-neutral-400">Loading...</span>}
       </div>
     </div>
   );
