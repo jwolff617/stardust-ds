@@ -11,6 +11,7 @@ export type NightView = {
   timeFrames?: string[];
   labels?: string[];
   sort?: string;
+  layout?: "lines" | "cards";
 };
 
 export type Preferences = {
@@ -55,6 +56,7 @@ export function cleanPreferences(raw: unknown): Preferences {
         timeFrames: strings(night.timeFrames, 10),
         labels: strings(night.labels, 20),
         sort: typeof night.sort === "string" ? night.sort.slice(0, 20) : undefined,
+        layout: night.layout === "lines" || night.layout === "cards" ? night.layout : undefined,
       },
     },
     module1: { storeHidden: flag(m1.storeHidden), collapsed: flag(m1.collapsed) },

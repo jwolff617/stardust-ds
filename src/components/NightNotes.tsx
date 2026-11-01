@@ -80,6 +80,7 @@ export function NightNotes({
   const setTimeFrameFilter = (next: TimeFrame[]) => change({ timeFrames: next });
   const setLabelFilter = (next: string[]) => change({ labels: next });
   const setSort = (next: NoteSort) => change({ sort: next });
+  const cards = view.layout === "cards";
   const [page, setPage] = useState(1);
   const [notes, setNotes] = useState<NoteRow[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -194,6 +195,19 @@ export function NightNotes({
             </option>
           ))}
         </select>
+        <div className="ml-auto flex items-center gap-1 text-xs">
+          {(["lines", "cards"] as const).map((l) => (
+            <button
+              key={l}
+              type="button"
+              aria-pressed={(view.layout ?? "lines") === l}
+              onClick={() => change({ layout: l })}
+              className={`rounded-full px-2.5 py-0.5 ${(view.layout ?? "lines") === l ? "bg-neutral-900 text-white" : "border border-neutral-300 text-neutral-600"}`}
+            >
+              {l === "lines" ? "Lines" : "Cards"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Filters: pick any number. Nothing picked shows everything. */}
@@ -247,7 +261,7 @@ export function NightNotes({
           {state === "active" ? "No notes here. Write one above." : state === "done" ? "Nothing done here yet." : "Nothing archived here."}
         </p>
       ) : (
-        <ul className="flex flex-col divide-y divide-neutral-100">
+        <ul className={cards ? "grid grid-cols-1 gap-3 sm:grid-cols-3" : "flex flex-col divide-y divide-neutral-100"}>
           {shownNotes.map((note, index) => (
             <NoteItem
               key={`${note.id}-${refreshToken}-${reloadKey}`}
@@ -256,6 +270,7 @@ export function NightNotes({
               isFirst={index === 0}
               isLast={index === shownNotes.length - 1}
               canReorder={sort === "mine"}
+              card={cards}
               onRun={run}
               onDelete={() => deleting.remove(note)}
               dragging={dragging}
@@ -300,6 +315,7 @@ function NoteItem({
   dragging,
   onDragChange,
   canReorder,
+  card,
 }: {
   note: NoteRow;
   state: NoteState;
@@ -310,6 +326,7 @@ function NoteItem({
   dragging: NoteRow | null;
   onDragChange: (note: NoteRow | null) => void;
   canReorder: boolean;
+  card: boolean;
 }) {
   const [restoreTimeFrame, setRestoreTimeFrame] = useState<TimeFrame>(note.timeFrame);
   const [label, setLabel] = useState(note.label ?? "");
@@ -341,17 +358,17 @@ function NoteItem({
         if (canDrop) onRun("/api/notes/reorder", { noteId: dragging.id, targetId: note.id });
         onDragChange(null);
       }}
-      className={`flex flex-col gap-2 py-3 ${dragging?.id === note.id ? "opacity-40" : ""} ${canDrop ? "hover:bg-blue-50" : ""}`}
+      className={`flex flex-col gap-2 ${card ? "rounded-md border border-neutral-200 bg-neutral-50 p-2" : "py-3"} ${dragging?.id === note.id ? "opacity-40" : ""} ${canDrop ? "hover:bg-blue-50" : ""}`}
     >
       <textarea
         defaultValue={note.body}
-        rows={Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
+        rows={card ? 7 : Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
         onBlur={(e) => {
           const next = e.target.value.trim();
           if (next && next !== note.body) onRun("/api/notes/update", { noteId: note.id, body: next });
         }}
         aria-label="Note"
-        className="resize-y rounded-md border border-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300"
+        className={`rounded-md border border-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300 ${card ? "resize-none bg-white" : "resize-y"}`}
       />
 
       <div className="flex flex-wrap items-center gap-2 text-xs">
