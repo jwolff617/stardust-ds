@@ -68,6 +68,11 @@ export function PageView({ dictionary, reloadKey = 0 }: { dictionary: { id: stri
           {data.status === "official" && (
             <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-900">Official</span>
           )}
+          {data.mine && (
+            <button type="button" onClick={() => setEditing(true)} className="ml-auto rounded-full border border-white/40 px-3 py-0.5 text-xs text-white hover:bg-white/10">
+              Edit
+            </button>
+          )}
         </div>
         {p.tagline && <p className="text-base text-neutral-200">{p.tagline}</p>}
       </div>
@@ -113,16 +118,11 @@ export function PageView({ dictionary, reloadKey = 0 }: { dictionary: { id: stri
       {data.mine && (
         <div className="flex flex-wrap items-center gap-3 border-t border-neutral-100 pt-3 text-xs text-neutral-500">
           <span>{STATUS_TEXT[data.status]}</span>
-          <div className="ml-auto flex items-center gap-3">
-            <button type="button" className={link} onClick={() => setEditing(true)}>
-              Edit
+          {data.status === "draft" && (
+            <button type="button" className={`${primary} ml-auto`} onClick={() => run({ action: "apply" })}>
+              Apply for Official
             </button>
-            {data.status === "draft" && (
-              <button type="button" className={primary} onClick={() => run({ action: "apply" })}>
-                Apply for Official
-              </button>
-            )}
-          </div>
+          )}
         </div>
       )}
 

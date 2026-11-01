@@ -445,9 +445,9 @@ export function Module2Definitions({
               </div>
             </>
           ) : (
-            <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
               {displayable.map((d) => (
-                <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4">
+                <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4 rounded-lg border border-neutral-200 p-3 sm:p-4">
                   {!hasDisplayView(d) && <h3 className="mb-1 text-sm font-medium text-neutral-500">{d.name}</h3>}
                   <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} onChange={onRefresh} />
                   {hasDisplayView(d) && <DisplayFor
