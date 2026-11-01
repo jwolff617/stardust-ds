@@ -291,6 +291,12 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
 8. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
 9. Labels: the Labels page (every label, by count), profile sections with their own labels and visibility, functional labels, and label reports.
 10. Sage searches and matches by label from chat.
-11. Idea Index, Job Match, and Marketplace become label views plus a quick-post button.
+11. Four boards become label searches, replacing four separate builds with one:
+    - **Idea Index:** anything labeled #idea-index. Sparks and comments stay as small extras.
+    - **Job Match:** Looking becomes your profile's #jobs section; a Job is a post or page labeled #jobs.
+    - **Manifesto Match:** the manifesto words become labels. Friends and Business Partners become #friends and #business profile sections, matched by shared words. Dating stays behind the 18+ gate.
+    - **Marketplace:** quick posts that expire, with photos and a price, found by #marketplace, #free, #housing, and the like.
+
+    Private tools (Night DS, Worthy), group tools (Lockers, After School), Wolffie Games, and Idea House's private applications stay as they are.
 
 The + Create my own builder from 0028 is the starting point for step 2: it already stores a dictionary's fields and entries in the Stardust style.
