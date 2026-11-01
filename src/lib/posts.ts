@@ -291,8 +291,11 @@ export async function loadBoard(
     if (filters.kinds.length > 0) q = q.in("kind", filters.kinds);
     if (filters.labels.length > 0) q = q.overlaps("labels", filters.labels);
     if (filters.neighborhood) q = q.eq("neighborhood", filters.neighborhood);
-    const text = filters.q.trim().replace(/[%,()*\\]/g, " ").trim();
-    if (text) q = q.or(`title.ilike.%${text}%,body.ilike.%${text}%,neighborhood.ilike.%${text}%,price.ilike.%${text}%`);
+    const text = filters.q.trim().replace(/[%,()*\\{}"]/g, " ").trim();
+    // A search that is a label (with or without #) also finds posts carrying it.
+    const label = cleanLabels([text])[0];
+    const byLabel = label ? `,labels.cs.{"${label}"}` : "";
+    if (text) q = q.or(`title.ilike.%${text}%,body.ilike.%${text}%,neighborhood.ilike.%${text}%,price.ilike.%${text}%${byLabel}`);
   }
   q = filters.sort === "votes" ? q.order("vote_count", { ascending: false }).order("created_at", { ascending: false }) : q.order("created_at", { ascending: false });
 
