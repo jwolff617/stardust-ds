@@ -1,5 +1,18 @@
 # Core Toolbox
 
+## What Stardust DS is
+
+Stardust DS is a picture of everything Sage knows. You can see it, so you don't have to assume your AI remembers. Every dictionary is something Sage knows, written in words you can read.
+
+The dictionaries teach the language. People learn it one dictionary at a time, and one day they just talk to Sage. Nobody has to come to a tool to use it.
+
+So there is only one kind of thing: **a dictionary, with labels.** Everything else is a way to make one or a way to find one.
+
+- **A creator** makes a dictionary for you: you name it, it starts in the right shape, and it's labeled correctly so it can be found. Marketplace makes a listing. Idea Index makes an idea.
+- **A search** shows every dictionary carrying a label. Idea Index is the search bar with "idea" already typed in. Any dictionary can do this by importing labels, and its owner picks which.
+
+Idea Index and Marketplace are both: a creator and a search for one label. Anyone can make their own (an idea center, a market village) by making a dictionary and choosing what it imports.
+
 Every dictionary in Stardust DS is written in words, and the words come from Core. Core has three lists: **nouns** (things), **verbs** (what you do), and **labels** (what something is about). Labels are Stardust's adjectives, and they drive most of what Stardust does. I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
 
 Sage follows one rule: every word in a dictionary must be a Core noun or verb. When someone asks for something Core doesn't have, Sage says so plainly, offers the closest thing, and adds the missing word to the Wanted list.
@@ -86,7 +99,9 @@ Either way, Idea Index shows the same clean cards. The same pattern works for an
 
 ### Templates for shared labels
 
-Each top-level label has a template: Marketplace, Jobs, Renting, Dating, Ideas. Anyone can make their own dictionary from a template (Ballard Free Stuff, a church swap, a shop's job board), and it keeps the template's shape. So there can be many marketplaces, and they all read the same way, and Sage searches all of them at once.
+Each top-level label has a template: Marketplace, Jobs, Renting, Dating, Ideas. A template is a creator: it makes a dictionary you name yourself, in the label's shape, already labeled. A couch for sale is its own small dictionary labeled marketplace. An idea is its own dictionary labeled idea. Nothing is posted into anyone else's board.
+
+Anyone can make a search for those labels too (Ballard Free Stuff imports free and ballard; a church swap imports marketplace and its own church's label). So there can be many marketplaces, they all read the same way, and Sage searches all of them at once.
 
 - **Fair ranking:** Sage ranks by fit, then distance, then freshness. Never by payment. Nobody can buy a higher place.
 - **Sage names the source:** "Couch, $40, in Ballard Free Stuff."
@@ -328,11 +343,13 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
 8. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
 9. Labels: the Labels page (every label, by count), profile sections with their own labels and visibility, functional labels, and label reports.
 10. Sage searches and matches by label from chat.
-11. Four boards become label searches, replacing four separate builds with one:
-    - **Idea Index:** anything labeled #idea-index. Sparks and comments stay as small extras.
-    - **Job Match:** Looking becomes your profile's #jobs section; a Job is a post or page labeled #jobs.
-    - **Manifesto Match:** the manifesto words become labels. Friends and Business Partners become #friends and #business profile sections, matched by shared words. Dating stays behind the 18+ gate.
-    - **Marketplace:** quick posts that expire, with photos and a price, found by #marketplace, #free, #housing, and the like.
+11. Boards become a creator plus a search, replacing separate builds with one:
+    - **Each board** shows the dictionaries carrying its label (its imports) and has one button, "+ New idea" or "+ New listing," that makes a named dictionary in the label's shape, already labeled. Done: imports (0033). Next: the creator button.
+    - **Idea Index:** imports idea. Each idea is its own dictionary. Sparks and comments become extras on any dictionary.
+    - **Marketplace:** imports marketplace. Each listing is a small dictionary with photos, a price, and an end date.
+    - **Job Match:** a job is a dictionary labeled jobs; Looking is your profile's jobs section.
+    - **Manifesto Match:** the manifesto words become labels. Friends and Business Partners become profile sections, matched by shared words. Dating stays behind the 18+ gate.
+    - **Existing posts** move into dictionaries once, then the posts tables retire.
 
     Private tools (Night DS, Worthy), group tools (Lockers, After School), Wolffie Games, and Idea House's private applications stay as they are.
 
