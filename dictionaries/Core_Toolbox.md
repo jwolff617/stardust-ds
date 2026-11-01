@@ -11,7 +11,7 @@ So there is only one kind of thing: **a dictionary, with labels.** Everything el
 - **A creator** makes a dictionary for you: you name it, it starts in the right shape, and it's labeled correctly so it can be found. Marketplace makes a listing. Idea Index makes an idea.
 - **A search** shows every dictionary carrying a label. Idea Index is the search bar with "idea" already typed in. Any dictionary can do this by importing labels, and its owner picks which.
 
-Idea Index and Marketplace are both: a creator and a search for one label. Anyone can make their own (an idea center, a market village) by making a dictionary and choosing what it imports.
+Idea Index and Marketplace are both: a creator and a search for one label. So are Jobs, Renting, Homeless Resources, and any topic anyone thinks of. Anyone can make their own (an idea center, a market village, a shelter list) by making a dictionary and choosing what it imports. No topic needs its own code.
 
 Every dictionary in Stardust DS is written in words, and the words come from Core. Core has three lists: **nouns** (things), **verbs** (what you do), and **labels** (what something is about). Labels are Stardust's adjectives, and they drive most of what Stardust does. I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
 
