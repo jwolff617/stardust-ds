@@ -101,7 +101,7 @@ as $$
   from matched m
   order by
     (select count(*) from words where lower(m.name) like '%' || w || '%') desc,
-    (m.page_status = 'official') desc,
+    coalesce(m.page_status = 'official', false) desc,
     library_count(m.id) desc,
     m.created_at desc
   limit least(greatest(p_limit, 1), 50)
