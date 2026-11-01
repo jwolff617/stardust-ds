@@ -1,7 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeLabel } from "@/lib/dictionary-search";
 import { fieldsOf, type CustomField } from "@/lib/custom";
-import { snippet, typeOf, type DictionaryType } from "@/lib/listings";
+import { endsText, snippet, typeOf, type DictionaryType } from "@/lib/listings";
+import { PHOTO_BUCKET } from "@/lib/posts";
 
 // Earned labels: only a moderator can give one (0033 enforces it).
 export const RESERVED_LABELS = ["official", "verified", "government", "nonprofit"];
@@ -18,6 +19,14 @@ export type LabeledDictionary = {
   official: boolean;
   mine: boolean;
   optedIn: boolean;
+  photo: string | null;
+  sparks: number;
+  // Shown under Mine: closed, ended, hidden after reports, and messages
+  // waiting for you.
+  done: boolean;
+  ended: boolean;
+  hidden: boolean;
+  unread: number;
 };
 
 export type LabelResult = { ok: true; label: string } | { ok: false; error: string };
@@ -69,6 +78,8 @@ export type DictionaryLabelInfo = {
   // What it makes, if anything: "idea" and the fields of one.
   noun: string | null;
   fields: CustomField[];
+  photoLimit: number;
+  lastsDays: number | null;
 };
 
 // One dictionary's labels, the labels it shows (its own, else its
@@ -79,7 +90,7 @@ export async function loadDictionaryLabels(
   userId: string | null,
 ): Promise<DictionaryLabelInfo> {
   const [{ data: d }, { data: rows }, { data: isModerator }] = await Promise.all([
-    supabase.from("dictionaries").select("owner_user_id, template_id, shows, noun, fields, display_kind").eq("id", dictionaryId).maybeSingle(),
+    supabase.from("dictionaries").select("owner_user_id, template_id, shows, noun, fields, display_kind, photo_limit, lasts_days").eq("id", dictionaryId).maybeSingle(),
     supabase.from("dictionary_labels").select("label").eq("dictionary_id", dictionaryId).order("label"),
     userId ? supabase.rpc("is_moderator") : Promise.resolve({ data: false }),
   ]);
@@ -96,6 +107,8 @@ export async function loadDictionaryLabels(
     canEditShows: d?.display_kind !== "listing" && (owns || Boolean(isModerator)),
     noun: d?.noun ?? null,
     fields: d?.noun ? fieldsOf(d.fields) : [],
+    photoLimit: d?.photo_limit ?? 0,
+    lastsDays: d?.lasts_days ?? null,
   };
 }
 
@@ -131,13 +144,28 @@ export async function findLabeledDictionaries(
 
   const ids = rows.map((r) => r.id);
   const [{ data: details }, { data: mine }] = await Promise.all([
-    supabase.from("dictionaries").select("id, display_kind, noun, page, fields, by_name, created_at, page_status").in("id", ids),
+    supabase
+      .from("dictionaries")
+      .select("id, display_kind, noun, page, fields, by_name, created_at, page_status, photos, spark_count, closed_at, expires_at, hidden_at")
+      .in("id", ids),
     userId
       ? supabase.from("user_dictionaries").select("dictionary_id").eq("opted_in", true).in("dictionary_id", ids)
       : Promise.resolve({ data: [] as { dictionary_id: string }[] }),
   ]);
   const byId = new Map((details ?? []).map((d) => [d.id, d]));
   const optedIn = new Set((mine ?? []).map((m) => m.dictionary_id));
+
+  // Messages waiting on the caller, for their own listings and threads.
+  const unread = new Map<string, number>();
+  if (userId) {
+    const { data: waiting } = await supabase
+      .from("dictionary_messages")
+      .select("dictionary_id")
+      .in("dictionary_id", ids)
+      .is("read_at", null)
+      .neq("sender_user_id", userId);
+    for (const w of waiting ?? []) unread.set(w.dictionary_id, (unread.get(w.dictionary_id) ?? 0) + 1);
+  }
   return {
     total: Number(rows[0].total),
     items: rows.map((r) => {
@@ -155,6 +183,12 @@ export async function findLabeledDictionaries(
         official: d?.page_status === "official",
         mine: Boolean(userId && r.owner_user_id === userId),
         optedIn: optedIn.has(r.id),
+        photo: d?.photos?.[0] ? supabase.storage.from(PHOTO_BUCKET).getPublicUrl(d.photos[0]).data.publicUrl : null,
+        sparks: d?.spark_count ?? 0,
+        done: Boolean(d?.closed_at),
+        ended: endsText(d?.expires_at ?? null) === "Ended",
+        hidden: Boolean(d?.hidden_at),
+        unread: unread.get(r.id) ?? 0,
       };
     }),
   };

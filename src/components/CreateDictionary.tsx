@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPage } from "@/app/actions/dictionaries";
 import { createSearch, createWordList, listMakers } from "@/app/actions/listings";
 import type { Maker } from "@/lib/listings";
+import { MakerFields, type MakerSettings } from "./DictionaryLabels";
 import { ListingForm } from "./ListingForm";
 import { input, link, primary } from "./ui";
 
@@ -101,6 +102,8 @@ function NewListing({ onDone, onClose }: { onDone: () => void; onClose: () => vo
         searchId={maker.id}
         noun={maker.noun}
         fields={maker.fields}
+        photoLimit={maker.photoLimit}
+        lastsDays={maker.lastsDays}
         onCancel={() => setMaker(null)}
         onSaved={() => {
           onDone();
@@ -125,7 +128,8 @@ function NewListing({ onDone, onClose }: { onDone: () => void; onClose: () => vo
 }
 
 function NewSearch({ onDone }: { onDone: () => void }) {
-  const [form, setForm] = useState({ name: "", description: "", noun: "", shape: "Details (long), Neighborhood, How to reach you", imports: "" });
+  const [form, setForm] = useState({ name: "", description: "", imports: "" });
+  const [maker, setMaker] = useState<MakerSettings>({ noun: "", shape: "Details (long), Neighborhood, How to reach you", photoLimit: 0, lastsDays: null });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof typeof form) => (e: { target: { value: string } }) => setForm((f) => ({ ...f, [k]: e.target.value }));
@@ -137,7 +141,7 @@ function NewSearch({ onDone }: { onDone: () => void }) {
         setSaving(true);
         setError(null);
         try {
-          await createSearch(form);
+          await createSearch({ ...form, ...maker });
           onDone();
         } catch (err) {
           setError((err as Error).message);
@@ -155,14 +159,7 @@ function NewSearch({ onDone }: { onDone: () => void }) {
         Labels it searches, with commas
         <input value={form.imports} onChange={set("imports")} placeholder="marketplace, ballard" className={input} />
       </label>
-      <label className="flex flex-col gap-1">
-        Its &quot;+ New&quot; button makes a (one word)
-        <input value={form.noun} onChange={set("noun")} placeholder="listing" maxLength={30} className={input} />
-      </label>
-      <label className="flex flex-col gap-1">
-        Each one asks for, with commas. Add (long), (number), or (date) after a field.
-        <input value={form.shape} onChange={set("shape")} className={input} />
-      </label>
+      <MakerFields value={maker} onChange={setMaker} />
       <label className="flex flex-col gap-1">
         What it&apos;s for (optional)
         <input value={form.description} onChange={set("description")} maxLength={300} className={input} />

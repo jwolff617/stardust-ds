@@ -24,7 +24,7 @@ export function LabeledDictionaries({
   labels: string[];
   exceptId?: string;
   // Set when this dictionary makes listings.
-  maker?: { searchId: string; noun: string; fields: CustomField[] };
+  maker?: { searchId: string; noun: string; fields: CustomField[]; photoLimit: number; lastsDays: number | null };
   reloadKey?: number;
   onChange?: () => void;
 }) {
@@ -107,6 +107,8 @@ export function LabeledDictionaries({
           searchId={maker.searchId}
           noun={maker.noun}
           fields={maker.fields}
+          photoLimit={maker.photoLimit}
+          lastsDays={maker.lastsDays}
           onCancel={() => setComposing(false)}
           onSaved={(id) => {
             setComposing(false);
@@ -149,17 +151,27 @@ export function LabeledDictionaries({
                   type="button"
                   onClick={() => setOpenId(open ? null : d.id)}
                   aria-expanded={open}
-                  className="flex w-full flex-col gap-1 px-3 py-2.5 text-left hover:bg-neutral-50"
+                  className="flex w-full items-start gap-3 px-3 py-2.5 text-left hover:bg-neutral-50"
                 >
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-neutral-900">{d.name}</span>
-                    {d.official && <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Official</span>}
-                    {d.type !== "Listing" && <span className="text-[11px] text-neutral-400">{d.type}</span>}
-                    {d.mine && <span className={tag}>yours</span>}
-                  </span>
-                  {d.summary && !open && <span className="line-clamp-2 text-xs text-neutral-600">{d.summary}</span>}
-                  <span className="text-[11px] text-neutral-400">
-                    {[d.byName, d.createdAt && timeAgo(d.createdAt), d.labels.slice(0, 4).join(" · ")].filter(Boolean).join("  ·  ")}
+                  {d.photo && !open && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={d.photo} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-md bg-neutral-100 object-cover" />
+                  )}
+                  <span className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-neutral-900">{d.name}</span>
+                      {d.official && <span className="rounded-full bg-neutral-900 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Official</span>}
+                      {d.type !== "Listing" && <span className="text-[11px] text-neutral-400">{d.type}</span>}
+                      {d.mine && <span className={tag}>yours</span>}
+                      {d.done && <span className="rounded-full bg-neutral-200 px-2 py-0.5 text-[10px] font-medium text-neutral-700">Done</span>}
+                      {!d.done && d.ended && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">Ended, renew it</span>}
+                      {d.hidden && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-medium text-red-700">Hidden after reports</span>}
+                      {d.unread > 0 && <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-medium text-white">✉ {d.unread} new</span>}
+                    </span>
+                    {d.summary && !open && <span className="line-clamp-2 text-xs text-neutral-600">{d.summary}</span>}
+                    <span className="text-[11px] text-neutral-400">
+                      {[d.byName, d.createdAt && timeAgo(d.createdAt), d.sparks > 0 && `✦ ${d.sparks}`, d.labels.slice(0, 4).join(" · ")].filter(Boolean).join("  ·  ")}
+                    </span>
                   </span>
                 </button>
                 {open && (

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { createGroup, createPage, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
 import { CreateDictionary } from "./CreateDictionary";
+import { ReportsQueue } from "./ReportsQueue";
 
 type Instance = { id: string; name: string; displayKind: string };
 
@@ -291,6 +292,8 @@ export function Module1DictionarySelect({
         <>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {moderating && <ReportsQueue />}
 
       {creating && (
         <CreateDictionary

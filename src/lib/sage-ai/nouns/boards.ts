@@ -148,4 +148,8 @@ export function boardNoun(board: BoardConfig): NounDef {
   };
 }
 
-export const boardNouns: NounDef[] = BOARDS.filter((b) => b.sageAi !== false).map(boardNoun);
+// Idea Index, Marketplace, and Job Match are searches now; their listings
+// use the Listing noun (listings.ts).
+const SEARCHES = ["idea-index-ds", "marketplace-ds", "job-match-ds"];
+
+export const boardNouns: NounDef[] = BOARDS.filter((b) => b.sageAi !== false && !SEARCHES.includes(b.address)).map(boardNoun);

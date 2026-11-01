@@ -8,9 +8,6 @@ import { AccountsView } from "./AccountsView";
 import { WorthyView } from "./WorthyView";
 import { AfterSchoolView } from "./AfterSchoolView";
 import { WolffieGamesView } from "./WolffieGamesView";
-import { MarketplaceView } from "./MarketplaceView";
-import { JobsView } from "./JobsView";
-import { IdeasView } from "./IdeasView";
 import { ManifestoView } from "./ManifestoView";
 import { IdeaHouseView } from "./IdeaHouseView";
 import { CustomView } from "./CustomView";
@@ -42,7 +39,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "marketplace", "jobs", "ideas", "manifesto", "idea_house", "custom", "page", "listing", "search", ...BASIC_APPS.map((a) => a.kind)];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "manifesto", "idea_house", "custom", "page", "listing", "search", ...BASIC_APPS.map((a) => a.kind)];
 
 const hasDisplayView = (d: SelectedDictionary) => DISPLAY_KINDS.includes(d.displayKind);
 
@@ -86,12 +83,6 @@ function DisplayFor({
       return <LockersAdminView dictionary={dictionary} reloadKey={reloadKey} />;
     case "notepad":
       return <NotepadView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "marketplace":
-      return <MarketplaceView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "jobs":
-      return <JobsView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "ideas":
-      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} />;
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "page":

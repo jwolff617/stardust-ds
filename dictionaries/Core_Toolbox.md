@@ -357,8 +357,8 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
 10. Sage searches and matches by label from chat.
 11. Boards become a creator plus a search, replacing separate builds with one:
     - **Each board** shows the dictionaries carrying its label (its imports) and has one button, "+ New idea" or "+ New listing," that makes a named dictionary in the label's shape, already labeled. Done: imports (0033), search (0034), ranking (0035), and Session 1 (0036): the Listing and Search types, "+ New idea / listing / job", the Makes row, Mine, and "+ Create" with a type picker.
-    - **Session 2:** message the owner, comments, and reports on any dictionary (reports hide a listing). Move Idea Index's old posts into listings and retire its board.
-    - **Session 3:** photos, price, and an end date as shape fields; Marketplace, then Jobs.
+    - **Sessions 2 and 3 (0037):** private messages with the maker, public comments, sparks, reports (three hide it until a moderator clears or removes it, with a Reports queue in Moderate), blocks, photos (each search sets how many), and end dates with Renew and Mark done. Old Idea Index, Marketplace, and Job Match posts moved into listings; those three are searches now, and their board views are gone. Sage AI has one Listing noun for all of them.
+    - **Next:** Manifesto Match, with its 18+ gate. Idea House stays as it is.
     - **Idea Index:** imports idea. Each idea is its own dictionary. Sparks and comments become extras on any dictionary.
     - **Marketplace:** imports marketplace. Each listing is a small dictionary with photos, a price, and an end date.
     - **Job Match:** a job is a dictionary labeled jobs; Looking is your profile's jobs section.
