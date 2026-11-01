@@ -15,6 +15,7 @@ import { ManifestoView } from "./ManifestoView";
 import { IdeaHouseView } from "./IdeaHouseView";
 import { CustomView } from "./CustomView";
 import { PageView } from "./PageView";
+import { DictionaryLabels } from "./DictionaryLabels";
 import { LockersView } from "./LockersView";
 import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
@@ -60,11 +61,13 @@ function DisplayFor({
   reloadKey,
   night,
   onNightChange,
+  onRefresh,
 }: {
   d: SelectedDictionary;
   reloadKey: number;
   night: NightView;
   onNightChange: (view: NightView) => void;
+  onRefresh?: () => void;
 }) {
   const dictionary = { id: d.id, name: d.name };
   switch (d.displayKind) {
@@ -89,7 +92,7 @@ function DisplayFor({
     case "jobs":
       return <JobsView dictionary={dictionary} reloadKey={reloadKey} />;
     case "ideas":
-      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} />;
+      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} onChange={onRefresh} />;
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "page":
@@ -432,11 +435,13 @@ export function Module2Definitions({
             <div className="flex flex-col gap-8">
               {displayable.map((d) => (
                 <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4">
+                  <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} />
                   <DisplayFor
                     d={d}
                     reloadKey={reloadKey}
                     night={prefs.night ?? {}}
                     onNightChange={(view) => onPrefsChange((p) => ({ ...p, night: view }))}
+                    onRefresh={onRefresh}
                   />
                 </div>
               ))}

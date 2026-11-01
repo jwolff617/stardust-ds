@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-instance";
-import { addDictionaryLabel, removeDictionaryLabel } from "@/lib/dictionary-labels";
+import { addDictionaryLabel, findLabeledDictionaries, loadDictionaryLabels, removeDictionaryLabel } from "@/lib/dictionary-labels";
 
 export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
   const supabase = await createClient();
@@ -87,6 +87,18 @@ export async function addLabel(dictionaryId: string, label: string) {
   const result = await addDictionaryLabel(supabase, dictionaryId, label);
   if (!result.ok) throw new Error(result.error);
   return result.label;
+}
+
+export async function getLabels(dictionaryId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return loadDictionaryLabels(supabase, dictionaryId, user?.id ?? null);
+}
+
+export async function labeledDictionaries(labels: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return findLabeledDictionaries(supabase, labels.slice(0, 10), user?.id ?? null);
 }
 
 export async function removeLabel(dictionaryId: string, label: string) {

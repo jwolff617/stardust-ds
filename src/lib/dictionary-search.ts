@@ -50,7 +50,7 @@ const DICTIONARY_COLUMNS =
 // Labels are lowercase words, 1 to 40 characters. Same rule as the
 // dictionary_labels check constraint.
 export function normalizeLabel(raw: string): string | null {
-  const label = raw.trim().toLowerCase().replace(/\s+/g, " ");
+  const label = raw.trim().replace(/^#+/, "").trim().toLowerCase().replace(/\s+/g, " ");
   if (label.length < 1 || label.length > 40) return null;
   return label;
 }
