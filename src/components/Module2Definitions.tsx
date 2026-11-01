@@ -16,6 +16,7 @@ import { IdeaHouseView } from "./IdeaHouseView";
 import { CustomView } from "./CustomView";
 import { PageView } from "./PageView";
 import { DictionaryLabels } from "./DictionaryLabels";
+import { ListingView } from "./ListingView";
 import { LockersView } from "./LockersView";
 import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
@@ -41,7 +42,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "marketplace", "jobs", "ideas", "manifesto", "idea_house", "custom", "page", ...BASIC_APPS.map((a) => a.kind)];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "marketplace", "jobs", "ideas", "manifesto", "idea_house", "custom", "page", "listing", "search", ...BASIC_APPS.map((a) => a.kind)];
 
 const hasDisplayView = (d: SelectedDictionary) => DISPLAY_KINDS.includes(d.displayKind);
 
@@ -97,6 +98,11 @@ function DisplayFor({
       return <PageView dictionary={dictionary} reloadKey={reloadKey} />;
     case "custom":
       return <CustomView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "listing":
+      return <ListingView dictionaryId={d.id} reloadKey={reloadKey} />;
+    case "search":
+      // The header above it is the whole view: its search and "+ New".
+      return null;
     case "idea_house":
       return <IdeaHouseView dictionary={dictionary} reloadKey={reloadKey} />;
     case "wolffie_games":
@@ -448,7 +454,7 @@ export function Module2Definitions({
             <div className="flex flex-col gap-4">
               {displayable.map((d) => (
                 <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4 rounded-lg border border-neutral-200 p-3 sm:p-4">
-                  {!hasDisplayView(d) && <h3 className="mb-1 text-sm font-medium text-neutral-500">{d.name}</h3>}
+                  {(!hasDisplayView(d) || d.displayKind === "search") && <h3 className="mb-2 text-base font-semibold">{d.name}</h3>}
                   <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} onChange={onRefresh} />
                   {hasDisplayView(d) && <DisplayFor
                     d={d}

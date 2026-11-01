@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { addLabel, getLabels, removeLabel, setShows } from "@/app/actions/dictionaries";
 import type { DictionaryLabelInfo } from "@/lib/dictionary-labels";
+import { setShape } from "@/app/actions/listings";
+import { shapeText } from "@/lib/listings";
 import { LabeledDictionaries } from "./LabeledDictionaries";
-import { tag } from "./ui";
+import { input, link, primary, tag } from "./ui";
 
-const EMPTY: DictionaryLabelInfo = { labels: [], shows: [], canEdit: false, canEditShows: false };
+const EMPTY: DictionaryLabelInfo = { labels: [], shows: [], canEdit: false, canEditShows: false, noun: null, fields: [] };
 
 // Above every dictionary in the feed: its labels, the labels it shows, and
 // the dictionaries carrying those. Label a dictionary #idea and it shows up
@@ -66,6 +68,18 @@ export function DictionaryLabels({
     }
   }
 
+  async function saveShape(noun: string, shape: string) {
+    setError(null);
+    try {
+      await setShape(dictionaryId, noun, shape);
+      setInfo(await getLabels(dictionaryId));
+      return true;
+    } catch (err) {
+      setError((err as Error).message);
+      return false;
+    }
+  }
+
   const showLabels = info.canEdit || info.labels.length > 0;
   const showShows = info.canEditShows || info.shows.length > 0;
   if (!showLabels && !showShows) return null;
@@ -92,9 +106,18 @@ export function DictionaryLabels({
           onRemove={(l) => changeShows(info.shows.filter((x) => x !== l))}
         />
       )}
+      {info.noun && info.canEditShows && <MakesRow noun={info.noun} shape={shapeText(info.fields)} onSave={saveShape} />}
       {error && <p className="text-xs text-red-600">{error}</p>}
       {info.shows.length > 0 && (
-        <LabeledDictionaries labels={info.shows} exceptId={dictionaryId} reloadKey={reloadKey} onChange={onChange} />
+        <div className="mt-1">
+          <LabeledDictionaries
+            labels={info.shows}
+            exceptId={dictionaryId}
+            maker={info.noun ? { searchId: dictionaryId, noun: info.noun, fields: info.fields } : undefined}
+            reloadKey={reloadKey}
+            onChange={onChange}
+          />
+        </div>
       )}
     </div>
   );
@@ -149,5 +172,52 @@ function ChipRow({
         />
       )}
     </div>
+  );
+}
+
+// For the owner: what "+ New" makes and what it asks for.
+function MakesRow({ noun, shape, onSave }: { noun: string; shape: string; onSave: (noun: string, shape: string) => Promise<boolean> }) {
+  const [editing, setEditing] = useState(false);
+  const [n, setN] = useState(noun);
+  const [sh, setSh] = useState(shape);
+  if (!editing) {
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+        <span className="w-14 text-neutral-500">Makes</span>
+        <span className="text-neutral-700">
+          {noun}: {shape}
+        </span>
+        <button type="button" onClick={() => (setN(noun), setSh(shape), setEditing(true))} className={link}>
+          Change
+        </button>
+      </div>
+    );
+  }
+  return (
+    <form
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (await onSave(n, sh)) setEditing(false);
+      }}
+      className="flex flex-col gap-2 rounded-md border border-neutral-200 p-2 text-xs text-neutral-600"
+    >
+      <label className="flex flex-col gap-1">
+        It makes a (one word)
+        <input value={n} onChange={(e) => setN(e.target.value)} maxLength={30} className={input} />
+      </label>
+      <label className="flex flex-col gap-1">
+        It asks for, with commas. Add (long), (number), or (date) after a field.
+        <input value={sh} onChange={(e) => setSh(e.target.value)} className={input} />
+      </label>
+      <p className="text-neutral-400">Up to 8 fields. Ones already shared keep their old fields.</p>
+      <div className="flex items-center gap-3">
+        <button type="submit" className={primary}>
+          Save
+        </button>
+        <button type="button" onClick={() => setEditing(false)} className={link}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

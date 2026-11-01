@@ -80,6 +80,20 @@ export async function searchDictionaries(
     .order("locked", { ascending: false })
     .order("name");
 
+  // Listings you added to your Library (never all of them: there can be
+  // thousands).
+  let libraryListingIds: string[] = [];
+  if (userId) {
+    const { data: rows } = await supabase
+      .from("user_dictionaries")
+      .select("dictionary_id, dictionaries!inner(display_kind)")
+      .eq("user_id", userId)
+      .eq("opted_in", true)
+      .eq("dictionaries.display_kind", "listing")
+      .limit(200);
+    libraryListingIds = (rows ?? []).map((r) => r.dictionary_id);
+  }
+
   if (q) {
     const { data: labelRows } = await supabase
       .from("dictionary_labels")
@@ -93,7 +107,9 @@ export async function searchDictionaries(
   } else {
     // Shared dictionaries and templates, plus groups you're in (RLS hides
     // groups you aren't in), plus dictionaries you built with Sage AI.
-    query = query.or("kind.neq.instance,scope.eq.group,display_kind.eq.custom,display_kind.eq.page");
+    const filters = ["kind.neq.instance", "scope.eq.group", "display_kind.eq.custom", "display_kind.eq.page", "display_kind.eq.search"];
+    if (libraryListingIds.length > 0) filters.push(`id.in.(${libraryListingIds.join(",")})`);
+    query = query.or(filters.join(","));
   }
 
   const { data, error } = await query;
@@ -135,6 +151,9 @@ export async function searchDictionaries(
     // A Business Page shows as itself; RLS shows others' only once official
     // (or to moderators while it waits).
     if (d.display_kind === "page") return true;
+    // Searches are public; a listing shows once you add it to your Library.
+    if (d.display_kind === "search") return true;
+    if (d.display_kind === "listing") return libraryListingIds.includes(d.id);
     return (
       Boolean(userId) &&
       d.owner_user_id !== userId &&

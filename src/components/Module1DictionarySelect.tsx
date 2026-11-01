@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { createGroup, createPage, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
+import { CreateDictionary } from "./CreateDictionary";
 
 type Instance = { id: string; name: string; displayKind: string };
 
@@ -72,6 +73,7 @@ export function Module1DictionarySelect({
   const [dictionaries, setDictionaries] = useState<Dictionary[]>([]);
   const [isModerator, setIsModerator] = useState(false);
   const [moderating, setModerating] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
   const [isToggling, startToggle] = useTransition();
@@ -260,13 +262,14 @@ export function Module1DictionarySelect({
         >
           {storeHidden ? `Show library (${store.length})` : "Hide library"}
         </button>
-        {isLoggedIn && onCreateOwn && (
+        {isLoggedIn && (
           <button
             type="button"
-            onClick={onCreateOwn}
+            onClick={() => setCreating(!creating)}
+            aria-expanded={creating}
             className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white"
           >
-            + Create my own
+            + Create
           </button>
         )}
         {isModerator && (
@@ -288,6 +291,18 @@ export function Module1DictionarySelect({
         <>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {creating && (
+        <CreateDictionary
+          onClose={() => setCreating(false)}
+          onAskSage={() => onCreateOwn?.()}
+          onDone={() => {
+            setCreating(false);
+            runSearch().catch(() => {});
+            onChange?.();
+          }}
+        />
+      )}
 
       {/* Yours in three rows: your own copies, groups you're in, and public ones. */}
       {(["personal", "group", "public"] as const).map((b) => {
