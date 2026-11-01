@@ -103,7 +103,8 @@ Each top-level label has a template: Marketplace, Jobs, Renting, Dating, Ideas. 
 
 Anyone can make a search for those labels too (Ballard Free Stuff imports free and ballard; a church swap imports marketplace and its own church's label). So there can be many marketplaces, they all read the same way, and Sage searches all of them at once.
 
-- **Fair ranking:** Sage ranks by fit, then distance, then freshness. Never by payment. Nobody can buy a higher place.
+- **Fair ranking:** fit first (name matches), then Official, then how many people added it to their Library, then newest. Distance comes later. Never by payment. Nobody can buy a higher place.
+- **Names compete:** two dictionaries can share a name; the better one rises. An Official name can't be copied (0035).
 - **Sage names the source:** "Couch, $40, in Ballard Free Stuff."
 - **Blocks and reports follow you** across every dictionary.
 
