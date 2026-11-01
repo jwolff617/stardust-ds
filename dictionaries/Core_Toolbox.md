@@ -73,6 +73,17 @@ A label describes a dictionary, a profile section, or a post: #book, #jobs, #dat
 
 Private dictionaries (Night DS, Worthy) are never in search.
 
+### A label can have a home dictionary
+
+An official label can be owned by a dictionary that defines its shape. **Idea Index** owns #idea-index and says what an idea looks like: a title, the problem, the first step, who you're looking for, and how to reach you. That shape is part of the label's definition, so everyone writes ideas the same way and they compare cleanly.
+
+You choose how much of yourself to show:
+
+- **Tag your profile.** Add an Idea section in Idea Index's shape. Searches show that section only and skip the rest of your profile. Anyone who wants more can tap through to your full public profile.
+- **Make a small dictionary instead.** Someone who doesn't want to share a profile makes "Maria's Ideas," fills in the same shape plus a way to reach them, and labels it #idea-index. Nothing else about them shows.
+
+Either way, Idea Index shows the same clean cards. The same pattern works for any official label: #jobs owns a work shape, #dating a dating shape, #marketplace a listing shape.
+
 ### Functional labels
 
 Most labels only describe. A few are defined in Core with a rule, so the label itself does something:
