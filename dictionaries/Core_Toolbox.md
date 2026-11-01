@@ -6,12 +6,23 @@ Stardust DS is a picture of everything Sage knows. You can see it, so you don't 
 
 The dictionaries teach the language. People learn it one dictionary at a time, and one day they just talk to Sage. Nobody has to come to a tool to use it.
 
-So there is only one kind of thing: **a dictionary, with labels.** Everything else is a way to make one or a way to find one.
+Everything is **a dictionary, with labels.** Dictionaries come in types, and each type has its template:
 
-- **A creator** makes a dictionary for you: you name it, it starts in the right shape, and it's labeled correctly so it can be found. Marketplace makes a listing. Idea Index makes an idea.
-- **A search** shows every dictionary carrying a label. Idea Index is the search bar with "idea" already typed in. Any dictionary can do this by importing labels, and its owner picks which.
+| Type | What it is | Examples |
+|---|---|---|
+| **Word list** | Words and their definitions | Core, the Stardust Dictionary |
+| **Page** | A business, project, or nonprofit's page | WACK, Playbound City, a bakery |
+| **Listing** | One thing offered or wanted, in a shape | An idea, a couch, a job, a room |
+| **Search** | A creator plus a search for labels | Idea Index, Marketplace, a market village |
+| **App** | A tool that does something | Night DS, Worthy, After School, Notepad, Address Book, Lockers |
+| **Profile** | You, in sections, public or private | Public Profile, Private Profile |
 
-Idea Index and Marketplace are both: a creator and a search for one label. So are Jobs, Renting, Homeless Resources, and any topic anyone thinks of. Anyone can make their own (an idea center, a market village, a shelter list) by making a dictionary and choosing what it imports. No topic needs its own code.
+When you make a dictionary, you pick its type, and the type gives you the template. Every type gets the same labels, imports, ranking, and Official. Simple, but not so simple it stops being useful.
+
+- **A search** makes listings and finds them. Its creator button makes a listing you name yourself, in the right shape, already labeled. It shows every dictionary carrying its labels: Idea Index is the search bar with "idea" already typed in. Its owner picks the labels and the shape.
+- **Apps stay apps.** They keep their own views. They get labels and imports like everything else, but nothing about them is flattened into a listing.
+
+Idea Index and Marketplace are both searches. So are Jobs, Renting, Homeless Resources, and any topic anyone thinks of. Anyone can make their own (an idea center, a market village, a shelter list) by making a dictionary and choosing what it imports. No topic needs its own code.
 
 Every dictionary in Stardust DS is written in words, and the words come from Core. Core has three lists: **nouns** (things), **verbs** (what you do), and **labels** (what something is about). Labels are Stardust's adjectives, and they drive most of what Stardust does. I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
 
@@ -350,7 +361,7 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
     - **Marketplace:** imports marketplace. Each listing is a small dictionary with photos, a price, and an end date.
     - **Job Match:** a job is a dictionary labeled jobs; Looking is your profile's jobs section.
     - **Manifesto Match:** the manifesto words become labels. Friends and Business Partners become profile sections, matched by shared words. Dating stays behind the 18+ gate.
-    - **Existing posts** move into dictionaries once, then the posts tables retire.
+    - **Existing posts** move into listings once, then the posts tables retire. Apps are untouched.
 
     Private tools (Night DS, Worthy), group tools (Lockers, After School), Wolffie Games, and Idea House's private applications stay as they are.
 
