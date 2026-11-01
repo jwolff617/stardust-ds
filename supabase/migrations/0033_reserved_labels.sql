@@ -39,6 +39,13 @@ $$;
 revoke execute on function set_shows(uuid, text[]) from public, anon;
 grant execute on function set_shows(uuid, text[]) to authenticated;
 
+-- Sage (Peacemaker) made the boards, so Sage owns them: their labels and
+-- imports are Sage's to change.
+update dictionaries
+set owner_user_id = (select id from auth.users where email = 'jwolff617@gmail.com')
+where address in ('marketplace-ds', 'job-match-ds', 'idea-index-ds', 'manifesto-match-ds', 'idea-house-ds')
+  and owner_user_id is null;
+
 -- The boards show their own labels.
 update dictionaries set shows = '{idea}' where address = 'idea-index-ds';
 update dictionaries set shows = '{marketplace}' where address = 'marketplace-ds';
