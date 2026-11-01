@@ -84,6 +84,28 @@ You choose how much of yourself to show:
 
 Either way, Idea Index shows the same clean cards. The same pattern works for any official label: #jobs owns a work shape, #dating a dating shape, #marketplace a listing shape.
 
+### Templates for shared labels
+
+Each top-level label has a template: Marketplace, Jobs, Renting, Dating, Ideas. Anyone can make their own dictionary from a template (Ballard Free Stuff, a church swap, a shop's job board), and it keeps the template's shape. So there can be many marketplaces, and they all read the same way, and Sage searches all of them at once.
+
+- **Fair ranking:** Sage ranks by fit, then distance, then freshness. Never by payment. Nobody can buy a higher place.
+- **Sage names the source:** "Couch, $40, in Ballard Free Stuff."
+- **Blocks and reports follow you** across every dictionary.
+
+### When two dictionaries define the same word
+
+A dictionary may give a Core word a narrower meaning for itself. Idea Index's Comment ("an open note on an idea, with one level of replies") is a kind of Core's Comment ("answer a post in the open"). It narrows it; it never contradicts it.
+
+Sage picks the meaning by where you are, never by popularity:
+
+1. **The dictionary you're in, or the one you name,** uses its own meaning.
+2. **Otherwise Core's meaning,** since Core is the shared language.
+3. **If it's still unclear,** Sage asks one short question.
+
+### Moderators
+
+Top-level shared labels (dating, renting, jobs, marketplace) get trained, paid moderators who review reports and look after those spaces. Until there's money for that, stewards from partner organizations do it. Shared dictionaries are taken seriously.
+
 ### Functional labels
 
 Most labels only describe. A few are defined in Core with a rule, so the label itself does something:
@@ -105,6 +127,10 @@ Most labels only describe. A few are defined in Core with a rule, so the label i
 4. **Lowercase, one spelling.** A moderator merges duplicates (#job, #jobs, #hiring become #jobs).
 5. **Up to 10 labels** on any one thing.
 6. **Misleading labels can be reported.** A steward removes the label; repeat misuse removes the dictionary.
+
+### Search
+
+The dictionary search starts with labels: type a word and matching labels show first, with their counts, then the dictionaries that carry them, then a text match. Sage uses the same search.
 
 ### Sage does the matching
 
