@@ -95,10 +95,10 @@ export async function getLabels(dictionaryId: string) {
   return loadDictionaryLabels(supabase, dictionaryId, user?.id ?? null);
 }
 
-export async function labeledDictionaries(labels: string[], exceptId?: string) {
+export async function labeledDictionaries(labels: string[], opts: { query?: string; exceptId?: string; page?: number }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return findLabeledDictionaries(supabase, labels.slice(0, 10), user?.id ?? null, exceptId);
+  return findLabeledDictionaries(supabase, labels.slice(0, 10), user?.id ?? null, opts);
 }
 
 export async function setShows(dictionaryId: string, labels: string[]) {

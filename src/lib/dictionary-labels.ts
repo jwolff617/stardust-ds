@@ -82,33 +82,42 @@ export async function saveShows(supabase: SupabaseClient, dictionaryId: string, 
   return { ok: true };
 }
 
-// Every dictionary the caller can see that carries one of these labels.
-// RLS decides what's visible: official pages, public profiles, shared
-// dictionaries, and the caller's own.
+export const IMPORTS_PER_PAGE = 12;
+
+// One page of a dictionary's imports: the dictionaries carrying any of the
+// labels that match the words, best match first. RLS decides what's visible.
 export async function findLabeledDictionaries(
   supabase: SupabaseClient,
   labels: string[],
   userId: string | null,
-  exceptId?: string,
-): Promise<LabeledDictionary[]> {
-  const { data: hits } = await supabase.from("dictionary_labels").select("dictionary_id").in("label", labels);
-  const ids = [...new Set((hits ?? []).map((h) => h.dictionary_id))].filter((id) => id !== exceptId);
-  if (ids.length === 0) return [];
+  opts: { query?: string; exceptId?: string; page?: number } = {},
+): Promise<{ items: LabeledDictionary[]; total: number }> {
+  const page = Math.max(1, opts.page ?? 1);
+  const { data, error } = await supabase.rpc("search_imports", {
+    p_labels: labels,
+    p_query: (opts.query ?? "").slice(0, 200),
+    p_except: opts.exceptId ?? null,
+    p_limit: IMPORTS_PER_PAGE,
+    p_offset: (page - 1) * IMPORTS_PER_PAGE,
+  });
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as { id: string; name: string; description: string | null; labels: string[]; owner_user_id: string | null; total: number }[];
+  if (rows.length === 0) return { items: [], total: 0 };
 
-  const [{ data: rows }, { data: allLabels }, { data: mine }] = await Promise.all([
-    supabase.from("dictionaries").select("id, name, description, owner_user_id").in("id", ids).order("name"),
-    supabase.from("dictionary_labels").select("dictionary_id, label").in("dictionary_id", ids).order("label"),
-    userId
-      ? supabase.from("user_dictionaries").select("dictionary_id").eq("opted_in", true).in("dictionary_id", ids)
-      : Promise.resolve({ data: [] as { dictionary_id: string }[] }),
-  ]);
+  const ids = rows.map((r) => r.id);
+  const { data: mine } = userId
+    ? await supabase.from("user_dictionaries").select("dictionary_id").eq("opted_in", true).in("dictionary_id", ids)
+    : { data: [] as { dictionary_id: string }[] };
   const optedIn = new Set((mine ?? []).map((m) => m.dictionary_id));
-  return (rows ?? []).map((d) => ({
-    id: d.id,
-    name: d.name,
-    description: d.description,
-    labels: (allLabels ?? []).filter((l) => l.dictionary_id === d.id).map((l) => l.label),
-    mine: Boolean(userId && d.owner_user_id === userId),
-    optedIn: optedIn.has(d.id),
-  }));
+  return {
+    total: Number(rows[0].total),
+    items: rows.map((d) => ({
+      id: d.id,
+      name: d.name,
+      description: d.description,
+      labels: d.labels ?? [],
+      mine: Boolean(userId && d.owner_user_id === userId),
+      optedIn: optedIn.has(d.id),
+    })),
+  };
 }
