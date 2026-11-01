@@ -1,6 +1,6 @@
 # Core Toolbox
 
-Every dictionary in Stardust DS is written in words, and the words come from Core. Core has two lists: **nouns** (things) and **verbs** (what you do). I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
+Every dictionary in Stardust DS is written in words, and the words come from Core. Core has three lists: **nouns** (things), **verbs** (what you do), and **labels** (what something is about). Labels are Stardust's adjectives, and they drive most of what Stardust does. I build each one once, test it, and make it look like Stardust. Anyone writes a dictionary using Core words: in Claude, in a notes app, or by talking to Sage.
 
 Sage follows one rule: every word in a dictionary must be a Core noun or verb. When someone asks for something Core doesn't have, Sage says so plainly, offers the closest thing, and adds the missing word to the Wanted list.
 
@@ -56,6 +56,54 @@ Every noun can be **Added, Edited, Found, Filtered, Archived, Restored, Deleted,
 | **Match** | Find others who share labels or words | Job Match, Manifesto Match |
 | **Save**, **Renew**, **Report**, **Block** | Keep it, keep it up, flag it, stop someone | Boards |
 | **Generate** | Sage fills it in for you | Wolffie Games |
+
+## Labels
+
+A label describes a dictionary, a profile section, or a post: #book, #jobs, #dating, #official. Any noun or verb can be a label. Labels are how people find each other, so they do most of Stardust's work.
+
+**You don't join apps. You describe yourself.** Nobody signs up for Job Match, Manifesto Match, or Idea Index. You fill in your profile once, keep adding to it, and label each part. When someone searches a label, the parts of you that carry it show up. Idea Index isn't a place you post into; it's every dictionary, profile section, and post labeled #idea-index.
+
+### Three kinds of things carry labels
+
+| What | Lasts | Example |
+|---|---|---|
+| **Your profile**, in sections | As long as you keep it | Work, Ideas, Dating, Community. Each section has its own labels and its own "who sees this." Search shows the matching section, never the whole profile. |
+| **Your posts** | Until they expire | A couch for sale, a job opening, a room. Labeled the same way. |
+| **Dictionaries and pages** | As long as they're up | WACK, a bakery's page, a group's lockers |
+
+Private dictionaries (Night DS, Worthy) are never in search.
+
+### Functional labels
+
+Most labels only describe. A few are defined in Core with a rule, so the label itself does something:
+
+| Label | What it does |
+|---|---|
+| **#dating** | Behind the 18+ gate; shows in dating search only to others with a #dating section |
+| **#jobs** | Shows in Job Match |
+| **#idea-index** | Shows in Idea Index |
+| **#marketplace** | Shows in Marketplace |
+| **#official** | Earned: a moderator approves it |
+| **#government**, **#nonprofit**, **#verified** | Earned: a moderator gives them |
+
+### Rules
+
+1. **Sorted by use.** The Labels page lists every label with a count, most used first. Whatever people actually use rises.
+2. **Count owners, not uses.** A label counts once per owner, so one person with 25 pages can't flood it.
+3. **Only public things count.** A label on something private never shows or counts.
+4. **Lowercase, one spelling.** A moderator merges duplicates (#job, #jobs, #hiring become #jobs).
+5. **Up to 10 labels** on any one thing.
+6. **Misleading labels can be reported.** A steward removes the label; repeat misuse removes the dictionary.
+
+### Sage does the matching
+
+You ask in plain English, and Sage picks the labels and searches:
+
+- "Find someone with a similar idea to mine, maybe as a business partner" → Sage reads your #idea-index section, searches #idea-index and #business sections that share your labels, and shows the matches with what you have in common.
+- "Who's hiring kitchen help near Ballard?" → #jobs and #kitchen, in Ballard.
+- "Show me nonprofits that help with housing" → #nonprofit and #housing.
+
+Sage only shows what people chose to make public, and you decide whether to say hello. Sage never messages anyone for you.
 
 ## Who sees it
 
@@ -241,5 +289,8 @@ Still built by hand, because no small word covers them: Idea House judging, Mani
 6. Alerts, then Remind.
 7. Public dictionaries with steward review.
 8. Move my dictionaries onto Core words, one at a time, Night DS first, only where nothing is lost.
+9. Labels: the Labels page (every label, by count), profile sections with their own labels and visibility, functional labels, and label reports.
+10. Sage searches and matches by label from chat.
+11. Idea Index, Job Match, and Marketplace become label views plus a quick-post button.
 
 The + Create my own builder from 0028 is the starting point for step 2: it already stores a dictionary's fields and entries in the Stardust style.
