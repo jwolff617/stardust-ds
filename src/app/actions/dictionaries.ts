@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-instance";
-import { addDictionaryLabel, findLabeledDictionaries, loadDictionaryLabels, removeDictionaryLabel } from "@/lib/dictionary-labels";
+import { addDictionaryLabel, findLabeledDictionaries, loadDictionaryLabels, removeDictionaryLabel, saveShows } from "@/lib/dictionary-labels";
 
 export async function toggleDictionary(dictionaryId: string, optIn: boolean) {
   const supabase = await createClient();
@@ -95,10 +95,18 @@ export async function getLabels(dictionaryId: string) {
   return loadDictionaryLabels(supabase, dictionaryId, user?.id ?? null);
 }
 
-export async function labeledDictionaries(labels: string[]) {
+export async function labeledDictionaries(labels: string[], exceptId?: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  return findLabeledDictionaries(supabase, labels.slice(0, 10), user?.id ?? null);
+  return findLabeledDictionaries(supabase, labels.slice(0, 10), user?.id ?? null, exceptId);
+}
+
+export async function setShows(dictionaryId: string, labels: string[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Log in first.");
+  const result = await saveShows(supabase, dictionaryId, labels);
+  if (!result.ok) throw new Error(result.error);
 }
 
 export async function removeLabel(dictionaryId: string, label: string) {

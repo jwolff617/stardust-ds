@@ -225,7 +225,7 @@ export function Module3SageAI({
   }
 
   return (
-    <section className="fixed inset-x-2 bottom-2 z-40 flex max-h-[60vh] flex-col rounded-lg border border-neutral-200 bg-white shadow-xl sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[26rem]">
+    <section className="fixed inset-x-0 bottom-0 z-40 flex h-[33vh] min-h-64 flex-col border-t border-neutral-200 bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
       <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-2">
         <h2 className="text-sm font-medium">Sage AI</h2>
         {isLoggedIn && (

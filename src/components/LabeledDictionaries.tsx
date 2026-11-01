@@ -5,16 +5,16 @@ import { labeledDictionaries, toggleDictionary } from "@/app/actions/dictionarie
 import type { LabeledDictionary } from "@/lib/dictionary-labels";
 import { tag } from "./ui";
 
-// The dictionaries labeled for a board, shown above its posts. Add one to
-// open it in your feed.
+// Every dictionary carrying one of these labels. Open one to add it to
+// your feed.
 export function LabeledDictionaries({
   labels,
-  title,
+  exceptId,
   reloadKey = 0,
   onChange,
 }: {
   labels: string[];
-  title: string;
+  exceptId?: string;
   reloadKey?: number;
   onChange?: () => void;
 }) {
@@ -24,13 +24,13 @@ export function LabeledDictionaries({
 
   useEffect(() => {
     let live = true;
-    labeledDictionaries(labelsKey.split(","))
+    labeledDictionaries(labelsKey.split(","), exceptId)
       .then((r) => live && setItems(r))
       .catch(() => {});
     return () => {
       live = false;
     };
-  }, [labelsKey, reloadKey]);
+  }, [labelsKey, exceptId, reloadKey]);
 
   async function open(d: LabeledDictionary) {
     setError(null);
@@ -47,7 +47,7 @@ export function LabeledDictionaries({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">{title}</p>
+
       <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {items.map((d) => (
           <li key={d.id} className="flex flex-col gap-1 rounded-md border border-neutral-200 px-3 py-2">

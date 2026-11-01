@@ -4,11 +4,6 @@ import { normalizeLabel } from "@/lib/dictionary-search";
 // Earned labels: only a moderator can give one (0033 enforces it).
 export const RESERVED_LABELS = ["official", "verified", "government", "nonprofit"];
 
-// The labels that put a dictionary into a board, every spelling people use.
-export const BOARD_LABELS: Record<string, string[]> = {
-  "idea-index-ds": ["idea index", "idea-index", "ideaindex", "ideas"],
-};
-
 export type LabeledDictionary = { id: string; name: string; description: string | null; labels: string[]; mine: boolean; optedIn: boolean };
 
 export type LabelResult = { ok: true; label: string } | { ok: false; error: string };
@@ -52,20 +47,39 @@ export async function removeDictionaryLabel(
   return { ok: true, label };
 }
 
-// One dictionary's labels, and whether the caller can change them.
+export type DictionaryLabelInfo = { labels: string[]; shows: string[]; canEdit: boolean; canEditShows: boolean };
+
+// One dictionary's labels, the labels it shows (its own, else its
+// template's), and what the caller can change.
 export async function loadDictionaryLabels(
   supabase: SupabaseClient,
   dictionaryId: string,
   userId: string | null,
-): Promise<{ labels: string[]; canEdit: boolean }> {
-  const [{ data: d }, { data: rows }] = await Promise.all([
-    supabase.from("dictionaries").select("owner_user_id").eq("id", dictionaryId).maybeSingle(),
+): Promise<DictionaryLabelInfo> {
+  const [{ data: d }, { data: rows }, { data: isModerator }] = await Promise.all([
+    supabase.from("dictionaries").select("owner_user_id, template_id, shows").eq("id", dictionaryId).maybeSingle(),
     supabase.from("dictionary_labels").select("label").eq("dictionary_id", dictionaryId).order("label"),
+    userId ? supabase.rpc("is_moderator") : Promise.resolve({ data: false }),
   ]);
+  let shows: string[] = d?.shows ?? [];
+  if (shows.length === 0 && d?.template_id) {
+    const { data: t } = await supabase.from("dictionaries").select("shows").eq("id", d.template_id).maybeSingle();
+    shows = t?.shows ?? [];
+  }
+  const owns = Boolean(userId && d?.owner_user_id === userId);
   return {
     labels: (rows ?? []).map((r) => r.label),
-    canEdit: Boolean(userId && d?.owner_user_id === userId),
+    shows,
+    canEdit: owns,
+    canEditShows: owns || Boolean(isModerator),
   };
+}
+
+export async function saveShows(supabase: SupabaseClient, dictionaryId: string, labels: string[]): Promise<LabelResult | { ok: true }> {
+  const clean = [...new Set(labels.map(normalizeLabel).filter((l): l is string => Boolean(l)))].slice(0, 10);
+  const { error } = await supabase.rpc("set_shows", { p_id: dictionaryId, p_labels: clean });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 // Every dictionary the caller can see that carries one of these labels.
@@ -75,9 +89,10 @@ export async function findLabeledDictionaries(
   supabase: SupabaseClient,
   labels: string[],
   userId: string | null,
+  exceptId?: string,
 ): Promise<LabeledDictionary[]> {
   const { data: hits } = await supabase.from("dictionary_labels").select("dictionary_id").in("label", labels);
-  const ids = [...new Set((hits ?? []).map((h) => h.dictionary_id))];
+  const ids = [...new Set((hits ?? []).map((h) => h.dictionary_id))].filter((id) => id !== exceptId);
   if (ids.length === 0) return [];
 
   const [{ data: rows }, { data: allLabels }, { data: mine }] = await Promise.all([

@@ -61,13 +61,11 @@ function DisplayFor({
   reloadKey,
   night,
   onNightChange,
-  onRefresh,
 }: {
   d: SelectedDictionary;
   reloadKey: number;
   night: NightView;
   onNightChange: (view: NightView) => void;
-  onRefresh?: () => void;
 }) {
   const dictionary = { id: d.id, name: d.name };
   switch (d.displayKind) {
@@ -92,7 +90,7 @@ function DisplayFor({
     case "jobs":
       return <JobsView dictionary={dictionary} reloadKey={reloadKey} />;
     case "ideas":
-      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} onChange={onRefresh} />;
+      return <IdeasView dictionary={dictionary} reloadKey={reloadKey} />;
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "page":
@@ -138,12 +136,14 @@ export function Module2Definitions({
     .map((d) => d.id)
     .filter((id) => !deselectedIds.includes(id));
 
-  const displayable = dictionaries.filter((d) => hasDisplayView(d) && !deselectedIds.includes(d.id));
+  // Every active dictionary gets a block in Display View: its labels header,
+  // then its own view if it has one.
+  const displayable = dictionaries.filter((d) => !deselectedIds.includes(d.id));
   const hasDisplay = displayable.length > 0;
 
   // The view you last picked wins. Until you pick one, Display View is the
   // landing view when a dictionary other than the always-on profiles has one.
-  const prefersDisplay = displayable.some((d) => d.displayKind !== "profile");
+  const prefersDisplay = displayable.some((d) => hasDisplayView(d) && d.displayKind !== "profile");
   const listCollapsed = prefs.listCollapsed ?? false;
   const [dragging, setDragging] = useState<string | null>(null);
   const viewMode = prefs.viewMode ?? (prefersDisplay ? "display" : "term");
@@ -226,7 +226,6 @@ export function Module2Definitions({
   // Clicking a name turns it on if it's off and jumps to its Display View.
   function jumpTo(d: SelectedDictionary) {
     if (deselectedIds.includes(d.id)) setDeselectedIds((prev) => prev.filter((x) => x !== d.id));
-    if (!hasDisplayView(d)) return;
     if (viewMode !== "display") setViewMode("display");
     pendingJump.current = d.id;
     // Already showing: nothing re-renders, so scroll now.
@@ -300,7 +299,7 @@ export function Module2Definitions({
                 type="button"
                 onClick={() => jumpTo(d)}
                 title={`${d.name}${d.belongs === "group" ? " (group)" : d.belongs === "public" ? " (public)" : ""}`}
-                className={`min-w-0 flex-1 truncate text-left ${hasDisplayView(d) ? "hover:underline" : "cursor-default"}`}
+                className="min-w-0 flex-1 truncate text-left hover:underline"
               >
                 {d.name}
                 {d.belongs !== "personal" && (
@@ -379,6 +378,20 @@ export function Module2Definitions({
                 ))}
               </div>
 
+              {displayable.length > 0 && (
+                <details className="rounded-md border border-neutral-200 px-3 py-2">
+                  <summary className="cursor-pointer text-xs text-neutral-500">Labels</summary>
+                  <div className="mt-2 flex flex-col gap-3">
+                    {displayable.map((d) => (
+                      <div key={d.id}>
+                        <p className="mb-1 text-xs font-medium">{d.name}</p>
+                        <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} onChange={onRefresh} />
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+
               {noFilters ? (
                 <p className="text-sm text-neutral-400">
                   Select at least one dictionary and one tab.
@@ -435,14 +448,14 @@ export function Module2Definitions({
             <div className="flex flex-col gap-8">
               {displayable.map((d) => (
                 <div key={d.id} id={`feed-${d.id}`} className="scroll-mt-4">
-                  <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} />
-                  <DisplayFor
+                  {!hasDisplayView(d) && <h3 className="mb-1 text-sm font-medium text-neutral-500">{d.name}</h3>}
+                  <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} onChange={onRefresh} />
+                  {hasDisplayView(d) && <DisplayFor
                     d={d}
                     reloadKey={reloadKey}
                     night={prefs.night ?? {}}
                     onNightChange={(view) => onPrefsChange((p) => ({ ...p, night: view }))}
-                    onRefresh={onRefresh}
-                  />
+                  />}
                 </div>
               ))}
             </div>

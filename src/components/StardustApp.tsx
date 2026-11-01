@@ -21,8 +21,9 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [sageDraft, setSageDraft] = useState<{ text: string; n: number } | null>(null);
 
   return (
-    // Bottom padding keeps the end of the feed clear of the Sage AI button.
-    <div className="flex flex-1 flex-col pb-20">
+    // Bottom padding keeps the end of the feed clear of Sage AI: the button,
+    // or the open panel across the bottom third.
+    <div className={`flex flex-1 flex-col ${prefs.module3?.collapsed ? "pb-20" : "pb-[max(34vh,17rem)]"}`}>
       <Module1DictionarySelect
         isLoggedIn={isLoggedIn}
         onSelectionChange={setSelectedDictionaries}

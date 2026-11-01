@@ -3,35 +3,22 @@
 import { useEffect, useState } from "react";
 import { IDEA_INDEX } from "@/lib/boards";
 import type { Comment, Join, Post } from "@/lib/posts";
-import { BOARD_LABELS } from "@/lib/dictionary-labels";
 import { BoardView } from "./board/BoardView";
-import { LabeledDictionaries } from "./LabeledDictionaries";
 import { ReportPanel, input, link, primary, quiet, timeAgo, type Send } from "./board/parts";
 
 // Idea Index on the shared board layout, plus what only ideas have: a spark
 // beside each idea (no downvotes), and under an open idea, who's in and the
-// open comments. Above the posts, every dictionary labeled "idea index".
-export function IdeasView({
-  dictionary,
-  reloadKey = 0,
-  onChange,
-}: {
-  dictionary: { id: string; name: string };
-  reloadKey?: number;
-  onChange?: () => void;
-}) {
+// open comments.
+export function IdeasView({ dictionary, reloadKey = 0 }: { dictionary: { id: string; name: string }; reloadKey?: number }) {
   return (
-    <div className="flex flex-col gap-4">
-      <LabeledDictionaries labels={BOARD_LABELS[IDEA_INDEX.address]} title="Dictionaries labeled #idea index" reloadKey={reloadKey} onChange={onChange} />
-      <BoardView
+    <BoardView
       dictionary={dictionary}
       reloadKey={reloadKey}
       config={IDEA_INDEX}
       sorts
       side={(p, send) => <SparkButton post={p} send={send} />}
       extra={(p, send) => <IdeaExtras post={p} send={send} />}
-      />
-    </div>
+    />
   );
 }
 
