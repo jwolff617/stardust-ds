@@ -22,7 +22,7 @@ export async function addDictionaryLabel(
     .from("dictionary_labels")
     .upsert({ dictionary_id: dictionaryId, label }, { onConflict: "dictionary_id,label", ignoreDuplicates: true });
   if (error) {
-    if (RESERVED_LABELS.includes(label)) return { ok: false, error: `#${label} is earned. A moderator gives it.` };
+    if (RESERVED_LABELS.includes(label)) return { ok: false, error: `"${label}" is earned. A moderator gives it.` };
     return { ok: false, error: "You can only label dictionaries you own." };
   }
 

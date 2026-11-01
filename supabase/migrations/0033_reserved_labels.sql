@@ -60,7 +60,7 @@ begin
   if new.label in ('official', 'verified', 'government', 'nonprofit')
      and auth.uid() is not null
      and not is_moderator() then
-    raise exception '#% is earned. A moderator gives it.', new.label;
+    raise exception '"%" is earned. A moderator gives it.', new.label;
   end if;
   return new;
 end;

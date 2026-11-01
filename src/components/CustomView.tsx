@@ -75,7 +75,7 @@ export function CustomView({ dictionary, reloadKey = 0 }: { dictionary: { id: st
               const on = labelFilter.includes(l);
               return (
                 <button key={l} type="button" aria-pressed={on} onClick={() => setLabelFilter(on ? labelFilter.filter((x) => x !== l) : [...labelFilter, l])} className={chip(on)}>
-                  #{l}
+                  {l}
                 </button>
               );
             })}
@@ -114,7 +114,7 @@ export function CustomView({ dictionary, reloadKey = 0 }: { dictionary: { id: st
                     <span>{formatDate(e.createdAt)}</span>
                     {e.labels.map((l) => (
                       <span key={l} className={tag}>
-                        #{l}
+                        {l}
                       </span>
                     ))}
                   </>

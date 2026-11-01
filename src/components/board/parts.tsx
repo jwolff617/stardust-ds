@@ -142,7 +142,7 @@ export function FilterBar({
         <div className="flex flex-wrap gap-1.5">
           {shownLabels.map((l) => (
             <button key={l} type="button" aria-pressed={selectedLabels.includes(l)} onClick={() => onLabels(toggle(selectedLabels, l))} className={chip(selectedLabels.includes(l))}>
-              #{l}
+              {l}
             </button>
           ))}
         </div>
@@ -182,7 +182,7 @@ export function OrgBadge({ org }: { org: Post["organization"] }) {
 
 export function Labels({ labels }: { labels: string[] }) {
   if (labels.length === 0) return null;
-  return <p className="text-xs text-neutral-500">{labels.map((l) => `#${l}`).join(" ")}</p>;
+  return <p className="text-xs text-neutral-500">{labels.join(" · ")}</p>;
 }
 
 const REASONS: { key: string; label: string }[] = [

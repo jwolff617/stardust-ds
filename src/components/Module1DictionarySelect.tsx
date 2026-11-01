@@ -316,7 +316,7 @@ export function Module1DictionarySelect({
                   label === l ? "bg-blue-600 text-white" : "bg-white text-neutral-600 ring-1 ring-neutral-200"
                 }`}
               >
-                #{l}
+                {l}
               </button>
             ))}
             {showLabels && ranked.length > LABELS_SHOWN && (

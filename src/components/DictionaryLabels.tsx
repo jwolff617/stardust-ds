@@ -128,9 +128,9 @@ function ChipRow({
       <span className="w-14 text-xs text-neutral-500">{title}</span>
       {chips.map((l) => (
         <span key={l} className={tag}>
-          #{l}
+          {l}
           {editable && (
-            <button type="button" onClick={() => onRemove(l)} aria-label={`Remove #${l}`} className="ml-1 text-neutral-400 hover:text-red-600">
+            <button type="button" onClick={() => onRemove(l)} aria-label={`Remove ${l}`} className="ml-1 text-neutral-400 hover:text-red-600">
               ✕
             </button>
           )}

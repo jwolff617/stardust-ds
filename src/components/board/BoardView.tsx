@@ -159,7 +159,7 @@ export function PostCard({ post: p, config, board }: { post: Post; config: Board
           .join(" · ")}{" "}
         <OrgBadge org={p.organization} />
       </p>
-      {match && <p className="text-xs font-medium text-blue-700">Matches your post: #{match.shared.join(" #")}</p>}
+      {match && <p className="text-xs font-medium text-blue-700">Matches your post: {match.shared.join(", ")}</p>}
       {p.hidden && <p className="text-xs text-red-700">{p.review === "removed" ? "Removed by a steward." : "Hidden after reports. A steward will look at it."}</p>}
       {p.mine && p.expired && <p className="text-xs text-amber-800">Expired. Renew it to put it back up.</p>}
       {p.threads.some((t) => t.yourTurn) && <p className="text-xs font-medium text-blue-700">Your turn to answer</p>}

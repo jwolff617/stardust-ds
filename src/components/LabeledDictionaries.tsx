@@ -68,7 +68,7 @@ export function LabeledDictionaries({
             <div className="flex flex-wrap gap-1">
               {d.labels.map((l) => (
                 <span key={l} className={tag}>
-                  #{l}
+                  {l}
                 </span>
               ))}
             </div>
