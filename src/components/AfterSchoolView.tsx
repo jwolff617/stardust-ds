@@ -3,13 +3,14 @@
 import { useEffect, useState, useTransition } from "react";
 import {
   ACTIVITY_COUNT,
-  LESSON_WEEKS_SHOWN,
   WEEKDAYS,
+  activitiesAsNotes,
+  addMonths,
   addWeeks,
-  formatMonth,
   formatWeek,
+  formatWeekWithYear,
   mondayOf,
-  weeksInMonth,
+  weeksInYear,
 } from "@/lib/after-school";
 import { GroupMembers } from "./GroupMembers";
 
@@ -33,8 +34,9 @@ function emptyWeek(weekStart: string): Week {
   return { weekStart, theme: "", activities: Array(ACTIVITY_COUNT).fill("") };
 }
 
-// After School DS Display View: Monday-to-Friday lesson notes and a theme
-// calendar, shared by everyone in the group.
+// After School DS Display View: one week of Monday-to-Friday lesson notes
+// at a time, and a theme calendar listing a whole year, shared by everyone
+// in the group.
 export function AfterSchoolView({ dictionary, reloadKey = 0 }: { dictionary: GroupDictionary; reloadKey?: number }) {
   const [tab, setTab] = useState<"lessons" | "calendar">("lessons");
   const [error, setError] = useState<string | null>(null);
@@ -79,15 +81,15 @@ function LessonWeeks({
   reloadKey: number;
   onError: (message: string | null) => void;
 }) {
-  const [firstWeek, setFirstWeek] = useState(() => mondayOf(new Date()));
+  const [week, setWeek] = useState(() => mondayOf(new Date()));
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [themes, setThemes] = useState<Record<string, string>>({});
   const [refreshToken, setRefreshToken] = useState(0);
   const [isLoading, startLoading] = useTransition();
   const [isRegenerating, setIsRegenerating] = useState(false);
 
-  const weeks = Array.from({ length: LESSON_WEEKS_SHOWN }, (_, i) => addWeeks(firstWeek, i));
-  const weeksKey = weeks.join(",");
+  const weeks = [week];
+  const weeksKey = week;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -124,7 +126,7 @@ function LessonWeeks({
   }
 
   async function regenerate() {
-    if (!window.confirm(`Copy the template into all ${LESSON_WEEKS_SHOWN} weeks shown? This replaces what's in them.`)) return;
+    if (!window.confirm(`Copy the template into the week of ${formatWeekWithYear(week)}? This replaces what's in it.`)) return;
     onError(null);
     setIsRegenerating(true);
     try {
@@ -149,8 +151,8 @@ function LessonWeeks({
             type="button"
             onClick={regenerate}
             disabled={isRegenerating || isLoading}
-            title={`Regenerate: copy the template into the ${LESSON_WEEKS_SHOWN} weeks below`}
-            aria-label="Regenerate weeks from the template"
+            title="Regenerate: copy the template into the week below"
+            aria-label="Regenerate this week from the template"
             className="ml-auto rounded-full border border-neutral-300 bg-white px-2 py-0.5 text-sm disabled:opacity-40"
           >
             ↻
@@ -159,33 +161,31 @@ function LessonWeeks({
         <DayRow lessonFor={(weekday) => dayOf(null, weekday)} onSave={save} refreshToken={refreshToken} />
       </div>
 
-      <div className="flex items-center gap-3 text-sm">
-        <button type="button" onClick={() => setFirstWeek((w) => addWeeks(w, -LESSON_WEEKS_SHOWN))}>
-          ← Earlier
-        </button>
-        <button
-          type="button"
-          onClick={() => setFirstWeek(mondayOf(new Date()))}
-          className="text-xs text-neutral-500 underline"
-        >
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+        <JumpButton label="« 12 mo" title="Back 12 months" onClick={() => setWeek((w) => addMonths(w, -12))} />
+        <JumpButton label="‹ 1 mo" title="Back 1 month" onClick={() => setWeek((w) => addMonths(w, -1))} />
+        <JumpButton label="←" title="Previous week" onClick={() => setWeek((w) => addWeeks(w, -1))} />
+        <span className="min-w-36 text-center font-medium">Week of {formatWeekWithYear(week)}</span>
+        <JumpButton label="→" title="Next week" onClick={() => setWeek((w) => addWeeks(w, 1))} />
+        <JumpButton label="1 mo ›" title="Ahead 1 month" onClick={() => setWeek((w) => addMonths(w, 1))} />
+        <JumpButton label="12 mo »" title="Ahead 12 months" onClick={() => setWeek((w) => addMonths(w, 12))} />
+        <button type="button" onClick={() => setWeek(mondayOf(new Date()))} className="text-xs text-neutral-500 underline">
           This week
-        </button>
-        <button type="button" onClick={() => setFirstWeek((w) => addWeeks(w, LESSON_WEEKS_SHOWN))}>
-          Later →
         </button>
         {isLoading && <span className="text-xs text-neutral-400">Loading...</span>}
       </div>
 
-      {weeks.map((week) => (
-        <div key={week} className="flex flex-col gap-2">
-          <p className="text-sm font-medium">
-            Week of {formatWeek(week)}
-            {themes[week] && <span className="ml-2 font-normal text-neutral-500">{themes[week]}</span>}
-          </p>
-          <DayRow lessonFor={(weekday) => dayOf(week, weekday)} onSave={save} refreshToken={refreshToken} />
-        </div>
-      ))}
+      {themes[week] && <p className="text-sm text-neutral-500">Theme: {themes[week]}</p>}
+      <DayRow lessonFor={(weekday) => dayOf(week, weekday)} onSave={save} refreshToken={refreshToken} />
     </div>
+  );
+}
+
+function JumpButton({ label, title, onClick }: { label: string; title: string; onClick: () => void }) {
+  return (
+    <button type="button" title={title} aria-label={title} onClick={onClick} className="text-neutral-700 hover:text-neutral-900">
+      {label}
+    </button>
   );
 }
 
@@ -221,6 +221,8 @@ function DayRow({
   );
 }
 
+// A whole year of weeks on one page: a theme and notes for each. The notes
+// are the week's activities, shown as one line.
 function ThemeCalendar({
   dictionaryId,
   reloadKey,
@@ -230,15 +232,14 @@ function ThemeCalendar({
   reloadKey: number;
   onError: (message: string | null) => void;
 }) {
-  const [month, setMonth] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() };
-  });
+  const [year, setYear] = useState(() => new Date().getFullYear());
   const [saved, setSaved] = useState<Record<string, Week>>({});
+  const [loads, setLoads] = useState(0);
   const [isLoading, startLoading] = useTransition();
 
-  const weeks = weeksInMonth(month.year, month.month);
+  const weeks = weeksInYear(year);
   const weeksKey = weeks.join(",");
+  const thisWeek = mondayOf(new Date());
 
   useEffect(() => {
     const controller = new AbortController();
@@ -249,19 +250,13 @@ function ThemeCalendar({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Couldn't load the calendar.");
         setSaved(Object.fromEntries((data.items ?? []).map((w: Week) => [w.weekStart, w])));
+        setLoads((n) => n + 1);
       } catch (err) {
         if ((err as Error).name !== "AbortError") onError((err as Error).message);
       }
     });
     return () => controller.abort();
   }, [dictionaryId, weeksKey, reloadKey, onError]);
-
-  function shiftMonth(delta: number) {
-    setMonth(({ year, month: m }) => {
-      const d = new Date(year, m + delta, 1);
-      return { year: d.getFullYear(), month: d.getMonth() };
-    });
-  }
 
   async function save(week: Week) {
     onError(null);
@@ -274,54 +269,54 @@ function ThemeCalendar({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center gap-3 text-sm">
-        <button type="button" onClick={() => shiftMonth(-1)} aria-label="Previous month">
+        <button type="button" onClick={() => setYear((y) => y - 1)} aria-label="Previous year">
           ←
         </button>
-        <span className="w-36 text-center font-medium">{formatMonth(month.year, month.month)}</span>
-        <button type="button" onClick={() => shiftMonth(1)} aria-label="Next month">
+        <span className="w-16 text-center font-medium">{year}</span>
+        <button type="button" onClick={() => setYear((y) => y + 1)} aria-label="Next year">
           →
+        </button>
+        <button type="button" onClick={() => setYear(new Date().getFullYear())} className="text-xs text-neutral-500 underline">
+          This year
         </button>
         {isLoading && <span className="text-xs text-neutral-400">Loading...</span>}
       </div>
 
-      {weeks.map((weekStart) => {
-        const week = saved[weekStart] ?? emptyWeek(weekStart);
-        return (
-          <div key={`${weekStart}-${reloadKey}`} className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
-            <div className="flex items-center gap-2">
-              <span className="w-24 shrink-0 text-sm font-medium">Week of {formatWeek(weekStart)}</span>
+      <div className="grid grid-cols-1 gap-x-6 lg:grid-cols-2">
+        {weeks.map((weekStart) => {
+          const week = saved[weekStart] ?? emptyWeek(weekStart);
+          const notes = activitiesAsNotes(week.activities);
+          return (
+            <div
+              key={`${weekStart}-${loads}`}
+              className={`flex items-center gap-2 border-b border-neutral-100 py-1 ${weekStart === thisWeek ? "bg-amber-50" : ""}`}
+            >
+              <span className="w-14 shrink-0 text-xs text-neutral-500">{formatWeek(weekStart)}</span>
               <input
                 type="text"
                 defaultValue={week.theme}
                 maxLength={200}
                 placeholder="Theme"
                 onBlur={(e) => e.target.value !== week.theme && save({ ...week, theme: e.target.value })}
-                className="min-w-0 flex-1 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+                className="w-1/3 min-w-0 rounded border border-transparent px-1.5 py-0.5 text-sm font-medium hover:border-neutral-200 focus:border-neutral-300"
+              />
+              <input
+                type="text"
+                defaultValue={notes}
+                maxLength={500}
+                placeholder="Notes"
+                onBlur={(e) =>
+                  e.target.value !== notes &&
+                  save({ ...week, activities: [e.target.value, ...Array(ACTIVITY_COUNT - 1).fill("")] })
+                }
+                className="min-w-0 flex-1 rounded border border-transparent px-1.5 py-0.5 text-sm hover:border-neutral-200 focus:border-neutral-300"
               />
             </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
-              {week.activities.map((activity, i) => (
-                <input
-                  key={i}
-                  type="text"
-                  defaultValue={activity}
-                  maxLength={500}
-                  placeholder={`Activity ${i + 1}`}
-                  onBlur={(e) => {
-                    if (e.target.value === activity) return;
-                    const activities = [...week.activities];
-                    activities[i] = e.target.value;
-                    save({ ...week, activities });
-                  }}
-                  className="rounded-md border border-neutral-300 px-2 py-1 text-xs"
-                />
-              ))}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

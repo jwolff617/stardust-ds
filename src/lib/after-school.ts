@@ -55,6 +55,27 @@ export function formatWeek(weekStart: string): string {
   return parse(weekStart).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+export function formatWeekWithYear(weekStart: string): string {
+  return parse(weekStart).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+// The Monday of the week that falls the given number of months away.
+export function addMonths(weekStart: string, months: number): string {
+  const d = parse(weekStart);
+  d.setMonth(d.getMonth() + months);
+  return mondayOf(d);
+}
+
+// Every Monday in a year: the weeks the calendar lists.
+export function weeksInYear(year: number): string[] {
+  return Array.from({ length: 12 }, (_, month) => weeksInMonth(year, month)).flat();
+}
+
+// A week's activities as one line of notes.
+export function activitiesAsNotes(activities: string[]): string {
+  return activities.map((a) => a.trim()).filter(Boolean).join("; ");
+}
+
 export function formatMonth(year: number, month: number): string {
   return new Date(year, month, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
