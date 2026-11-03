@@ -65,6 +65,7 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
   const [kind, setKind] = useState<WorthyKind>("deposit");
   const [amount, setAmount] = useState("");
   const [entryNote, setEntryNote] = useState("");
+  const [showLog, setShowLog] = useState(false);
 
   const [storyDate, setStoryDate] = useState(today);
   const [storyOutcome, setStoryOutcome] = useState<BetOutcome>("card");
@@ -210,7 +211,19 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
-        <p className="text-sm font-medium">Log an entry</p>
+        <button
+          type="button"
+          onClick={() => setShowLog((v) => !v)}
+          aria-expanded={showLog}
+          className="flex items-center justify-between text-left text-sm font-medium"
+        >
+          <span>
+            Bet log <span className="font-normal text-neutral-400">({entriesInRange.length})</span>
+          </span>
+          <span className="text-xs text-neutral-500">{showLog ? "Hide" : "Show"}</span>
+        </button>
+        {showLog && (
+        <>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={kind}
@@ -267,6 +280,8 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
               </EntryLine>
             ))}
           </ul>
+        )}
+        </>
         )}
       </div>
 
