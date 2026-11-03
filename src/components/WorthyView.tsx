@@ -19,7 +19,18 @@ import {
   type Principle,
   type WorthyKind,
 } from "@/lib/worthy";
-import { DeleteButton, Entry as EntryLine, UndoBar, formatDate, tag, useUndoDelete } from "./ui";
+import {
+  DeleteButton,
+  Entry as EntryLine,
+  ListFooter,
+  SearchBox,
+  Section,
+  UndoBar,
+  formatDate,
+  tag,
+  useListSearch,
+  useUndoDelete,
+} from "./ui";
 
 type WorthyDictionary = { id: string; name: string };
 type Entry = { id: string; kind: WorthyKind; amount: number; note: string | null; occurredAt: string };
@@ -65,7 +76,6 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
   const [kind, setKind] = useState<WorthyKind>("deposit");
   const [amount, setAmount] = useState("");
   const [entryNote, setEntryNote] = useState("");
-  const [showLog, setShowLog] = useState(false);
 
   const [storyDate, setStoryDate] = useState(today);
   const [storyOutcome, setStoryOutcome] = useState<BetOutcome>("card");
@@ -162,6 +172,12 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
 
   const deletingEntry = useUndoDelete<Entry>((e) => run("/api/worthy/delete", { entryId: e.id }));
   const deletingStory = useUndoDelete<Story>((st) => run("/api/worthy/delete", { storyId: st.id }));
+  const entryList = useListSearch(deletingEntry.hide(entriesInRange), (e) =>
+    [WORTHY_KIND_LABELS[e.kind], e.amount, e.note, formatDate(e.occurredAt, true)].join(" "),
+  );
+  const storyList = useListSearch(deletingStory.hide(stories), (st) =>
+    [st.body, BET_OUTCOME_LABELS[st.outcome], ...st.principles.map((p) => PRINCIPLE_SHORT[p]), formatDate(st.occurredOn)].join(" "),
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -210,20 +226,7 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
-        <button
-          type="button"
-          onClick={() => setShowLog((v) => !v)}
-          aria-expanded={showLog}
-          className="flex items-center justify-between text-left text-sm font-medium"
-        >
-          <span>
-            Bet log <span className="font-normal text-neutral-400">({entriesInRange.length})</span>
-          </span>
-          <span className="text-xs text-neutral-500">{showLog ? "Hide" : "Show"}</span>
-        </button>
-        {showLog && (
-        <>
+      <Section title="Bet log" count={entriesInRange.length} defaultOpen={false}>
         <div className="flex flex-wrap items-center gap-2">
           <select
             value={kind}
@@ -262,9 +265,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
           </button>
         </div>
         {deletingEntry.pending && <UndoBar text={`${WORTHY_KIND_LABELS[deletingEntry.pending.kind]} ${money(deletingEntry.pending.amount)}`} onUndo={deletingEntry.undo} />}
-        {entriesInRange.length > 0 && (
+        {entriesInRange.length > 0 && <SearchBox list={entryList} />}
+        {entryList.shown.length > 0 && (
           <ul className="flex flex-col divide-y divide-neutral-100">
-            {deletingEntry.hide(entriesInRange).map((entry) => (
+            {entryList.shown.map((entry) => (
               <EntryLine
                 key={entry.id}
                 meta={
@@ -281,12 +285,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
             ))}
           </ul>
         )}
-        </>
-        )}
-      </div>
+        <ListFooter list={entryList} />
+      </Section>
 
-      <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
-        <p className="text-sm font-medium">Bet Stories</p>
+      <Section title="Bet Stories" count={stories.length}>
         {/* Bet days: research and bet only on game days, split by percent of your budget. */}
         <p className="text-xs text-neutral-500">
           Bet days: Saturday 40%, Monday 40%, Thursday 20% of your budget. Other days, no research, no bets. Skip a day if nothing is worth it.
@@ -360,8 +362,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
         {stories.length === 0 ? (
           <p className="text-sm text-neutral-400">No bet stories yet.</p>
         ) : (
+          <>
+          <SearchBox list={storyList} />
           <ul className="flex flex-col divide-y divide-neutral-100">
-            {deletingStory.hide(stories).map((story) => (
+            {storyList.shown.map((story) => (
               <EntryLine
                 key={story.id}
                 meta={
@@ -381,8 +385,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
               </EntryLine>
             ))}
           </ul>
+          <ListFooter list={storyList} />
+          </>
         )}
-      </div>
+      </Section>
     </div>
   );
 }

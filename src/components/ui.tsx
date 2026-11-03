@@ -111,3 +111,87 @@ export function UndoBar({ text, onUndo }: { text: string; onUndo: () => void }) 
     </div>
   );
 }
+
+// A section that opens and closes: the title, a count, and Show / Hide.
+export function Section({
+  title,
+  count,
+  defaultOpen = true,
+  children,
+}: {
+  title: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="flex flex-col gap-2 rounded-md border border-neutral-200 p-3">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="flex items-center justify-between text-left text-sm font-medium"
+      >
+        <span>
+          {title}
+          {count !== undefined && <span className="font-normal text-neutral-400"> ({count})</span>}
+        </span>
+        <span className="text-xs text-neutral-500">{open ? "Hide" : "Show"}</span>
+      </button>
+      {open && children}
+    </div>
+  );
+}
+
+// Every list shows its 5 most recent items, with Show all, and a search
+// that finds items holding every word typed. Items come in newest first.
+export const RECENT = 5;
+
+export type ListSearch<T> = {
+  q: string;
+  setQ: (q: string) => void;
+  shown: T[];
+  found: number;
+  all: boolean;
+  setAll: (all: boolean) => void;
+};
+
+export function useListSearch<T>(items: T[], text: (item: T) => string): ListSearch<T> {
+  const [q, setQ] = useState("");
+  const [all, setAll] = useState(false);
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const matches = words.length ? items.filter((i) => words.every((w) => text(i).toLowerCase().includes(w))) : items;
+  const shown = all || words.length ? matches : matches.slice(0, RECENT);
+  return { q, setQ, shown, found: matches.length, all, setAll };
+}
+
+export function SearchBox<T>({ list }: { list: ListSearch<T> }) {
+  return (
+    <input
+      type="search"
+      value={list.q}
+      onChange={(e) => list.setQ(e.target.value)}
+      placeholder="Search"
+      aria-label="Search"
+      className={`${input} sm:max-w-xs`}
+    />
+  );
+}
+
+// Under the list: how many a search found, or Show all / Show 5 most recent.
+export function ListFooter<T>({ list }: { list: ListSearch<T> }) {
+  if (list.q.trim()) {
+    return (
+      <p className="text-xs text-neutral-400">
+        {list.found === 0 ? `Nothing matches “${list.q.trim()}”.` : `${list.found} found`}
+      </p>
+    );
+  }
+  if (list.found <= RECENT) return null;
+  return (
+    <button type="button" onClick={() => list.setAll(!list.all)} className={`${link} self-start`}>
+      {list.all ? `Show ${RECENT} most recent` : `Show all ${list.found}`}
+    </button>
+  );
+}

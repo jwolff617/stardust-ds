@@ -14,6 +14,13 @@ Every dictionary's Display View reads and works the same way. If someone learns 
 2. One quiet gray line under it: the date, then tags.
 3. Buttons at the end of that line. The ✕ sits last, set apart.
 
+## Lists and sections
+
+- A section has one header line: the title, a gray count, and **Show** / **Hide** on the right. Logs you check often start open. Logs that are mostly bookkeeping start hidden. Use `Section`.
+- A list shows its **5 most recent** items, newest first. **Show all N** opens the rest, **Show 5 most recent** closes them.
+- Every list has a **Search** box. It finds items holding every word typed, in any field you can see: the text, the date, the tags. While searching, all matches show, with a gray "3 found" or "Nothing matches" line under them.
+- Use `useListSearch`, `SearchBox` and `ListFooter`.
+
 ## Dates
 
 One format: `Oct 29`. The year shows only when it isn't this year. The time shows only where it matters (`Oct 29, 7:30 PM`). Use `formatDate`.
