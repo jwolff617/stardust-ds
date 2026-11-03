@@ -57,6 +57,7 @@ export type WorthySummary = {
   balance: number;
   hasBalance: boolean;
   loss: number;
+  winRatePct: number | null;
   savingsPctOfDeposits: number | null;
   balancePctOfDeposits: number | null;
 };
@@ -111,6 +112,7 @@ export function summarize(entries: WorthyEntry[], start: Date | null): WorthySum
     balance: round(currentBalance),
     hasBalance: balance !== null,
     loss: round(deposits - (currentBalance - startBalance) - savings),
+    winRatePct: pct(wins),
     savingsPctOfDeposits: pct(savings),
     balancePctOfDeposits: pct(currentBalance),
   };

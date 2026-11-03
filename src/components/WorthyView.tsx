@@ -140,6 +140,7 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
   const tiles: { label: string; value: string; hint?: string }[] = [
     { label: "Deposited", value: money(summary.deposits) },
     { label: "Wins", value: money(summary.wins) },
+    { label: "Win rate", value: pct(summary.winRatePct), hint: "Wins / deposits" },
     {
       label: "Savings",
       value: `${money(summary.savings)} of ${money(summary.savingsOwed)}`,
