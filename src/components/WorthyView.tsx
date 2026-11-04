@@ -5,6 +5,7 @@ import { TIME_FRAME_LABELS, rangeStart, type TimeFrame } from "@/lib/time-frames
 import {
   BET_CARD_PARTS,
   BET_CARD_RULE,
+  BET_STORIES_KEY,
   BET_OUTCOMES,
   betCardText,
   type BetCard,
@@ -289,6 +290,11 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
       </Section>
 
       <Section title="Bet Stories" count={stories.length}>
+        <div className="text-sm font-medium text-neutral-900">
+          {BET_STORIES_KEY.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </div>
         {/* Bet days: research and bet only on game days, split by percent of your budget. */}
         <p className="text-xs text-neutral-500">
           Bet days: Saturday 40%, Monday 40%, Thursday 20% of your budget. Other days, no research, no bets. Skip a day if nothing is worth it.

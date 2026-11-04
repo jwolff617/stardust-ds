@@ -119,6 +119,11 @@ export function summarize(entries: WorthyEntry[], start: Date | null): WorthySum
 }
 
 // The rule: every bet gets a card first.
+export const BET_STORIES_KEY = [
+  "Bet how they're playing, not the score.",
+  "Bet how they're playing, not the odds.",
+];
+
 export const BET_CARD_RULE = "Every bet gets a bet card first. Take 10 minutes: read an article or a blog, think, and feel what your body feels. Then bet. No card, no bet.";
 
 export const BET_CARD_PARTS = [
