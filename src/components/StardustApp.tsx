@@ -23,7 +23,7 @@ export function StardustApp({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     // Bottom padding keeps the end of the feed clear of Sage AI: the button,
     // or the open panel across the bottom third.
-    <div className={`flex flex-1 flex-col ${prefs.module3?.collapsed ? "pb-20" : "pb-[max(34vh,17rem)]"}`}>
+    <div className={`flex flex-1 flex-col ${!isLoggedIn || prefs.module3?.collapsed ? "pb-20" : "pb-[max(34vh,17rem)]"}`}>
       <Module1DictionarySelect
         isLoggedIn={isLoggedIn}
         onSelectionChange={setSelectedDictionaries}

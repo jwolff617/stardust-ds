@@ -78,6 +78,9 @@ export function Module1DictionarySelect({
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
   const [isToggling, startToggle] = useTransition();
+  // False until the first search answers, so the library doesn't claim
+  // "You've added everything" while it's still loading.
+  const [loadedOnce, setLoadedOnce] = useState(false);
 
   const runSearch = useCallback(
     async (signal?: AbortSignal) => {
@@ -85,6 +88,7 @@ export function Module1DictionarySelect({
       const data = await res.json();
       setDictionaries(data.dictionaries ?? []);
       setIsModerator(Boolean(data.isModerator));
+      setLoadedOnce(true);
     },
     [query],
   );
@@ -344,7 +348,7 @@ export function Module1DictionarySelect({
             )}
           </div>
           {shownStore.length === 0 ? (
-            <p className="text-xs text-neutral-400">{store.length === 0 ? "You've added everything." : "Nothing matches."}</p>
+            <p className="text-xs text-neutral-400">{!loadedOnce ? "Loading..." : store.length === 0 ? "You've added everything." : "Nothing matches."}</p>
           ) : (
             <ul className="flex flex-wrap gap-1.5">{shownStore.map(chip)}</ul>
           )}

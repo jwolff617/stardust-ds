@@ -211,6 +211,19 @@ export function Module3SageAI({
 
   const toggle = () => onCollapsedChange?.(!collapsed);
 
+  // Signed out there is nothing to show but a sign-in line, so skip the
+  // panel and show one small link where the button sits.
+  if (!isLoggedIn) {
+    return (
+      <a
+        href="/login"
+        className="fixed bottom-4 right-4 z-40 rounded-full bg-neutral-900 px-4 py-3 text-sm font-medium text-white shadow-lg"
+      >
+        Log in to talk to Sage AI
+      </a>
+    );
+  }
+
   if (collapsed) {
     return (
       <button
