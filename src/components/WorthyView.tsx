@@ -186,6 +186,10 @@ export function WorthyView({ dictionary, reloadKey = 0 }: { dictionary: WorthyDi
 
       <div className="rounded-md bg-neutral-50 p-3 text-sm text-neutral-700">
         <p className="font-medium">Save half of every win.</p>
+        <p className="mt-1 text-xs">
+          A win does not make me hot. Feeling hot is the weakness: carrying one game into the next. Each event
+          stands alone. Bank half, let the win go, start fresh.
+        </p>
         <ul className="mt-1 list-disc pl-5 text-xs">
           {PRINCIPLES.map((p) => (
             <li key={p}>{PRINCIPLE_LABELS[p]}</li>
