@@ -77,7 +77,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0038 applied (2026-11-01), plus the first steward. 0039 (Stardust book sync, 2026-11-08) and 0040 (delete Lockers, Idea House, Business Pages, Wolffie Games; add organizations and Official, 2026-11-19) are written, not applied. Deploy the code only after 0040 is applied. To resync after the book changes, run `python apps/stardust-ds/supabase/sync_stardust_from_book.py <next number>` from the UrbanWolfStudio root. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0038 applied (2026-11-01), plus the first steward. 0039 (Stardust book sync, 2026-11-08) 0040 (delete Lockers, Idea House, Business Pages, Wolffie Games; organizations and Official), and 0041 (Journal, New notebook, phone swaps, new names), both 2026-11-19, are written, not applied. Deploy the code only after 0040 and 0041 are applied. To resync after the book changes, run `python apps/stardust-ds/supabase/sync_stardust_from_book.py <next number>` from the UrbanWolfStudio root. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 
