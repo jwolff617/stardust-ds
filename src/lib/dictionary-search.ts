@@ -104,7 +104,7 @@ export async function searchDictionaries(
   } else {
     // Shared dictionaries and templates, plus groups you're in (RLS hides
     // groups you aren't in), plus dictionaries you built with Sage AI.
-    const filters = ["kind.neq.instance", "scope.eq.group", "display_kind.eq.custom", "display_kind.eq.search"];
+    const filters = ["kind.neq.instance", "scope.eq.group", "display_kind.eq.custom", "display_kind.eq.search", "address.like.notebook-*"];
     if (libraryListingIds.length > 0) filters.push(`id.in.(${libraryListingIds.join(",")})`);
     query = query.or(filters.join(","));
   }
@@ -145,6 +145,8 @@ export async function searchDictionaries(
     if (d.scope === "group") return d.owner_user_id !== userId;
     // A dictionary you built has no template, so it shows as itself.
     if (d.display_kind === "custom") return d.owner_user_id === userId;
+    // So does a notebook you made.
+    if (d.address.startsWith("notebook-")) return d.owner_user_id === userId;
     // Searches are public; a listing shows once you add it to your Library.
     if (d.display_kind === "search") return true;
     if (d.display_kind === "listing") return libraryListingIds.includes(d.id);

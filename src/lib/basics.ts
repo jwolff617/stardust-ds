@@ -1,5 +1,5 @@
 // The store's basic apps: small personal dictionaries that each hold one
-// kind of record (Notepad pages, Address Book contacts, Birthdays). One
+// kind of record (Notepad pages, Journal entries, Address Book contacts, Birthdays). One
 // config per app drives its table, its API, its Display View, and its Sage
 // AI noun, so a new basic app is a migration plus an entry here. Pure,
 // safe to import from client and server.
@@ -80,6 +80,17 @@ export const BASIC_APPS: BasicApp[] = [
     fields: [{ key: "body", label: "Note", type: "longtext", required: true, max: 50000 }],
     titleField: "body",
     addLabel: "New note",
+    sort: (a, b) => b.createdAt.localeCompare(a.createdAt),
+  },
+  {
+    kind: "journal",
+    address: "journal-ds",
+    table: "journal_entries",
+    noun: "Journal Entry",
+    nounDescription: "An entry in a Journal: what happened, how it felt. Dated by when it was written. Newest first. Private.",
+    fields: [{ key: "body", label: "Entry", type: "longtext", required: true, max: 50000 }],
+    titleField: "body",
+    addLabel: "What happened today?",
     sort: (a, b) => b.createdAt.localeCompare(a.createdAt),
   },
   {

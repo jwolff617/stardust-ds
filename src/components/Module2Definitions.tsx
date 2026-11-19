@@ -13,6 +13,7 @@ import { DictionaryLabels } from "./DictionaryLabels";
 import { ListingView } from "./ListingView";
 import { BasicsView } from "./BasicsView";
 import { NotepadView } from "./NotepadView";
+import { JournalView } from "./JournalView";
 import { BASIC_APPS, basicApp } from "@/lib/basics";
 import type { Preferences } from "@/lib/preferences";
 
@@ -74,6 +75,8 @@ function DisplayFor({
       return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
     case "notepad":
       return <NotepadView dictionary={dictionary} reloadKey={reloadKey} />;
+    case "journal":
+      return <JournalView dictionary={dictionary} reloadKey={reloadKey} />;
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "custom":
