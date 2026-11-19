@@ -1,19 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPage } from "@/app/actions/dictionaries";
 import { createSearch, createWordList, listMakers } from "@/app/actions/listings";
 import type { Maker } from "@/lib/listings";
 import { MakerFields, type MakerSettings } from "./DictionaryLabels";
 import { ListingForm } from "./ListingForm";
 import { input, link, primary } from "./ui";
 
-type Kind = "listing" | "search" | "page" | "words" | "app";
+type Kind = "listing" | "search" | "words" | "app";
 
 const KINDS: { kind: Kind; title: string; about: string }[] = [
   { kind: "listing", title: "Listing", about: "Share one thing: an idea, something for sale, a job, a room." },
   { kind: "search", title: "Search", about: "Collect everything with a label: your own idea center or market." },
-  { kind: "page", title: "Page", about: "A page for your business, project, or nonprofit." },
   { kind: "words", title: "Word list", about: "Words and what they mean." },
   { kind: "app", title: "App", about: "A tool that does something. Describe it and Sage builds it." },
 ];
@@ -56,16 +54,6 @@ export function CreateDictionary({ onDone, onAskSage, onClose }: { onDone: () =>
 
       {kind === "listing" && <NewListing onDone={onDone} onClose={onClose} />}
       {kind === "search" && <NewSearch onDone={onDone} />}
-      {kind === "page" && (
-        <NameOnly
-          placeholder="Your business, project, or nonprofit"
-          button="Make the page"
-          onCreate={async (name) => {
-            await createPage(name);
-            onDone();
-          }}
-        />
-      )}
       {kind === "words" && (
         <NameOnly
           placeholder="Name your word list"

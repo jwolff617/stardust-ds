@@ -46,18 +46,19 @@ All four matches work the same way:
 - **Person Match:** Friends, Business Partners, Dating (18+, mutual, one per person, as built).
 - **Idea Match:** was Idea Index.
 - **Resource Match:** was Marketplace, with no prices. Have or Need: give, lend, swap, borrow, ask. A help line sits at the top: 988 and shelters.
-- **Job Match:** paid jobs are welcome, and each job shows its pay. Matching is only on passion fit, never pay: nothing sorts, filters, or ranks by pay. WA law requires a pay range on postings from employers with 15 or more employees, so the job form keeps a pay line.
+- **Job Match:** paid jobs are welcome. Matching is only on passion fit, never pay: nothing sorts, filters, or ranks by pay. Stardust connects people; it doesn't take applications, so there's no required pay field. (WA's pay-range rule falls on the employer, wherever it posts.)
 
 ## Organizations and Official
 
-- An organization signs up as an organization and can write resources, ideas, and jobs right away.
-- **Apply for Official** moves off Business Pages onto the organization's account. Sage approves or sends it back, reusing the draft / applied / official flow from 0032.
-- Official organizations show first and carry the tag. Anyone can filter to Official only.
-- Jobs from organizations that aren't Official show "Not checked by Stardust yet."
+- Anyone can say they're an organization and start writing right away, the same as a person.
+- **Apply for Official** is on the organization's account. A moderator approves it (or sends it back) in Moderate. Until then, no Official tag.
+- Official organizations show first in searches and carry the tag. Migration 0040.
 
 ## Keep, rename, cut
 
-| Keep | Rename | Cut (hide now, delete 2026-12-19) |
+Lockers, Idea House, Business Pages, and Wolffie Games are deleted completely, data and all, in 0040. The rest of the cut list goes as the build reaches it.
+
+| Keep | Rename | Cut |
 |---|---|---|
 | Night DS notes (as Night Notes) | Accounts DS → Resources, starts empty, public or private | General dictionary creation (Listing, Search, Page, Word list, App) |
 | Notepad | Manifesto Match → Person Match | Lockers, Lockers Admin |

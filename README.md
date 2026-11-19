@@ -4,7 +4,7 @@ Stardust DS is a dictionary system for sparks. Every person, business, nonprofit
 
 Stardust DS starts in one city: Seattle.
 
-**The focus: peaceful living.** Stardust DS is for the heaven level of life: quieting your mind and making connections in your community. Night DS lets you embrace your spark and clear your mind. The boards (Marketplace, Job Match, Manifesto Match, Idea Index, Idea House) help you find and help the people around you. A new dictionary earns its place if it does one of those two things.
+**The focus: peaceful living.** Stardust DS is for the heaven level of life: quieting your mind and making connections in your community. Night DS lets you embrace your spark and clear your mind. The boards (Marketplace, Job Match, Manifesto Match, Idea Index) help you find and help the people around you. A new dictionary earns its place if it does one of those two things.
 
 ## The pieces
 
@@ -54,14 +54,10 @@ A DS is a personal dictionary. Only its template shows up in search. Adding it c
 | **Notepad** | Built | Plain notes that stay until you delete them, in a 3x3 grid with as many pages as it takes. The first box is always a new note; edit any note where it sits. Night DS is for letting go; Notepad is for keeping. |
 | **Address Book** | Built | The people you know: name, phone, email, address, notes. |
 | **Birthdays** | Built | Name, month, day, and the year if you know it. Who's next is on top, with how many days away and how old they turn. |
-| **Wolffie Games** | Built | Pick or type themes, set kids and age, and Sage AI writes a one-day packet: 5-minute craft, game, joke, riddle, fact, a cut-out template, a coloring page, and a word search. Opens as 6 printable pages; Print or save PDF. Packets and themes are kept. Separate from After School DS. Drawings come from `src/lib/wolffie/printables.js`, a copy of `shop/wolffie-lessons/printables.js`. |
 | **Marketplace** | Built | The first board on Posts, the shared piece every board uses. Kinds: For Sale, Free, Wanted, Trade, Housing, each with its own fields (condition, pickup, rent, move-in). Up to 4 photos, shrunk on the phone first. Newest first, no ads, no boosts. Private messages with a Your Turn count; closing a post sends one kind note to everyone who wrote. Posts expire (14 to 30 days) and renew with a tap. Report (with a reason), Block both ways, Save, a scam note under risky messages, and a fair-housing wording check. Stewards review hidden posts. See `dictionaries/Marketplace_DS.md`. |
 | **Job Match** | Built | Jobs, gigs, people looking for work, and free training, on Posts. Every job and gig says what it pays. Fair chance and No experience filters. Apply with a short message from any phone, with a starter to fill in. Jobs promise when they'll answer, and Mark filled sends everyone who applied a kind note. Looking posts show "Matches you" on jobs that share a label. Fair-hiring wording check. See `dictionaries/Job_Match_DS.md`. |
-| **Lockers** | Built | SHARE Lockers in North Seattle, shared and public: hours, rules, and announcements. Anyone can read it; Lockers Admin members edit it in place. |
-| **Lockers Admin** | Built | The EC and Clerk side of SHARE Lockers, a group with exactly one copy. Members manage participants, the 500 lockers (assign, release, broken), bars (recommend, issue, dismiss, lift), attendance (work shifts, Sunday meetings, Power Lunch, makeup shifts), and reports (renewals due, missed shifts, counts). |
 | **Idea Index** | Built | Ideas on Posts: Idea, Building, and Need, each with its own fields (the problem, a first small step, who you're looking for). Spark to say you love it (no downvotes, no leaderboard), sort by newest or most sparked, open comments with one level of replies, and I'm In to say you'd help build it and what you'd bring. Report any comment; three hide it until a steward looks. Port of `../idea-index/`. See `dictionaries/Idea_Index_DS.md`. |
 | **Manifesto Match** | Built | Write who you are in your own words: pick 5 to 12 words (Presence, Honest, Roots, Play...) and say what each means to you. Match with people by the words you share, most shared first. Friends and Business Partners are open; Dating is built (age, who you are, who you hope to meet, ages, fits both ways) and opens when Sage says. 18+ for the whole board, and you see others only while yours is up. Say hello starting from a shared word. Pause any time. Port of `../manifesto-match/`. See `dictionaries/Manifesto_Match_DS.md`. |
-| **Idea House** | Built | The Idea House Fund on Stardust: its story, the public ledger read from the fund's Google Sheet (grants by ID, never by name, and any name-like column is dropped), and a private application of a few plain questions seen only by the applicant and the fund's judges (stewards of the board). Applicants see Received, Reviewing, Granted with its ledger ID, or Not this time with a note. Judges decide and ask questions privately. See `dictionaries/Idea_House_DS.md`. |
 | Universal Transcript DS | Outline | Reads your Night DS Done notes and builds a transcript of your strengths. See `dictionaries/Universal_Transcript_DS.md`. |
 
 ## Run it
@@ -81,7 +77,7 @@ The app is Next.js 16 (read `node_modules/next/dist/docs/` before changing Next 
 
 Schema changes live in `supabase/migrations/`, numbered and run in order. `supabase/seed/` holds the starting dictionaries for a fresh database.
 
-**Live project:** 0001 to 0038 applied (2026-11-01), plus the first steward. 0039 (Stardust book sync, 2026-11-08) is written, not applied. To resync after the book changes, run `python apps/stardust-ds/supabase/sync_stardust_from_book.py <next number>` from the UrbanWolfStudio root. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
+**Live project:** 0001 to 0038 applied (2026-11-01), plus the first steward. 0039 (Stardust book sync, 2026-11-08) and 0040 (delete Lockers, Idea House, Business Pages, Wolffie Games; add organizations and Official, 2026-11-19) are written, not applied. Deploy the code only after 0040 is applied. To resync after the book changes, run `python apps/stardust-ds/supabase/sync_stardust_from_book.py <next number>` from the UrbanWolfStudio root. See `dictionaries/BUILD_LOG.md` for what each adds and what to test.
 
 Run each file in order in the Supabase SQL editor, or with the Supabase CLI linked to the project: `supabase db push`.
 

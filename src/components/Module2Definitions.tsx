@@ -7,15 +7,10 @@ import type { NightView } from "@/lib/preferences";
 import { AccountsView } from "./AccountsView";
 import { WorthyView } from "./WorthyView";
 import { AfterSchoolView } from "./AfterSchoolView";
-import { WolffieGamesView } from "./WolffieGamesView";
 import { ManifestoView } from "./ManifestoView";
-import { IdeaHouseView } from "./IdeaHouseView";
 import { CustomView } from "./CustomView";
-import { PageView } from "./PageView";
 import { DictionaryLabels } from "./DictionaryLabels";
 import { ListingView } from "./ListingView";
-import { LockersView } from "./LockersView";
-import { LockersAdminView } from "./LockersAdminView";
 import { BasicsView } from "./BasicsView";
 import { NotepadView } from "./NotepadView";
 import { BASIC_APPS, basicApp } from "@/lib/basics";
@@ -39,7 +34,7 @@ const TABS: { key: PartOfSpeech; label: string }[] = [
 ];
 
 // Display kinds that have their own Display View.
-const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "lockers", "lockers_admin", "wolffie_games", "manifesto", "idea_house", "custom", "page", "listing", "search", ...BASIC_APPS.map((a) => a.kind)];
+const DISPLAY_KINDS = ["profile", "notes_list", "accounts", "worthy", "after_school", "manifesto", "custom", "listing", "search", ...BASIC_APPS.map((a) => a.kind)];
 
 const hasDisplayView = (d: SelectedDictionary) => DISPLAY_KINDS.includes(d.displayKind);
 
@@ -77,16 +72,10 @@ function DisplayFor({
       return <WorthyView dictionary={dictionary} reloadKey={reloadKey} />;
     case "after_school":
       return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "lockers":
-      return <LockersView reloadKey={reloadKey} />;
-    case "lockers_admin":
-      return <LockersAdminView dictionary={dictionary} reloadKey={reloadKey} />;
     case "notepad":
       return <NotepadView dictionary={dictionary} reloadKey={reloadKey} />;
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "page":
-      return <PageView dictionary={dictionary} reloadKey={reloadKey} />;
     case "custom":
       return <CustomView dictionary={dictionary} reloadKey={reloadKey} />;
     case "listing":
@@ -94,10 +83,6 @@ function DisplayFor({
     case "search":
       // The header above it is the whole view: its search and "+ New".
       return null;
-    case "idea_house":
-      return <IdeaHouseView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "wolffie_games":
-      return <WolffieGamesView dictionary={dictionary} reloadKey={reloadKey} />;
     default: {
       const app = basicApp(d.displayKind);
       return app ? <BasicsView app={app} dictionary={dictionary} reloadKey={reloadKey} /> : null;

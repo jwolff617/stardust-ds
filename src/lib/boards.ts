@@ -204,33 +204,7 @@ export const MANIFESTO_MATCH: BoardConfig = {
   ],
 };
 
-export const IDEA_HOUSE: BoardConfig = {
-  address: "idea-house-ds",
-  noun: "Application",
-  nounDescription:
-    "An application to the Idea House Fund: your idea, what you need (things, not cash), and how it helps. Only you and the fund's judges see it. Judges decide; Sage AI never does.",
-  photos: 0,
-  labels: [],
-  safety: [
-    "Your application is seen only by you and the fund's judges.",
-    "The fund gives things, not cash, and never asks you for money or bank details.",
-  ],
-  kinds: [
-    {
-      name: "Application",
-      price: { label: "About what it costs", placeholder: "About $300" },
-      fields: [
-        { key: "need", label: "What you need", type: "longtext", max: 1000, required: true, placeholder: "A vacuum and cleaning supplies." },
-        { key: "helps", label: "How it helps", type: "longtext", max: 1000, required: true, placeholder: "I can take cleaning jobs and earn on my own schedule." },
-      ],
-      titlePlaceholder: "Your idea in one line: Start a house-cleaning business",
-      bodyPlaceholder: "Anything else the judges should know.",
-      close: { verb: "Withdraw", done: "Withdrawn", note: "" },
-    },
-  ],
-};
-
-export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX, MANIFESTO_MATCH, IDEA_HOUSE];
+export const BOARDS: BoardConfig[] = [MARKETPLACE, JOB_MATCH, IDEA_INDEX, MANIFESTO_MATCH];
 
 export function boardByAddress(address: string): BoardConfig | undefined {
   return BOARDS.find((b) => b.address === address);

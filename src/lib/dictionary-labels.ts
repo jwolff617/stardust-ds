@@ -143,15 +143,21 @@ export async function findLabeledDictionaries(
   if (rows.length === 0) return { items: [], total: 0 };
 
   const ids = rows.map((r) => r.id);
-  const [{ data: details }, { data: mine }] = await Promise.all([
+  const owners = [...new Set(rows.map((r) => r.owner_user_id).filter((o): o is string => Boolean(o)))];
+  const [{ data: details }, { data: mine }, { data: officials }] = await Promise.all([
     supabase
       .from("dictionaries")
-      .select("id, display_kind, noun, page, fields, by_name, created_at, page_status, photos, spark_count, closed_at, expires_at, hidden_at")
+      .select("id, display_kind, noun, page, fields, by_name, created_at, photos, spark_count, closed_at, expires_at, hidden_at")
       .in("id", ids),
     userId
       ? supabase.from("user_dictionaries").select("dictionary_id").eq("opted_in", true).in("dictionary_id", ids)
       : Promise.resolve({ data: [] as { dictionary_id: string }[] }),
+    // Official organizations, approved by a moderator.
+    owners.length > 0
+      ? supabase.from("organizations").select("user_id").eq("status", "official").in("user_id", owners)
+      : Promise.resolve({ data: [] as { user_id: string }[] }),
   ]);
+  const official = new Set((officials ?? []).map((o) => o.user_id));
   const byId = new Map((details ?? []).map((d) => [d.id, d]));
   const optedIn = new Set((mine ?? []).map((m) => m.dictionary_id));
 
@@ -180,7 +186,7 @@ export async function findLabeledDictionaries(
         type,
         byName: d?.by_name ?? "",
         createdAt: d?.created_at ?? "",
-        official: d?.page_status === "official",
+        official: Boolean(r.owner_user_id && official.has(r.owner_user_id)),
         mine: Boolean(userId && r.owner_user_id === userId),
         optedIn: optedIn.has(r.id),
         photo: d?.photos?.[0] ? supabase.storage.from(PHOTO_BUCKET).getPublicUrl(d.photos[0]).data.publicUrl : null,

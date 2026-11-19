@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { createGroup, createPage, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
+import { createGroup, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
 import { CreateDictionary } from "./CreateDictionary";
 import { ReportsQueue } from "./ReportsQueue";
 
@@ -23,11 +23,7 @@ type Dictionary = {
   ownLabels: string[];
   isOtherProfile: boolean;
   displayKind: string;
-  pageStatus: string | null;
 };
-
-// The Business Page template makes a new page each time you add it.
-const PAGE_TEMPLATE = "business-page";
 
 // Who a dictionary belongs to, so the lists can say so:
 // personal (your own copy), group (shared with members), or public.
@@ -127,23 +123,6 @@ export function Module1DictionarySelect({
       return;
     }
 
-    // The Business Page template makes a new, named page every time.
-    if (dictionary.address === PAGE_TEMPLATE) {
-      const name = window.prompt("Name your page (your business, project, or nonprofit):");
-      if (!name?.trim()) return;
-      setError(null);
-      startToggle(async () => {
-        try {
-          await createPage(name);
-          await runSearch();
-          onChange?.();
-        } catch (err) {
-          setError((err as Error).message || "Couldn't make that page.");
-        }
-      });
-      return;
-    }
-
     // The first time, a group template asks for a name (members see it).
     // After that it toggles your copy on and off, same as Night DS.
     if (dictionary.kind === "instance_template" && dictionary.scope === "group" && !dictionary.instance) {
@@ -229,8 +208,6 @@ export function Module1DictionarySelect({
         } disabled:cursor-default`}
       >
         {d.instance ? shortName(d.instance.name) : d.name}
-        {d.pageStatus === "official" && <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">· official</span>}
-        {d.pageStatus === "applied" && <span className="ml-1 text-[10px] uppercase tracking-wide opacity-70">· waiting</span>}
       </button>
       {moderating && !d.locked && d.address !== "core" && d.address !== "stardust" && (
         <button type="button" onClick={() => remove(d)} aria-label={`Delete ${d.name}`} className="px-1 text-xs text-neutral-400 hover:text-red-600">

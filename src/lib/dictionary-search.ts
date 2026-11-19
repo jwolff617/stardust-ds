@@ -25,8 +25,6 @@ export type DictionarySearchResult = {
   // Another spark's Public Profile, found through search.
   isOtherProfile: boolean;
   displayKind: string;
-  // Business Pages: draft, applied (waiting for a moderator), or official.
-  pageStatus: string | null;
 };
 
 type DictionaryRow = {
@@ -41,11 +39,10 @@ type DictionaryRow = {
   owner_user_id: string | null;
   template_id: string | null;
   display_kind: string;
-  page_status: string | null;
 };
 
 const DICTIONARY_COLUMNS =
-  "id, address, name, description, kind, scope, locked, default_opt_in, owner_user_id, template_id, display_kind, page_status";
+  "id, address, name, description, kind, scope, locked, default_opt_in, owner_user_id, template_id, display_kind";
 
 // Labels are lowercase words, 1 to 40 characters. Same rule as the
 // dictionary_labels check constraint.
@@ -107,7 +104,7 @@ export async function searchDictionaries(
   } else {
     // Shared dictionaries and templates, plus groups you're in (RLS hides
     // groups you aren't in), plus dictionaries you built with Sage AI.
-    const filters = ["kind.neq.instance", "scope.eq.group", "display_kind.eq.custom", "display_kind.eq.page", "display_kind.eq.search"];
+    const filters = ["kind.neq.instance", "scope.eq.group", "display_kind.eq.custom", "display_kind.eq.search"];
     if (libraryListingIds.length > 0) filters.push(`id.in.(${libraryListingIds.join(",")})`);
     query = query.or(filters.join(","));
   }
@@ -148,9 +145,6 @@ export async function searchDictionaries(
     if (d.scope === "group") return d.owner_user_id !== userId;
     // A dictionary you built has no template, so it shows as itself.
     if (d.display_kind === "custom") return d.owner_user_id === userId;
-    // A Business Page shows as itself; RLS shows others' only once official
-    // (or to moderators while it waits).
-    if (d.display_kind === "page") return true;
     // Searches are public; a listing shows once you add it to your Library.
     if (d.display_kind === "search") return true;
     if (d.display_kind === "listing") return libraryListingIds.includes(d.id);
@@ -170,7 +164,6 @@ export async function searchDictionaries(
         .from("dictionaries")
         .select("id, name, display_kind, template_id")
         .eq("owner_user_id", userId)
-        .neq("display_kind", "page")
         .in("template_id", templateIds);
       for (const i of instances ?? []) {
         instanceByTemplate.set(i.template_id, {
@@ -242,7 +235,6 @@ export async function searchDictionaries(
       ownLabels,
       isOtherProfile,
       displayKind: instance?.displayKind ?? d.display_kind,
-      pageStatus: d.page_status,
     };
   });
 }
