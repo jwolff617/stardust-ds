@@ -15,6 +15,7 @@ import {
   setListingDone,
   toggleSpark,
 } from "@/app/actions/listings";
+import { SwapContact } from "./SwapContact";
 import { endsText, REPORT_REASONS, type Listing, type Thread } from "@/lib/listings";
 import { ListingForm } from "./ListingForm";
 import { timeAgo } from "./board/parts";
@@ -321,6 +322,7 @@ function ThreadBox({
           Send
         </button>
       </div>
+      {thread && <SwapContact thread={`d:${listingId}:${askerId}`} />}
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
