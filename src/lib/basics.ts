@@ -1,13 +1,8 @@
 // The store's basic apps: small personal dictionaries that each hold one
-// kind of record (Notepad pages, Journal entries, Address Book contacts, Birthdays). One
+// kind of record (Journal entries, Address Book contacts, Birthdays). One
 // config per app drives its table, its API, its Display View, and its Sage
 // AI noun, so a new basic app is a migration plus an entry here. Pure,
 // safe to import from client and server.
-
-// Night DS notes and Notepad notes are both "notes". Both nouns carry this
-// rule so Sage AI asks instead of guessing.
-export const NOTE_OR_NOTEPAD =
-  "When Note (Night DS) and Notepad Note (Notepad) are both listed and the user just says \"note\", ask which one: Night DS (lives for a time frame, then archives itself) or Notepad (stays until deleted). Don't ask when their words decide it: Notepad named, or a time frame or Night DS label named.";
 
 export type BasicFieldType = "text" | "longtext" | "integer";
 
@@ -70,18 +65,6 @@ function birthdaySubtitle(r: BasicRecord): string {
 }
 
 export const BASIC_APPS: BasicApp[] = [
-  {
-    kind: "notepad",
-    address: "notepad-ds",
-    table: "notepad_pages",
-    noun: "Notepad Note",
-    nounDescription: "A note in Notepad: plain text, no title. Notes stay until deleted. Newest first.",
-    nounNotes: NOTE_OR_NOTEPAD,
-    fields: [{ key: "body", label: "Note", type: "longtext", required: true, max: 50000 }],
-    titleField: "body",
-    addLabel: "New note",
-    sort: (a, b) => b.createdAt.localeCompare(a.createdAt),
-  },
   {
     kind: "journal",
     address: "journal-ds",

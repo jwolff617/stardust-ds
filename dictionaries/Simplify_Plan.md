@@ -18,13 +18,12 @@ Claude and ChatGPT handle money and the big tasks. Stardust is the small, quiet 
 
 | Choice | What it does |
 |---|---|
-| **Notepad** | Notes that stay until you delete them |
-| **Night Notes** | Notes with a time frame that let go when it's up (Night DS's notes) |
-| **Journal** | Dated entries, newest first |
+| **Night Notes** | Short notes. Each lives a day, a week, up to a life (never expires). Card or line view. Notepad folded in here (0042). |
+| **Journal** | Longer entries, paragraphs or pages, to look back on in a year or a decade. On this day shows past years' entries. |
 
-To make a new notebook, pick one of the three and name it. That replaces general dictionary creation.
+To make a new notebook, pick one of the two and name it. That replaces general dictionary creation.
 
-Also private: Address Book (with birthdays), Resources you keep private, and Sage's own notebooks (Worthy, Hazel Valley).
+Also private: Address Book, Birthdays, Resources you keep private, and Sage's own notebooks (Worthy, Hazel Valley).
 
 **Public.** This is what matches read.
 

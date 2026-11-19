@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { basicApp } from "@/lib/basics";
 import { addRecord, deleteRecord, editRecord, listRecords } from "@/lib/basics-db";
 
-// The basic apps' Display Views (Notepad, Address Book, Birthdays): every
+// The basic apps' Display Views (Journal, Address Book, Birthdays): every
 // record in the caller's copy, in the app's order. RLS keeps them owner-only.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

@@ -143,8 +143,8 @@ export async function moderatorDelete(dictionaryId: string) {
   revalidatePath("/");
 }
 
-// A new notebook: Notepad, Night Notes, or Journal, with your own name.
-export async function createNotebook(style: "notepad" | "night" | "journal", name: string) {
+// A new notebook: Night Notes or Journal, with your own name.
+export async function createNotebook(style: "night" | "journal", name: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Log in to make a notebook.");

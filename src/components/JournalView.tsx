@@ -10,9 +10,10 @@ function dayOf(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
-// Journal Display View: write today's entry at the top, past entries
-// below, newest first, each under its date. Click an entry to edit it;
-// emptying one deletes it.
+// Journal Display View: longer entries to look back on. On this day
+// (entries from today's date in past years) at the top, then today's
+// entry, then past entries, newest first, each under its date. Click an
+// entry to edit it; emptying one deletes it.
 export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: string; name: string }; reloadKey?: number }) {
   const [entries, setEntries] = useState<BasicRecord[]>([]);
   const [draft, setDraft] = useState("");
@@ -66,8 +67,32 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
     else await send({ record: { id: entry.id, body: text } });
   }
 
+  // On this day: entries written on today's date in earlier years.
+  const today = new Date();
+  const onThisDay = entries.filter((e) => {
+    const d = new Date(e.createdAt);
+    return d.getMonth() === today.getMonth() && d.getDate() === today.getDate() && d.getFullYear() < today.getFullYear();
+  });
+
   return (
     <div className="flex flex-col gap-3">
+      {onThisDay.length > 0 && (
+        <div className="flex flex-col gap-2 rounded-md bg-amber-50 p-3">
+          <p className="text-xs font-semibold text-amber-900">On this day</p>
+          {onThisDay.map((e) => {
+            const years = today.getFullYear() - new Date(e.createdAt).getFullYear();
+            return (
+              <div key={e.id} className="flex flex-col gap-0.5">
+                <p className="text-xs text-amber-800">
+                  {years === 1 ? "A year ago" : `${years} years ago`} · {dayOf(e.createdAt)}
+                </p>
+                <p className="whitespace-pre-wrap text-sm text-neutral-800">{String(e.body ?? "")}</p>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -80,9 +105,9 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
         <textarea
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          rows={4}
+          rows={8}
           maxLength={50000}
-          placeholder="What happened today? How did it feel?"
+          placeholder="What happened today, and what do you want to remember about it?"
           className={`${input} resize-y`}
         />
         <button type="submit" disabled={!draft.trim()} className={`${primary} self-start`}>

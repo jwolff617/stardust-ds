@@ -5,7 +5,7 @@ import type { BasicApp, BasicField, BasicRecord } from "@/lib/basics";
 
 const input = "rounded-md border border-neutral-300 px-2 py-1 text-sm";
 
-// The Display View every basic app shares (Notepad, Address Book,
+// The Display View every basic app shares (Address Book,
 // Birthdays): an add form with the required fields, a search box, and a
 // list in the app's order. Click a record to open it; fields save when
 // they lose focus.

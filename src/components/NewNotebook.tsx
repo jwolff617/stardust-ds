@@ -4,15 +4,14 @@ import { useState } from "react";
 import { createNotebook } from "@/app/actions/dictionaries";
 import { input, link, primary } from "./ui";
 
-type Style = "notepad" | "night" | "journal";
+type Style = "night" | "journal";
 
 const STYLES: { style: Style; title: string; about: string; placeholder: string }[] = [
-  { style: "notepad", title: "Notepad", about: "Notes that stay until you delete them.", placeholder: "Book ideas" },
-  { style: "night", title: "Night Notes", about: "Notes that let go when their time is up.", placeholder: "Tonight's worries" },
-  { style: "journal", title: "Journal", about: "Dated entries about your day, newest first.", placeholder: "Morning pages" },
+  { style: "night", title: "Night Notes", about: "Short notes. Each lives a day, a week, or a life. Card or line view.", placeholder: "Book ideas" },
+  { style: "journal", title: "Journal", about: "Longer entries about your days, to look back on in a year or a decade.", placeholder: "Morning pages" },
 ];
 
-// "New notebook": pick Notepad, Night Notes, or Journal, name it, write.
+// "New notebook": pick Night Notes or Journal, name it, write.
 // Private to you.
 export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const [style, setStyle] = useState<Style | null>(null);
@@ -37,7 +36,7 @@ export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: 
       </div>
 
       {!picked && (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {STYLES.map((s) => (
             <li key={s.style}>
               <button
