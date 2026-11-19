@@ -46,7 +46,7 @@ All four matches work the same way:
 - **Person Match:** Friends, Business Partners, Dating (18+, mutual, one per person, as built).
 - **Idea Match:** was Idea Index.
 - **Resource Match:** was Marketplace, with no prices. Have or Need: give, lend, swap, borrow, ask. A help line sits at the top: 988 and shelters.
-- **Job Match:** passion, not pay. Matches never use pay. WA law requires a pay range on postings from employers with 15 or more employees, so it stays on the job form as a line.
+- **Job Match:** paid jobs are welcome, and each job shows its pay. Matching is only on passion fit, never pay: nothing sorts, filters, or ranks by pay. WA law requires a pay range on postings from employers with 15 or more employees, so the job form keeps a pay line.
 
 ## Organizations and Official
 
