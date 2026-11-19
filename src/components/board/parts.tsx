@@ -10,6 +10,7 @@ import { scamWarning } from "@/lib/wording";
 
 export { input, primary, quiet, link, chip } from "../ui";
 import { input, primary, quiet, link, chip } from "../ui";
+import { SwapContact } from "../SwapContact";
 
 export type Send = (body: Record<string, unknown>) => Promise<Record<string, unknown> | null>;
 
@@ -175,7 +176,7 @@ export function OrgBadge({ org }: { org: Post["organization"] }) {
   return (
     <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-1.5 text-xs font-medium text-emerald-800">
       {org.name}
-      {org.verified && <span className="text-[10px] uppercase tracking-wide text-emerald-700">· verified</span>}
+      {org.verified && <span className="text-[10px] uppercase tracking-wide text-emerald-700">· official</span>}
     </span>
   );
 }
@@ -235,6 +236,7 @@ export function ThreadBox({
   placeholder = "Write a message",
   closedToNew,
   starter,
+  swapThread,
 }: {
   thread: Thread | null;
   title: string;
@@ -245,6 +247,8 @@ export function ThreadBox({
   closedToNew?: boolean;
   // A few lines to start from, offered before the first message.
   starter?: string;
+  // The thread's key for swapping phones, once there's a thread.
+  swapThread?: string;
 }) {
   const [text, setText] = useState("");
   const [reporting, setReporting] = useState(false);
@@ -320,6 +324,7 @@ export function ThreadBox({
           Use a starter
         </button>
       )}
+      {thread && swapThread && <SwapContact thread={swapThread} />}
     </div>
   );
 }
@@ -452,6 +457,7 @@ export function PostThreads({
           <ThreadBox
             key={t.replierId}
             thread={t}
+            swapThread={`p:${post.id}:${t.replierId}`}
             title={`${t.yourTurn ? "Your turn · " : ""}${t.replierName || "A spark"}`}
             onSend={async (text) => Boolean(await send({ action: "reply", id: post.id, body: text, replierId: t.replierId }))}
             onBlock={() =>
@@ -467,6 +473,7 @@ export function PostThreads({
   return (
     <ThreadBox
       thread={post.threads[0] ?? null}
+      swapThread={post.threads[0] ? `p:${post.id}:${post.threads[0].replierId}` : undefined}
       closedToNew={post.status === "closed"}
       title={startLabel ?? `Message ${post.organization?.name ?? post.authorName} privately`}
       starter={starter}

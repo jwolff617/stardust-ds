@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { createGroup, moderatorDelete, toggleDictionary } from "@/app/actions/dictionaries";
-import { CreateDictionary } from "./CreateDictionary";
+import { NewNotebook } from "./NewNotebook";
+import { OfficialQueue, Organizations } from "./Organizations";
 import { ReportsQueue } from "./ReportsQueue";
 
 type Instance = { id: string; name: string; displayKind: string };
@@ -51,7 +52,6 @@ export function Module1DictionarySelect({
   collapsed = false,
   onCollapsedChange,
   onStoreHiddenChange,
-  onCreateOwn,
 }: {
   isLoggedIn: boolean;
   onSelectionChange?: (dictionaries: SelectedDictionary[]) => void;
@@ -61,8 +61,6 @@ export function Module1DictionarySelect({
   collapsed?: boolean;
   onCollapsedChange?: (collapsed: boolean) => void;
   onStoreHiddenChange?: (hidden: boolean) => void;
-  // Opens Sage AI with a starting prompt for building a dictionary.
-  onCreateOwn?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [label, setLabel] = useState<string | null>(null);
@@ -71,6 +69,7 @@ export function Module1DictionarySelect({
   const [isModerator, setIsModerator] = useState(false);
   const [moderating, setModerating] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [orgsOpen, setOrgsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSearching, startSearch] = useTransition();
   const [isToggling, startToggle] = useTransition();
@@ -251,7 +250,17 @@ export function Module1DictionarySelect({
             aria-expanded={creating}
             className="rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white"
           >
-            + Create
+            + New notebook
+          </button>
+        )}
+        {isLoggedIn && (
+          <button
+            type="button"
+            onClick={() => setOrgsOpen(!orgsOpen)}
+            aria-expanded={orgsOpen}
+            className="rounded-full border border-neutral-300 px-3 py-1 text-xs font-medium text-neutral-600"
+          >
+            Organizations
           </button>
         )}
         {isModerator && (
@@ -274,12 +283,14 @@ export function Module1DictionarySelect({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      {moderating && <OfficialQueue />}
       {moderating && <ReportsQueue />}
 
+      {orgsOpen && <Organizations onClose={() => setOrgsOpen(false)} />}
+
       {creating && (
-        <CreateDictionary
+        <NewNotebook
           onClose={() => setCreating(false)}
-          onAskSage={() => onCreateOwn?.()}
           onDone={() => {
             setCreating(false);
             runSearch().catch(() => {});
