@@ -17,6 +17,9 @@ function dayOf(iso: string): string {
 // it; emptying one deletes it.
 export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: string; name: string }; reloadKey?: number }) {
   const [entries, setEntries] = useState<BasicRecord[]>([]);
+  // A shared journal: writers' names by user id, and who you are.
+  const [writers, setWriters] = useState<Record<string, string>>({});
+  const [me, setMe] = useState("");
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
@@ -33,6 +36,8 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
       .then((data) => {
         if (data.error) throw new Error(data.error);
         setEntries(data.items ?? []);
+        setWriters(data.writers ?? {});
+        setMe(data.me ?? "");
       })
       .catch((err) => {
         if ((err as Error).name !== "AbortError") setError((err as Error).message);
@@ -69,12 +74,15 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
     else await send({ record: { id: entry.id, body: text } });
   }
 
-  // Every word must appear in the entry or its date.
+  const shared = Object.keys(writers).length > 0;
+  const writer = (e: BasicRecord) => (e.ownerId === me ? "You" : writers[e.ownerId ?? ""] ?? "Someone who left");
+
+  // Every word must appear in the entry, its date, or (shared) its writer.
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const found = words.length
     ? entries.filter((e) => {
         const month = new Date(e.createdAt).toLocaleDateString(undefined, { month: "long" });
-        const text = `${String(e.body ?? "")} ${dayOf(e.createdAt)} ${month}`.toLowerCase();
+        const text = `${String(e.body ?? "")} ${dayOf(e.createdAt)} ${month} ${shared ? writer(e) : ""}`.toLowerCase();
         return words.every((w) => text.includes(w));
       })
     : entries;
@@ -125,8 +133,13 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
 
       {found.slice(0, shown).map((entry) => (
         <div key={entry.id} className="flex flex-col gap-1 border-t border-neutral-100 pt-2">
-          <p className="text-xs font-medium text-neutral-500">{dayOf(entry.createdAt)}</p>
-          {editingId === entry.id ? (
+          <p className="text-xs font-medium text-neutral-500">
+            {dayOf(entry.createdAt)}
+            {shared && ` · ${writer(entry)}`}
+          </p>
+          {shared && entry.ownerId !== me ? (
+            <p className="whitespace-pre-wrap text-sm text-neutral-800">{String(entry.body ?? "")}</p>
+          ) : editingId === entry.id ? (
             <textarea
               autoFocus
               value={editText}

@@ -15,7 +15,7 @@ export type BasicField = {
   min?: number;
 };
 
-export type BasicRecord = { id: string; createdAt: string; updatedAt: string } & Record<string, string | number | null>;
+export type BasicRecord = { id: string; createdAt: string; updatedAt: string; ownerId?: string } & Record<string, string | number | null | undefined>;
 
 export type BasicApp = {
   // The display_kind of the app's copies.

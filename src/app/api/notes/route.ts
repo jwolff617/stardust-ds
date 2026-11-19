@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { notebookWriters } from "@/lib/basics-db";
 import { expiresAtFor, isNoteSort, isTimeFrame, normalizeNoteLabel, safeTimeZone, TIME_FRAMES } from "@/lib/time-frames";
 
 const PAGE_SIZE = 25;
@@ -32,6 +33,9 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user: me },
+  } = await supabase.auth.getUser();
 
   // Notes whose time is up archive themselves before anything is read.
   await supabase.rpc("sweep_expired_notes");
@@ -45,7 +49,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("notes")
     .select(
-      "id, body, dictionary_id, visibility, time_frame, label, expires_at, archived_at, done_at, created_at",
+      "id, body, dictionary_id, owner_user_id, visibility, time_frame, label, expires_at, archived_at, done_at, created_at",
       { count: "exact" },
     )
     .in("dictionary_id", dictionaryIds);
@@ -82,6 +86,11 @@ export async function GET(request: Request) {
   }
 
 
+  // Shared notebooks show who wrote each note.
+  const writers: Record<string, string> = {};
+  for (const id of dictionaryIds) Object.assign(writers, await notebookWriters(supabase, id));
+  const shared = Object.keys(writers).length > 0;
+
   const items = (data ?? []).map((row) => ({
     id: row.id,
     body: row.body,
@@ -94,6 +103,8 @@ export async function GET(request: Request) {
     archivedAt: row.archived_at,
     doneAt: row.done_at,
     createdAt: row.created_at,
+    mine: row.owner_user_id === me?.id,
+    authorName: shared ? writers[row.owner_user_id] ?? "Someone who left" : null,
   }));
 
   const total = count ?? 0;

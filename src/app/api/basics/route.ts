@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { basicApp } from "@/lib/basics";
-import { addRecord, deleteRecord, editRecord, listRecords } from "@/lib/basics-db";
+import { addRecord, deleteRecord, editRecord, listRecords, notebookWriters } from "@/lib/basics-db";
 
 // The basic apps' Display Views (Journal, Address Book, Birthdays): every
 // record in the caller's copy, in the app's order. RLS keeps them owner-only.
@@ -11,8 +11,12 @@ export async function GET(request: Request) {
   if (!dictionaryId || !app) return Response.json({ error: "dictionaryId and a kind are required." }, { status: 400 });
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   try {
-    return Response.json({ items: await listRecords(supabase, app, dictionaryId) });
+    const [items, writers] = await Promise.all([listRecords(supabase, app, dictionaryId), notebookWriters(supabase, dictionaryId)]);
+    return Response.json({ items, writers, me: user?.id ?? "" });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 500 });
   }

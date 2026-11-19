@@ -142,11 +142,11 @@ export async function searchDictionaries(
     if (d.kind !== "instance") return true;
     // Your own copy of a template shows through its template, personal or
     // group alike. Someone else's group you were added to shows on its own.
+    // A notebook shows as itself: yours, or a shared one you're in.
+    if (d.address.startsWith("notebook-")) return d.owner_user_id === userId || d.scope === "group";
     if (d.scope === "group") return d.owner_user_id !== userId;
     // A dictionary you built has no template, so it shows as itself.
     if (d.display_kind === "custom") return d.owner_user_id === userId;
-    // So does a notebook you made.
-    if (d.address.startsWith("notebook-")) return d.owner_user_id === userId;
     // Searches are public; a listing shows once you add it to your Library.
     if (d.display_kind === "search") return true;
     if (d.display_kind === "listing") return libraryListingIds.includes(d.id);

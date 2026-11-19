@@ -23,6 +23,8 @@ Claude and ChatGPT handle money and the big tasks. Stardust is the small, quiet 
 
 To make a new notebook, pick one of the two and name it. That replaces general dictionary creation.
 
+**Just me or Shared.** A shared notebook is a small circle writing together: a recovery group, a staff team, a family. The owner adds people by email, up to 30 in all. Everyone sees who wrote what and changes only their own. Invite only: no public groups, nothing to browse, no feed, no notifications (0043).
+
 Also private: Address Book, Birthdays, Resources you keep private, and Sage's own notebooks (Worthy, Hazel Valley).
 
 **Public.** This is what matches read.

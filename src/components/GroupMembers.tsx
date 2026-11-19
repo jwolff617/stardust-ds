@@ -62,9 +62,9 @@ export function GroupMembers({
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(m.isMe ? "Leave this group?" : `Remove ${m.name}?`)) run({ removeUserId: m.userId });
+                if (window.confirm(m.isMe ? "Leave this notebook?" : `Remove ${m.name}?`)) run({ removeUserId: m.userId });
               }}
-              aria-label={m.isMe ? "Leave group" : `Remove ${m.name}`}
+              aria-label={m.isMe ? "Leave" : `Remove ${m.name}`}
               className="text-neutral-400 hover:text-red-600"
             >
               ✕

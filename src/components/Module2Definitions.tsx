@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
+import { GroupMembers } from "./GroupMembers";
 import { ProfileFields } from "./ProfileFields";
 import { NightNotes } from "./NightNotes";
 import type { NightView } from "@/lib/preferences";
@@ -48,6 +49,20 @@ function inOrder(dictionaries: SelectedDictionary[], order: string[]): SelectedD
     .map(({ d }) => d);
 }
 
+// A shared notebook shows who's in it above the notes: the owner adds
+// people by email (up to 30) and anyone can leave.
+function SharedWith({ d, reloadKey, children }: { d: SelectedDictionary; reloadKey: number; children: ReactNode }) {
+  const [error, setError] = useState<string | null>(null);
+  if (d.belongs !== "group") return <>{children}</>;
+  return (
+    <div className="flex flex-col gap-3">
+      <GroupMembers dictionaryId={d.id} reloadKey={reloadKey} onError={setError} />
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      {children}
+    </div>
+  );
+}
+
 // One dictionary's Display View in the feed.
 function DisplayFor({
   d,
@@ -63,7 +78,11 @@ function DisplayFor({
   const dictionary = { id: d.id, name: d.name };
   switch (d.displayKind) {
     case "notes_list":
-      return <NightNotes dictionaries={[dictionary]} reloadKey={reloadKey} view={night} onViewChange={onNightChange} />;
+      return (
+        <SharedWith d={d} reloadKey={reloadKey}>
+          <NightNotes dictionaries={[dictionary]} reloadKey={reloadKey} view={night} onViewChange={onNightChange} />
+        </SharedWith>
+      );
     case "profile":
       return <ProfileFields dictionaries={[dictionary]} reloadKey={reloadKey} />;
     case "accounts":
@@ -73,7 +92,11 @@ function DisplayFor({
     case "after_school":
       return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
     case "journal":
-      return <JournalView dictionary={dictionary} reloadKey={reloadKey} />;
+      return (
+        <SharedWith d={d} reloadKey={reloadKey}>
+          <JournalView dictionary={dictionary} reloadKey={reloadKey} />
+        </SharedWith>
+      );
     case "manifesto":
       return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "custom":

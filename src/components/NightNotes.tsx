@@ -29,6 +29,9 @@ type NoteRow = {
   expiresAt: string | null;
   archivedAt: string | null;
   doneAt: string | null;
+  // Shared notebooks: whether you wrote it, and who did.
+  mine: boolean;
+  authorName: string | null;
 };
 
 const STATE_TABS: { key: NoteState; label: string }[] = [
@@ -360,17 +363,20 @@ function NoteItem({
       }}
       className={`flex flex-col gap-2 ${card ? "rounded-md border border-neutral-200 bg-neutral-50 p-2" : "py-3"} ${dragging?.id === note.id ? "opacity-40" : ""} ${canDrop ? "hover:bg-blue-50" : ""}`}
     >
+      {note.authorName && <p className="px-2 text-xs font-medium text-neutral-500">{note.mine ? "You" : note.authorName}</p>}
       <textarea
         defaultValue={note.body}
+        readOnly={!note.mine}
         rows={card ? 7 : Math.min(6, Math.max(1, Math.ceil(note.body.length / 80)))}
         onBlur={(e) => {
           const next = e.target.value.trim();
-          if (next && next !== note.body) onRun("/api/notes/update", { noteId: note.id, body: next });
+          if (note.mine && next && next !== note.body) onRun("/api/notes/update", { noteId: note.id, body: next });
         }}
         aria-label="Note"
         className={`rounded-md border border-transparent px-2 py-1 text-sm hover:border-neutral-200 focus:border-neutral-300 ${card ? "resize-none bg-white" : "resize-y"}`}
       />
 
+      {note.mine && (
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {/* Moving notes only makes sense in My order. */}
         {isActive && canReorder && (
@@ -477,6 +483,7 @@ function NoteItem({
           <DeleteButton onClick={onDelete} what="note" />
         </div>
       </div>
+      )}
     </li>
   );
 }

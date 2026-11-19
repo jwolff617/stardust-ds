@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createNotebook } from "@/app/actions/dictionaries";
-import { input, link, primary } from "./ui";
+import { chip, input, link, primary } from "./ui";
 
 type Style = "night" | "journal";
 
@@ -16,6 +16,7 @@ const STYLES: { style: Style; title: string; about: string; placeholder: string 
 export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: () => void }) {
   const [style, setStyle] = useState<Style | null>(null);
   const [name, setName] = useState("");
+  const [shared, setShared] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const picked = STYLES.find((s) => s.style === style);
@@ -29,8 +30,7 @@ export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: 
           </button>
         )}
         <h3 className="text-sm font-semibold">{picked ? `New ${picked.title}` : "New notebook"}</h3>
-        <span className="text-xs text-neutral-400">Private to you</span>
-        <button type="button" onClick={onClose} aria-label="Close" className="ml-auto px-1 text-neutral-400 hover:text-neutral-900">
+                <button type="button" onClick={onClose} aria-label="Close" className="ml-auto px-1 text-neutral-400 hover:text-neutral-900">
           ✕
         </button>
       </div>
@@ -59,7 +59,7 @@ export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: 
             setSaving(true);
             setError(null);
             try {
-              await createNotebook(picked.style, name);
+              await createNotebook(picked.style, name, shared);
               onDone();
             } catch (err) {
               setError((err as Error).message);
@@ -78,9 +78,18 @@ export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: 
             aria-label="Name"
             className={`${input} min-w-0 flex-1`}
           />
+          <div className="flex gap-1.5" role="radiogroup" aria-label="Who writes in it">
+            <button type="button" role="radio" aria-checked={!shared} onClick={() => setShared(false)} className={chip(!shared)}>
+              Just me
+            </button>
+            <button type="button" role="radio" aria-checked={shared} onClick={() => setShared(true)} className={chip(shared)}>
+              Shared
+            </button>
+          </div>
           <button type="submit" disabled={saving || !name.trim()} className={primary}>
             Make it
           </button>
+          {shared && <p className="w-full text-xs text-neutral-500">You add people by email after, up to 30. Everyone sees who wrote what.</p>}
           {error && <p className="w-full text-xs text-red-600">{error}</p>}
         </form>
       )}

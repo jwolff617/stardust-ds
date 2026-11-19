@@ -144,11 +144,11 @@ export async function moderatorDelete(dictionaryId: string) {
 }
 
 // A new notebook: Night Notes or Journal, with your own name.
-export async function createNotebook(style: "night" | "journal", name: string) {
+export async function createNotebook(style: "night" | "journal", name: string, shared = false) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Log in to make a notebook.");
-  const { data, error } = await supabase.rpc("create_notebook", { p_style: style, p_name: name });
+  const { data, error } = await supabase.rpc("create_notebook", { p_style: style, p_name: name, p_shared: shared });
   if (error || !data) throw new Error(error?.message ?? "Couldn't make that notebook.");
   revalidatePath("/");
   return data as string;
