@@ -2,8 +2,8 @@
 -- Business Pages, and Wolffie Games for good, data and all. Move Official
 -- off pages and onto organizations.
 --
--- Organizations: anyone can say they're an organization and start writing
--- right away, the same as a person. The Official tag comes only when a
+-- Organizations: anyone can make one and start writing right away, the
+-- same as a person. The Official tag comes only when a
 -- moderator approves them. Official organizations rank first in searches.
 --
 -- Needs 0039.
@@ -55,27 +55,17 @@ alter table dictionaries
                                      'notepad', 'contacts', 'birthdays',
                                      'marketplace', 'jobs', 'ideas', 'manifesto'));
 
--- 4. Organizations.
+-- 4. Organizations. The table is from 0022 (Sage added them by hand, and
+--    members post as the organization). Now anyone can make one and is its
+--    admin. It writes right away. Official comes only when a moderator
+--    approves. `verified` stays in step with Official so posts keep working.
 
-create table if not exists organizations (
-  user_id uuid primary key references auth.users(id) on delete cascade,
-  name text not null check (length(name) between 1 and 80),
-  website text not null default '' check (length(website) <= 200),
-  about text not null default '' check (length(about) <= 500),
-  status text not null default 'unverified' check (status in ('unverified', 'applied', 'official')),
-  created_at timestamptz not null default now(),
-  reviewed_at timestamptz
-);
+alter table organizations
+  add column if not exists status text not null default 'unverified'
+    check (status in ('unverified', 'applied', 'official')),
+  add column if not exists reviewed_at timestamptz;
 
-alter table organizations enable row level security;
-
--- Who's an organization, and who's Official, is public to sparks.
--- Writes go only through the functions below.
-drop policy if exists "sparks read organizations" on organizations;
-create policy "sparks read organizations"
-  on organizations for select
-  to authenticated
-  using (true);
+update organizations set status = 'official' where verified and status <> 'official';
 
 create or replace function is_official(p_user uuid)
 returns boolean
@@ -83,12 +73,52 @@ language sql
 stable
 security definer set search_path = public
 as $$
-  select exists (select 1 from organizations where user_id = p_user and status = 'official');
+  select exists (
+    select 1 from organization_members m join organizations o on o.id = m.organization_id
+    where m.user_id = p_user and o.status = 'official'
+  );
 $$;
 
--- Say you're an organization, or change its name and words. Changing
--- them keeps your status.
-create or replace function save_organization(p_name text, p_website text, p_about text)
+create or replace function is_org_admin(p_org uuid)
+returns boolean
+language sql
+stable
+security definer set search_path = public
+as $$
+  select exists (select 1 from organization_members where organization_id = p_org and user_id = auth.uid() and role = 'admin');
+$$;
+
+-- Make an organization. You're its admin. Up to 3 each.
+create or replace function create_organization(p_name text, p_kind text, p_website text, p_about text)
+returns uuid
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_name text := left(nullif(trim(p_name), ''), 80);
+  v_slug text;
+  v_id uuid;
+begin
+  if auth.uid() is null then raise exception 'Log in first.'; end if;
+  if v_name is null then raise exception 'Give your organization a name.'; end if;
+  if (select count(*) from organization_members where user_id = auth.uid() and role = 'admin') >= 3 then
+    raise exception 'You run 3 organizations already.';
+  end if;
+  v_slug := left(trim(both '-' from regexp_replace(lower(v_name), '[^a-z0-9]+', '-', 'g')), 30);
+  if length(v_slug) < 2 then v_slug := 'org'; end if;
+  v_slug := v_slug || '-' || substr(gen_random_uuid()::text, 1, 6);
+  insert into organizations (slug, name, kind, website, about)
+  values (v_slug, v_name,
+          case when p_kind in ('nonprofit', 'business', 'government') then p_kind else 'nonprofit' end,
+          left(trim(coalesce(p_website, '')), 200), left(trim(coalesce(p_about, '')), 1000))
+  returning id into v_id;
+  insert into organization_members (organization_id, user_id, role) values (v_id, auth.uid(), 'admin');
+  return v_id;
+end;
+$$;
+
+-- Change its name and words. Admins only. Status stays.
+create or replace function save_organization(p_id uuid, p_name text, p_kind text, p_website text, p_about text)
 returns void
 language plpgsql
 security definer set search_path = public
@@ -96,38 +126,42 @@ as $$
 declare
   v_name text := left(nullif(trim(p_name), ''), 80);
 begin
-  if auth.uid() is null then raise exception 'Log in first.'; end if;
+  if not is_org_admin(p_id) then raise exception 'Only its admin can change it.'; end if;
   if v_name is null then raise exception 'Give your organization a name.'; end if;
-  insert into organizations (user_id, name, website, about)
-  values (auth.uid(), v_name, left(trim(coalesce(p_website, '')), 200), left(trim(coalesce(p_about, '')), 500))
-  on conflict (user_id) do update
-    set name = excluded.name, website = excluded.website, about = excluded.about;
+  update organizations
+  set name = v_name,
+      kind = case when p_kind in ('nonprofit', 'business', 'government') then p_kind else kind end,
+      website = left(trim(coalesce(p_website, '')), 200),
+      about = left(trim(coalesce(p_about, '')), 1000)
+  where id = p_id;
 end;
 $$;
 
--- Stop being an organization. Official goes with it.
-create or replace function remove_organization()
-returns void
-language sql
-security definer set search_path = public
-as $$
-  delete from organizations where user_id = auth.uid();
-$$;
-
-create or replace function apply_official()
+create or replace function delete_organization(p_id uuid)
 returns void
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  update organizations set status = 'applied' where user_id = auth.uid() and status = 'unverified';
-  if not found then raise exception 'Save your organization first, or you''ve already applied.'; end if;
+  if not is_org_admin(p_id) then raise exception 'Only its admin can delete it.'; end if;
+  delete from organizations where id = p_id;
 end;
 $$;
 
--- A moderator approves (Official) or sends back (unverified). A moderator
--- can also take Official away.
-create or replace function review_organization(p_user uuid, p_approve boolean)
+create or replace function apply_official(p_id uuid)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if not is_org_admin(p_id) then raise exception 'Only its admin can apply.'; end if;
+  update organizations set status = 'applied' where id = p_id and status = 'unverified';
+  if not found then raise exception 'Already applied.'; end if;
+end;
+$$;
+
+-- A moderator approves (Official) or sends back. Also takes Official away.
+create or replace function review_organization(p_id uuid, p_approve boolean)
 returns void
 language plpgsql
 security definer set search_path = public
@@ -135,16 +169,24 @@ as $$
 begin
   if not is_moderator() then raise exception 'Only a moderator can do that.'; end if;
   update organizations
-  set status = case when p_approve then 'official' else 'unverified' end, reviewed_at = now()
-  where user_id = p_user;
+  set status = case when p_approve then 'official' else 'unverified' end,
+      verified = p_approve,
+      reviewed_at = now()
+  where id = p_id;
   if not found then raise exception 'Organization not found.'; end if;
 end;
 $$;
 
-revoke execute on function save_organization(text, text, text), remove_organization(), apply_official(),
-  review_organization(uuid, boolean) from public, anon;
-grant execute on function save_organization(text, text, text), remove_organization(), apply_official(),
-  review_organization(uuid, boolean) to authenticated;
+-- Admins see who's in their organization.
+drop policy if exists "admins see their members" on organization_members;
+create policy "admins see their members"
+  on organization_members for select to authenticated
+  using (is_org_admin(organization_id));
+
+revoke execute on function create_organization(text, text, text, text), save_organization(uuid, text, text, text, text),
+  delete_organization(uuid), apply_official(uuid), review_organization(uuid, boolean), is_org_admin(uuid) from public, anon;
+grant execute on function create_organization(text, text, text, text), save_organization(uuid, text, text, text, text),
+  delete_organization(uuid), apply_official(uuid), review_organization(uuid, boolean), is_org_admin(uuid) to authenticated;
 grant execute on function is_official(uuid) to anon, authenticated;
 
 -- 5. Searches rank Official organizations first, after name matches.

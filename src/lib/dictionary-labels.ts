@@ -154,10 +154,10 @@ export async function findLabeledDictionaries(
       : Promise.resolve({ data: [] as { dictionary_id: string }[] }),
     // Official organizations, approved by a moderator.
     owners.length > 0
-      ? supabase.from("organizations").select("user_id").eq("status", "official").in("user_id", owners)
-      : Promise.resolve({ data: [] as { user_id: string }[] }),
+      ? Promise.all(owners.map(async (o) => ((await supabase.rpc("is_official", { p_user: o })).data ? o : null))).then((r) => ({ data: r.filter(Boolean) as string[] }))
+      : Promise.resolve({ data: [] as string[] }),
   ]);
-  const official = new Set((officials ?? []).map((o) => o.user_id));
+  const official = new Set(officials ?? []);
   const byId = new Map((details ?? []).map((d) => [d.id, d]));
   const optedIn = new Set((mine ?? []).map((m) => m.dictionary_id));
 
