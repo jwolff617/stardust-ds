@@ -51,9 +51,9 @@ All four matches work the same way:
 
 ## Organizations and Official
 
-- Anyone can say they're an organization and start writing right away, the same as a person.
+- Anyone can make an organization and start writing right away, the same as a person. Businesses, nonprofits, community groups, and public offices all count; many businesses have good intentions and real jobs and ideas to share.
 - **Apply for Official** is on the organization's account. A moderator approves it (or sends it back) in Moderate. Until then, no Official tag.
-- Official organizations show first in searches and carry the tag. Migration 0040.
+- Official organizations show first in searches and carry the tag. Migration 0040. Official means a moderator checked it is real, not that it is a nonprofit.
 
 ## Keep, rename, cut
 

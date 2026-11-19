@@ -108,7 +108,7 @@ export function Organizations({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <p className="text-xs text-neutral-600">
-        Run a nonprofit, a community group, or a public office? Make it here and post ideas, resources, and jobs as it right away.
+        Run a business, a nonprofit, a community group, or a public office? Make it here and post ideas, resources, and jobs as it right away.
         Apply for Official and a moderator checks it&apos;s real. Official organizations show first, with the tag.
       </p>
 
