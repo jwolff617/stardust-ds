@@ -10,16 +10,18 @@ function dayOf(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
-// Journal Display View: longer entries to look back on. On this day
-// (entries from today's date in past years) at the top, then today's
-// entry, then past entries, newest first, each under its date. Click an
-// entry to edit it; emptying one deletes it.
+// Journal Display View: longer entries to look back on. Today's entry at
+// the top, then search, then past entries, newest first, each under its
+// date. Search finds the memories you want to read: every word must be in
+// the entry or its date ("mom june", "2025 trip"). Click an entry to edit
+// it; emptying one deletes it.
 export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: string; name: string }; reloadKey?: number }) {
   const [entries, setEntries] = useState<BasicRecord[]>([]);
   const [draft, setDraft] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState("");
   const [shown, setShown] = useState(PER_PAGE);
+  const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [token, setToken] = useState(0);
 
@@ -67,32 +69,18 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
     else await send({ record: { id: entry.id, body: text } });
   }
 
-  // On this day: entries written on today's date in earlier years.
-  const today = new Date();
-  const onThisDay = entries.filter((e) => {
-    const d = new Date(e.createdAt);
-    return d.getMonth() === today.getMonth() && d.getDate() === today.getDate() && d.getFullYear() < today.getFullYear();
-  });
+  // Every word must appear in the entry or its date.
+  const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+  const found = words.length
+    ? entries.filter((e) => {
+        const month = new Date(e.createdAt).toLocaleDateString(undefined, { month: "long" });
+        const text = `${String(e.body ?? "")} ${dayOf(e.createdAt)} ${month}`.toLowerCase();
+        return words.every((w) => text.includes(w));
+      })
+    : entries;
 
   return (
     <div className="flex flex-col gap-3">
-      {onThisDay.length > 0 && (
-        <div className="flex flex-col gap-2 rounded-md bg-amber-50 p-3">
-          <p className="text-xs font-semibold text-amber-900">On this day</p>
-          {onThisDay.map((e) => {
-            const years = today.getFullYear() - new Date(e.createdAt).getFullYear();
-            return (
-              <div key={e.id} className="flex flex-col gap-0.5">
-                <p className="text-xs text-amber-800">
-                  {years === 1 ? "A year ago" : `${years} years ago`} · {dayOf(e.createdAt)}
-                </p>
-                <p className="whitespace-pre-wrap text-sm text-neutral-800">{String(e.body ?? "")}</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -116,9 +104,26 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
       </form>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {entries.length > 0 && (
+        <input
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setShown(PER_PAGE);
+          }}
+          placeholder="Search your journal: a person, a place, a month, a year"
+          aria-label="Search your journal"
+          className={input}
+        />
+      )}
+      {words.length > 0 && (
+        <p className="text-xs text-neutral-500">
+          {found.length === 0 ? "No entries match." : `${found.length} ${found.length === 1 ? "entry" : "entries"}`}
+        </p>
+      )}
       {entries.length === 0 && <p className="text-sm text-neutral-400">No entries yet.</p>}
 
-      {entries.slice(0, shown).map((entry) => (
+      {found.slice(0, shown).map((entry) => (
         <div key={entry.id} className="flex flex-col gap-1 border-t border-neutral-100 pt-2">
           <p className="text-xs font-medium text-neutral-500">{dayOf(entry.createdAt)}</p>
           {editingId === entry.id ? (
@@ -145,7 +150,7 @@ export function JournalView({ dictionary, reloadKey = 0 }: { dictionary: { id: s
         </div>
       ))}
 
-      {entries.length > shown && (
+      {found.length > shown && (
         <button type="button" onClick={() => setShown((n) => n + PER_PAGE)} className="self-start text-xs text-neutral-500 underline">
           Older entries
         </button>

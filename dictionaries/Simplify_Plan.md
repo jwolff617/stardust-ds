@@ -19,7 +19,7 @@ Claude and ChatGPT handle money and the big tasks. Stardust is the small, quiet 
 | Choice | What it does |
 |---|---|
 | **Night Notes** | Short notes. Each lives a day, a week, up to a life (never expires). Card or line view. Notepad folded in here (0042). |
-| **Journal** | Longer entries, paragraphs or pages, to look back on in a year or a decade. On this day shows past years' entries. |
+| **Journal** | Longer entries, paragraphs or pages, to look back on in a year or a decade. Search finds the memories you want to read. |
 
 To make a new notebook, pick one of the two and name it. That replaces general dictionary creation.
 
