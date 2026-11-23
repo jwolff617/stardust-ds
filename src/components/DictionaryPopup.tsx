@@ -6,6 +6,15 @@ type Entry = { id: string; term: string; body: string; partOfSpeech: string };
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
+const FILTERS = [
+  { key: "all", label: "All" },
+  { key: "noun", label: "Nouns" },
+  { key: "verb", label: "Verbs" },
+  { key: "organization", label: "Organizations" },
+  { key: "person", label: "People" },
+] as const;
+type Filter = (typeof FILTERS)[number]["key"];
+
 // The Stardust Dictionary in a window over the page, about three
 // quarters of the screen. X closes it; minimize keeps your page and
 // leaves a small tab to bring it back.
@@ -28,16 +37,19 @@ export function DictionaryPopup({
   const [items, setItems] = useState<Entry[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [note, setNote] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
-    const params = new URLSearchParams({ page: String(page) });
+    const params = new URLSearchParams({ page: String(page), filter });
     if (letter) params.set("letter", letter);
     fetch(`/api/stardust-dictionary?${params}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data) => {
         setItems(data.items ?? []);
         setTotalPages(data.totalPages ?? 1);
+        setNote(data.note ?? "");
         if (letter) {
           setLetter("");
           setPage(data.page ?? 1);
@@ -46,7 +58,7 @@ export function DictionaryPopup({
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [page, letter]);
+  }, [page, letter, filter]);
 
   useEffect(() => {
     if (minimized) return;
@@ -89,6 +101,25 @@ export function DictionaryPopup({
           </button>
         </div>
 
+        <div className="flex flex-wrap gap-2 border-b border-[var(--line)] px-5 py-2 text-xs">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={filter === f.key}
+              onClick={() => {
+                setFilter(f.key);
+                setPage(1);
+              }}
+              className={`rounded-full border px-3 py-0.5 tracking-wider ${
+                filter === f.key ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--line)] opacity-70 hover:opacity-100"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex flex-wrap gap-x-2 gap-y-1 border-b border-[var(--line)] px-5 py-2 text-xs">
           {LETTERS.map((l) => (
             <button key={l} type="button" onClick={() => setLetter(l)} className="opacity-60 hover:opacity-100">
@@ -100,6 +131,8 @@ export function DictionaryPopup({
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {loading && items.length === 0 ? (
             <p className="text-sm opacity-50">Opening the dictionary...</p>
+          ) : items.length === 0 ? (
+            <p className="text-sm opacity-60">{note || "Nothing here yet."}</p>
           ) : (
             <dl className="flex flex-col gap-4">
               {items.map((e) => (
