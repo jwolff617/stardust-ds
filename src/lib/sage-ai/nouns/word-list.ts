@@ -30,6 +30,7 @@ async function identify(supabase: SupabaseClient, userId: string, word: string):
       .maybeSingle();
     if (def) return { kind: def.part_of_speech === "verb" ? "verb" : "noun", refId: def.id, word: term.name };
   }
+  // Not made yet: no type until it is created.
   return { kind: "new", refId: null, word: w };
 }
 

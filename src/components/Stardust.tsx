@@ -912,6 +912,8 @@ type ListWord = { id: string; word: string; kind: string; refId: string | null }
 
 // What kind of word it is: a small, plain label.
 function TypePill({ type }: { type: string }) {
+  // A list word not made yet has no type until it's created.
+  if (type === "new") return null;
   const label = type === "organization" ? "org" : type === "new-notebook" ? "group" : type === "mine" ? "noun" : type;
   return <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">{label}</span>;
 }
@@ -935,11 +937,10 @@ const THING_OF: Record<string, string> = {
   settings: "settings",
 };
 
-function kindLabel(type: string): { head: string; sub: string } {
-  if (type.startsWith("new:")) {
-    const t = type.slice(4);
-    return { head: "NEW", sub: t === "noun" ? "noun" : THING_OF[t] ?? t };
-  }
+function kindLabel(t: string): { head: string; sub: string } {
+  let type = t;
+  // Making a word: it's whatever type is picked, same as once it's saved.
+  if (type.startsWith("new:")) type = type.slice(4);
   if (type === "verb") return { head: "VERB", sub: "" };
   if (type === "noun" || type === "word" || type === "mine") return { head: "NOUN", sub: "" };
   if (type === "search") return { head: "SEARCH", sub: "results" };
