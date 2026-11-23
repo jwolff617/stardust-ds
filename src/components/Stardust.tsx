@@ -140,6 +140,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     return mine;
   }, [fetchDictionaries]);
 
+  const flushSaveRef = useRef<(() => void) | null>(null);
   const openWordRef = useRef<((kind: string, id: string) => Promise<boolean>) | null>(null);
   const loadWordList = useCallback(async () => {
     if (!isLoggedIn) return;
@@ -185,6 +186,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }
 
   function clearToSearch() {
+    flushSaveRef.current?.();
     setRenaming(false);
     setRef(null);
     setDirty(false);
@@ -197,6 +199,8 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // keep: Sage refreshing the word that's open; if it didn't say which
   // one, it's still the same word, so it stays editable.
   function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields, keep = false) {
+    // Opening another word: save the one you were on first.
+    if (!keep) flushSaveRef.current?.();
     setRenaming(false);
     if (w.kind !== "organization") setOrgInfo(null);
     setSaveState("");
@@ -378,6 +382,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           setBody("");
           setFields(EMPTY_FIELDS);
           setRef(null);
+          flushSave();
           setBox({ mode: "view", dictionary: d });
         } else {
           await openWord(made.kind, made.id);
@@ -398,6 +403,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       setBody("");
       setFields(EMPTY_FIELDS);
       setRef(null);
+      flushSave();
       setBox({ mode: "view", dictionary: d.view });
       return true;
     }
@@ -469,6 +475,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
   useEffect(() => {
     openWordRef.current = openWord;
+    flushSaveRef.current = flushSave;
   });
 
   // A word-list word opens with its body ready to edit.
@@ -536,24 +543,48 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // Renaming is rare: it takes the EDIT button, then saves itself too.
   const wordEditable = searching || isDraft || (box.mode === "word" && canSave && renaming);
 
-  // Edits save themselves a moment after you stop typing.
+  // Edits save themselves a moment after you stop typing, and right away
+  // when you leave the word. Each edit has a number, so a save that finishes
+  // late never marks newer typing as saved.
+  const editVersion = useRef(0);
+  const pending = useRef<{ kind: string; id: string; draft: { word: string; body: string; place: string; people: string; time: string; visibility: string }; version: number } | null>(null);
+
   useEffect(() => {
-    if (!dirty || !canSave || box.mode !== "word" || !ref) return;
-    const t = setTimeout(() => {
-      setSaveState("saving");
-      saveWordAction(ref.kind, ref.id, { word, body, ...fields })
-        .then(() => {
-          setDirty(false);
-          setSaveState("saved");
-          setReply("");
-        })
-        .catch((err) => {
-          setSaveState("error");
-          setReply((err as Error).message);
-        });
-    }, 1200);
+    if (!dirty || !canSave || box.mode !== "word" || !ref) {
+      pending.current = null;
+      return;
+    }
+    editVersion.current += 1;
+    pending.current = { kind: ref.kind, id: ref.id, draft: { word, body, ...fields }, version: editVersion.current };
+    const t = setTimeout(() => flushSave(), 1200);
     return () => clearTimeout(t);
   }, [dirty, canSave, box.mode, ref, word, body, fields]);
+
+  function flushSave() {
+    const job = pending.current;
+    if (!job) return;
+    pending.current = null;
+    setSaveState("saving");
+    saveWordAction(job.kind, job.id, job.draft)
+      .then(() => {
+        // Only "Saved" if nothing was typed since this save started.
+        if (job.version === editVersion.current) {
+          setDirty(false);
+          setSaveState("saved");
+        }
+      })
+      .catch((err) => {
+        setSaveState("error");
+        setReply((err as Error).message);
+      });
+  }
+
+  // Leaving the page with unsaved typing: save it on the way out.
+  useEffect(() => {
+    const onLeave = () => flushSave();
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  });
 
   function saveWord() {
     if (!word.trim() && !body.trim()) return;
