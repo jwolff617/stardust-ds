@@ -56,7 +56,7 @@ const noopSubscribe = () => () => {};
 // "Peacemaker's Notes" is stored with the owner's name; on your own page
 // it's just "Notes".
 function shortName(name: string): string {
-  return name.replace(/^.{1,40}?['â€™]s\s+/, "") || name;
+  return name.replace(/^.{1,40}?['’]s\s+/, "") || name;
 }
 
 type DictionaryResult = {
@@ -511,13 +511,13 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         {isLoggedIn && userName && <p className="mt-1 text-base text-[var(--muted)] sm:text-lg">{userName}</p>}
       </header>
 
-      <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[25fr_65fr_10fr] lg:gap-5">
+      <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22fr_58fr_20fr] lg:gap-5">
         {/* Left: Today's Word List, then Verbs and Things. On phones the list
             comes first and Verbs and Things drop below the tags. */}
         <aside className="flex min-w-0 flex-col gap-6">
           <WordListPanel isLoggedIn={isLoggedIn} list={wordList} onOpen={openListWord} />
-          <div className="hidden lg:flex lg:flex-col lg:gap-6">
-            <VerbsAndThings onVerb={toBar} onThing={pickThing} />
+          <div className="hidden lg:block">
+            <Things onThing={pickThing} />
           </div>
         </aside>
 
@@ -554,19 +554,28 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             )}
 
             {openType && <TypePill type={openType} />}
+            {(box.mode !== "spark" && box.mode !== "search") || word || body || Object.values(fields).some(Boolean) ? (
+              <button
+                type="button"
+                onClick={clearToSearch}
+                className="shrink-0 border border-[var(--foreground)] px-2 py-0.5 text-[11px] font-semibold tracking-widest hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+              >
+                CLEAR
+              </button>
+            ) : null}
           </div>
           {box.mode === "word" && ref?.kind === "organization" && orgInfo && (
             <p className="-mt-1 text-xs text-[var(--muted)]">
               {orgInfo.kind}
               {orgInfo.website && (
                 <>
-                  {" Â· "}
+                  {" · "}
                   <a href={/^https?:/.test(orgInfo.website) ? orgInfo.website : `https://${orgInfo.website}`} target="_blank" rel="noreferrer" className="underline">
                     {orgInfo.website.replace(/^https?:\/\//, "")}
                   </a>
                 </>
               )}
-              {orgInfo.official ? " Â· Official" : orgInfo.applied ? " Â· waiting on Official" : ""}
+              {orgInfo.official ? " · Official" : orgInfo.applied ? " · waiting on Official" : ""}
             </p>
           )}
           {/* The body */}
@@ -578,7 +587,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                 aria-label="Close"
                 className="absolute right-2 top-1 px-2 text-2xl leading-none text-[var(--muted)] hover:text-[var(--foreground)]"
               >
-                Ã—
+                ×
               </button>
             )}
             <Box
@@ -653,11 +662,15 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               ))}
             </div>
           </Panel>
+          <div className="mt-6 hidden lg:block">
+            <Verbs onVerb={toBar} />
+          </div>
         </aside>
 
         {/* Phones: Verbs and Things below the tags */}
         <div className="flex flex-col gap-6 lg:hidden">
-          <VerbsAndThings onVerb={toBar} onThing={pickThing} />
+          <Verbs onVerb={toBar} />
+          <Things onThing={pickThing} />
         </div>
       </div>
 
@@ -783,7 +796,7 @@ function Box({
                 </span>
                 <span className="line-clamp-2 text-sm text-[var(--muted)]">{item.body}</span>
                 <span className="text-xs opacity-50">
-                  {[item.details, item.place, item.people, item.time, item.visibility].filter(Boolean).join(" Â· ")}
+                  {[item.details, item.place, item.people, item.time, item.visibility].filter(Boolean).join(" · ")}
                 </span>
                 {item.shared && item.shared.length > 0 && (
                   <span className="text-xs opacity-70">Shares: {item.shared.slice(0, 8).join(", ")}</span>
@@ -875,7 +888,7 @@ function WordListPanel({
 }) {
   const empty = "text-sm text-[var(--muted)]";
   return (
-    <Panel title="TODAYâ€™S WORD LIST">
+    <Panel title="TODAY’S WORD LIST">
       {!isLoggedIn ? (
         <p className={empty}>Log in to keep a word list.</p>
       ) : !list.exists ? (
@@ -903,43 +916,45 @@ function WordListPanel({
 }
 
 const VERBS = ["new", "edit", "search", "view", "match", "contact", "share", "delete", "remove"];
-// Things, by who sees them.
-const THINGS: { group: string; words: string[] }[] = [
-  { group: "Public", words: ["idea", "org", "profile", "resource"] },
-  { group: "Shared", words: ["group", "inbox", "settings"] },
-  { group: "Private", words: ["note", "journal"] },
+// Things, public first, then shared, then private. A thin line between
+// the three; hover says which.
+const THINGS: { who: string; words: string[] }[] = [
+  { who: "Public", words: ["idea", "org", "profile", "resource"] },
+  { who: "Shared", words: ["group", "inbox", "settings"] },
+  { who: "Private", words: ["note", "journal"] },
 ];
 
-function VerbsAndThings({ onVerb, onThing }: { onVerb: (text: string) => void; onThing: (thing: string) => void }) {
-  const item = "px-1.5 py-0.5 text-left text-sm hover:bg-[var(--soft)] hover:underline";
+const ITEM = "px-1.5 py-0.5 text-left text-sm hover:bg-[var(--soft)] hover:underline";
+
+function Verbs({ onVerb }: { onVerb: (text: string) => void }) {
   return (
-    <>
-      <Panel title="VERBS">
-        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-2">
-          {VERBS.map((v) => (
-            <button key={v} type="button" onClick={() => onVerb(v)} className={item}>
-              {v}
-            </button>
-          ))}
-        </div>
-      </Panel>
-      <Panel title="THINGS">
-        <div className="flex flex-col gap-2">
-          {THINGS.map((g) => (
-            <div key={g.group}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">{g.group}</p>
-              <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-2">
-                {g.words.map((w) => (
-                  <button key={w} type="button" onClick={() => onThing(w)} className={item}>
-                    {w}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Panel>
-    </>
+    <Panel title="VERBS">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-2">
+        {VERBS.map((v) => (
+          <button key={v} type="button" onClick={() => onVerb(v)} className={ITEM}>
+            {v}
+          </button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+function Things({ onThing }: { onThing: (thing: string) => void }) {
+  return (
+    <Panel title="THINGS">
+      <div className="-mx-3 flex flex-col">
+        {THINGS.map((g) => (
+          <div key={g.who} title={g.who} className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-[var(--line)] px-3 py-1.5 last:border-b-0 sm:grid-cols-3 lg:grid-cols-2">
+            {g.words.map((w) => (
+              <button key={w} type="button" onClick={() => onThing(w)} title={`${w} · ${g.who.toLowerCase()}`} className={ITEM}>
+                {w}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }
 
