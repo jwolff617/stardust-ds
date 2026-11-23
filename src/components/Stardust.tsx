@@ -79,6 +79,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const [privateProfileId, setPrivateProfileId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
+  const [wordList, setWordList] = useState<{ exists: boolean; words: ListWord[] }>({ exists: false, words: [] });
 
   const [input, setInput] = useState("");
   const [reply, setReply] = useState("");
@@ -123,6 +124,21 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     setPrivateProfileId(privateId);
     return mine;
   }, [fetchDictionaries]);
+
+  const loadWordList = useCallback(async () => {
+    if (!isLoggedIn) return;
+    const res = await fetch("/api/word-list");
+    const data = await res.json();
+    setWordList({ exists: Boolean(data.exists), words: data.words ?? [] });
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/word-list")
+      .then((r) => r.json())
+      .then((data) => setWordList({ exists: Boolean(data.exists), words: data.words ?? [] }))
+      .catch(() => {});
+  }, [isLoggedIn]);
 
   useEffect(() => {
     fetchDictionaries()
@@ -196,9 +212,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         case "clear":
           clearToSearch();
           break;
+        case "word-list":
+          await loadWordList();
+          break;
       }
     },
-    [dictionaries, loadDictionaries],
+    [dictionaries, loadDictionaries, loadWordList],
   );
 
   async function send(text: string) {
@@ -246,6 +265,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       const decoder = new TextDecoder();
       let buffer = "";
       let showedResults = false;
+      let showedSomething = false;
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
@@ -256,12 +276,15 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           if (chunk) setReply((r) => r + chunk);
           for (const d of directives) {
             // Once results are up, nothing else in the same reply replaces them.
-            if (showedResults && d.type !== "results") continue;
+            if (showedResults && d.type !== "results" && d.type !== "word-list") continue;
             if (d.type === "results") showedResults = true;
+            if (d.type !== "word-list") showedSomething = true;
             await applyDirective(d);
           }
         }
       }
+      // The page answered. Sage's words stay only when it's asking something.
+      if (showedSomething) setReply((r) => (r.includes("?") ? r : ""));
       setReloadKey((k) => k + 1);
     } catch {
       setReply("Something went wrong.");
@@ -358,6 +381,40 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     }
   };
 
+  // A word-list word opens with its body ready to edit.
+  async function openListWord(w: ListWord) {
+    if (w.refId && w.kind !== "new") {
+      const res = await fetch(`/api/word?kind=${encodeURIComponent(w.kind)}&id=${w.refId}`);
+      if (res.ok) {
+        const d = await res.json();
+        showWord({ word: d.word, body: d.body ?? "", kind: d.kind, id: d.id, place: d.place, people: d.people, time: d.time, visibility: d.visibility });
+        requestAnimationFrame(() => document.getElementById("body")?.focus());
+        return;
+      }
+    }
+    // A new word: its body is blank and waiting.
+    showWord({ word: w.word, body: "" });
+    requestAnimationFrame(() => document.getElementById("body")?.focus());
+  }
+
+  // Clicking a verb or a thing puts it in the Sage bar.
+  function toBar(text: string) {
+    setInput((prev) => (prev.trim() ? `${prev.trim()} ${text} ` : `${text} `));
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  // What kind of word is open, for the oval next to it.
+  const openType =
+    box.mode === "word"
+      ? ref?.kind ?? "word"
+      : box.mode === "results"
+        ? "search"
+        : box.mode === "view"
+          ? "view"
+          : box.mode === "panel"
+            ? box.panel
+            : "";
+
   function saveWord() {
     if (!word.trim() && !body.trim()) return;
     send(ref ? `Save my changes to this ${ref.kind}.` : "Save the word on the page. If it's new, ask me where it goes unless it's clear.");
@@ -365,7 +422,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-6 sm:px-8">
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-6 sm:px-8">
       {/* Top: title in the center, login and the dictionary at the right */}
       <header className="relative flex flex-col items-center pt-6 sm:pt-8">
         <div className="absolute right-0 top-6 flex flex-col items-end gap-1 text-sm sm:top-8">
@@ -388,115 +445,134 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         {isLoggedIn && userName && <p className="mt-2 text-base opacity-70 sm:text-lg">{userName}</p>}
       </header>
 
-      {/* WORD */}
-      <div className="mt-8 flex items-baseline gap-3 sm:mt-10">
-        <label htmlFor="word" className="shrink-0 text-2xl font-semibold tracking-widest sm:text-4xl">
-          WORD:
-        </label>
-        <input
-          id="word"
-          value={word}
-          readOnly={!wordEditable}
-          onFocus={() => box.mode === "spark" && setBox({ mode: "search" })}
-          onChange={(e) => {
-            setWord(e.target.value);
-            setDirty(true);
-          }}
-          onKeyDown={onFormKey}
-          aria-label="Word"
-          className={`min-w-0 flex-1 bg-transparent pb-1 text-2xl outline-none sm:text-4xl ${
-            wordEditable ? "border-b border-[var(--line)] focus:border-[var(--foreground)]" : "border-b border-transparent"
-          }`}
-        />
-        {box.mode === "word" && isLoggedIn && !renaming && (
-          <button
-            type="button"
-            onClick={() => {
-              setRenaming(true);
-              requestAnimationFrame(() => document.getElementById("word")?.focus());
-            }}
-            className="shrink-0 self-center text-xs tracking-widest opacity-50 hover:opacity-100"
-          >
-            EDIT
-          </button>
-        )}
-      </div>
+      <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[25fr_65fr_10fr] lg:gap-5">
+        {/* Left: Today's Word List, then Verbs and Things. On phones the list
+            comes first and Verbs and Things drop below the tags. */}
+        <aside className="flex min-w-0 flex-col gap-6">
+          <WordListPanel isLoggedIn={isLoggedIn} list={wordList} onOpen={openListWord} />
+          <div className="hidden lg:flex lg:flex-col lg:gap-6">
+            <VerbsAndThings onPick={toBar} />
+          </div>
+        </aside>
 
-      {/* The rectangle */}
-      <section className="relative mt-6 flex min-h-[45vh] flex-col rounded-md border-2 border-[var(--foreground)] p-4 sm:p-6">
-        {box.mode !== "spark" && box.mode !== "search" && (
-          <button
-            type="button"
-            onClick={clearToSearch}
-            aria-label="Close"
-            className="absolute right-2 top-1 px-2 text-2xl leading-none opacity-60 hover:opacity-100"
-          >
-            ×
-          </button>
-        )}
-        <Box
-          box={box}
-          body={body}
-          setBody={(b) => {
-            setBody(b);
-            if (box.mode === "word") setDirty(true);
-          }}
-          onFormKey={onFormKey}
-          isLoggedIn={isLoggedIn}
-          reloadKey={reloadKey}
-          privateProfileId={privateProfileId}
-          onOpen={(f) => showWord(f)}
-          onChanged={() => {
-            setReloadKey((k) => k + 1);
-            loadDictionaries().catch(() => {});
-          }}
-          onClose={clearToSearch}
-        />
-      </section>
-
-      {/* Place, People, Time, Visibility */}
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-6">
-        {FIELD_NAMES.map(({ key, label }) => (
-          <label key={key} className="flex flex-col items-center gap-1 text-center">
-            <span className="text-xs font-semibold tracking-[0.25em] opacity-60">{label.toUpperCase()}</span>
+        {/* Center: the word, its type, and its body */}
+        <section className="flex min-w-0 flex-col gap-3">
+          <div className="flex items-center gap-3 border-b border-[var(--line)] pb-2">
             <input
-              value={fields[key]}
-              readOnly={!editable}
+              id="word"
+              value={word}
+              readOnly={!wordEditable}
+              onFocus={() => box.mode === "spark" && setBox({ mode: "search" })}
               onChange={(e) => {
-                setFields((f) => ({ ...f, [key]: e.target.value }));
+                setWord(e.target.value);
                 setDirty(true);
               }}
               onKeyDown={onFormKey}
-              className="w-full border-b border-[var(--line)] pb-1 text-center text-base outline-none placeholder:opacity-30"
+              aria-label="Word"
+              placeholder={searching ? "Word" : ""}
+              className={`min-w-0 flex-1 bg-transparent text-2xl font-semibold outline-none sm:text-3xl ${
+                wordEditable ? "placeholder:font-normal placeholder:opacity-30" : ""
+              }`}
             />
-          </label>
-        ))}
-      </div>
-      {(searching || (box.mode === "word" && isLoggedIn && dirty)) && (
-        <div className="mt-3 flex justify-center gap-3">
-          <button
-            type="button"
-            onClick={searching ? searchFromForm : saveWord}
-            disabled={sending}
-            className="rounded-full border border-[var(--foreground)] px-5 py-1 text-sm tracking-widest disabled:opacity-40"
-          >
-            {searching ? "SEARCH" : "SAVE"}
-          </button>
-          {searching && (
-            <button
-              type="button"
-              onClick={createFromForm}
-              disabled={sending}
-              className="rounded-full bg-[var(--foreground)] px-5 py-1 text-sm tracking-widest text-[var(--background)] disabled:opacity-40"
-            >
-              CREATE
-            </button>
+            {box.mode === "word" && isLoggedIn && !renaming && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRenaming(true);
+                  requestAnimationFrame(() => document.getElementById("word")?.focus());
+                }}
+                className="shrink-0 self-center text-xs tracking-widest opacity-50 hover:opacity-100"
+              >
+                EDIT
+              </button>
+            )}
+
+            {openType && <TypePill type={openType} />}
+          </div>
+          {/* The body */}
+          <section className="relative flex min-h-[45vh] flex-1 flex-col rounded-md border border-[var(--line)] p-4 sm:p-6">
+            {box.mode !== "spark" && box.mode !== "search" && (
+              <button
+                type="button"
+                onClick={clearToSearch}
+                aria-label="Close"
+                className="absolute right-2 top-1 px-2 text-2xl leading-none opacity-60 hover:opacity-100"
+              >
+                ×
+              </button>
+            )}
+            <Box
+              box={box}
+              body={body}
+              setBody={(b) => {
+                setBody(b);
+                if (box.mode === "word") setDirty(true);
+              }}
+              onFormKey={onFormKey}
+              isLoggedIn={isLoggedIn}
+              reloadKey={reloadKey}
+              privateProfileId={privateProfileId}
+              onOpen={(f) => showWord(f)}
+              onChanged={() => {
+                setReloadKey((k) => k + 1);
+                loadDictionaries().catch(() => {});
+              }}
+              onClose={clearToSearch}
+            />
+          </section>
+
+          {(searching || (box.mode === "word" && isLoggedIn && dirty)) && (
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                type="button"
+                onClick={searching ? searchFromForm : saveWord}
+                disabled={sending}
+                className="rounded-full border border-[var(--foreground)] px-5 py-1 text-sm tracking-widest disabled:opacity-40"
+              >
+                {searching ? "SEARCH" : "SAVE"}
+              </button>
+              {searching && (
+                <button
+                  type="button"
+                  onClick={createFromForm}
+                  disabled={sending}
+                  className="rounded-full bg-[var(--foreground)] px-5 py-1 text-sm tracking-widest text-[var(--background)] disabled:opacity-40"
+                >
+                  CREATE
+                </button>
+              )}
+            </div>
           )}
+        </section>
+
+        {/* Right: Tags */}
+        <aside className="flex min-w-0 flex-col gap-4 rounded-md border border-[var(--line)] p-3 lg:rounded-none lg:border-0 lg:border-l lg:p-0 lg:pl-3">
+          <h2 className="text-xs font-semibold tracking-[0.25em] opacity-70">TAGS</h2>
+          {FIELD_NAMES.map(({ key, label }) => (
+            <label key={key} className="flex flex-col gap-1">
+              <span className="text-[11px] tracking-widest opacity-60">{label === "Place" ? "Location" : label}</span>
+              <input
+                value={fields[key]}
+                readOnly={!editable}
+                onChange={(e) => {
+                  setFields((f) => ({ ...f, [key]: e.target.value }));
+                  setDirty(true);
+                }}
+                onKeyDown={onFormKey}
+                className="w-full min-w-0 border-b border-[var(--line)] pb-1 text-sm outline-none"
+              />
+            </label>
+          ))}
+        </aside>
+
+        {/* Phones: Verbs and Things below the tags */}
+        <div className="flex flex-col gap-6 lg:hidden">
+          <VerbsAndThings onPick={toBar} />
         </div>
-      )}
+      </div>
 
       {/* Sage AI */}
-      <section className="mt-6">
+      <section className="sticky bottom-0 mt-6 bg-[var(--background)] pb-2 pt-2">
         {(reply || sending) && (
           <p className="mb-2 whitespace-pre-wrap text-base leading-relaxed">
             <span className="mr-2 text-xs font-semibold tracking-widest opacity-50">SAGE</span>
@@ -530,7 +606,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                 send(input);
               }
             }}
-            rows={input.length > 90 ? 4 : 2}
+            rows={input.length > 90 ? 3 : 1}
             placeholder={isLoggedIn ? "Talk to Sage. Try: new note, match my idea, open Profile, settings." : "Log in to talk to Sage."}
             aria-label="Talk to Sage AI"
             className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1 text-lg outline-none placeholder:opacity-40"
@@ -596,6 +672,7 @@ function Box({
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={onFormKey}
           placeholder={box.mode === "word" ? "Write its meaning here." : isLoggedIn ? "" : "Search public words. Log in to write your own."}
+          id="body"
           aria-label="Body"
           className="min-h-[40vh] w-full flex-1 resize-none pr-6 text-lg leading-relaxed outline-none placeholder:opacity-30"
         />
@@ -661,4 +738,99 @@ function Box({
           );
       }
   }
+}
+
+type ListWord = { id: string; word: string; kind: string; refId: string | null };
+
+// The oval next to a word: what kind of word it is.
+function TypePill({ type }: { type: string }) {
+  const label = type === "organization" ? "org" : type === "new-notebook" ? "group" : type;
+  return (
+    <span className="shrink-0 rounded-full border border-[var(--line)] px-2.5 py-0.5 text-[11px] tracking-wider opacity-70">{label}</span>
+  );
+}
+
+function PanelHeader({ children }: { children: React.ReactNode }) {
+  return <h2 className="mb-2 border-b border-[var(--line)] pb-1 text-xs font-semibold tracking-[0.25em] opacity-70">{children}</h2>;
+}
+
+function WordListPanel({
+  isLoggedIn,
+  list,
+  onOpen,
+}: {
+  isLoggedIn: boolean;
+  list: { exists: boolean; words: ListWord[] };
+  onOpen: (w: ListWord) => void;
+}) {
+  return (
+    <div>
+      <PanelHeader>TODAY&rsquo;S WORD LIST</PanelHeader>
+      {!isLoggedIn ? (
+        <p className="text-sm opacity-50">Log in to keep a word list.</p>
+      ) : !list.exists ? (
+        <p className="text-sm opacity-50">No list yet. Tell Sage: new word list.</p>
+      ) : list.words.length === 0 ? (
+        <p className="text-sm opacity-50">Empty. Tell Sage: add to word list hope.</p>
+      ) : (
+        <ul className="flex flex-col">
+          {list.words.map((w) => (
+            <li key={w.id}>
+              <button
+                type="button"
+                onClick={() => onOpen(w)}
+                className="flex w-full items-center justify-between gap-2 rounded px-1 py-1.5 text-left hover:bg-[var(--soft)]"
+              >
+                <span className="truncate">{w.word}</span>
+                <TypePill type={w.kind} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const VERBS = ["new", "edit", "search", "view", "match", "contact", "share", "delete", "remove"];
+// No marks: public. [brackets]: semi-private. (parentheses): private.
+const THINGS: { word: string; mark: "" | "[]" | "()" }[] = [
+  { word: "idea", mark: "" },
+  { word: "org", mark: "" },
+  { word: "profile", mark: "" },
+  { word: "resource", mark: "" },
+  { word: "inbox", mark: "[]" },
+  { word: "settings", mark: "[]" },
+  { word: "group", mark: "[]" },
+  { word: "note", mark: "()" },
+  { word: "journal", mark: "()" },
+];
+
+function VerbsAndThings({ onPick }: { onPick: (text: string) => void }) {
+  const chip = "rounded px-1.5 py-0.5 text-left hover:bg-[var(--soft)]";
+  return (
+    <>
+      <div>
+        <PanelHeader>VERBS</PanelHeader>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
+          {VERBS.map((v) => (
+            <button key={v} type="button" onClick={() => onPick(v)} className={chip}>
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <PanelHeader>THINGS</PanelHeader>
+        <div className="flex flex-wrap gap-x-2 gap-y-1 text-sm">
+          {THINGS.map((t) => (
+            <button key={t.word} type="button" onClick={() => onPick(t.word)} className={chip}>
+              {t.mark === "[]" ? `[${t.word}]` : t.mark === "()" ? `(${t.word})` : t.word}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] leading-snug opacity-50">word: public · [word]: shared · (word): private</p>
+      </div>
+    </>
+  );
 }

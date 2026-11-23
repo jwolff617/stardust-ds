@@ -86,10 +86,23 @@ export async function runPageTool(
   if (what === "word") {
     const word = str(input.word);
     if (!word) return { ok: false, error: 'what="word" needs a word.' };
-    const kind = str(input.kind) || undefined;
-    const id = /^[0-9a-f-]{36}$/i.test(str(input.id)) ? str(input.id) : undefined;
-    emit({ type: "word", word, body: typeof input.body === "string" ? input.body : "", ...fields, ...(kind && id ? { kind, id } : {}) });
-    return { ok: true, message: `"${word}" is on the page.` };
+    let kind = str(input.kind) || undefined;
+    let id = /^[0-9a-f-]{36}$/i.test(str(input.id)) ? str(input.id) : undefined;
+    let body = typeof input.body === "string" ? input.body : "";
+    let shown = word;
+    // No body and no id: it's a dictionary word ("define love"). Look it up.
+    if (!body && !id) {
+      const hits = await searchEverything(ctx.supabase, { word }, 10);
+      const exact = hits.find((h) => ["noun", "verb", "word"].includes(h.kind) && h.word.toLowerCase().replace(/^the\s+/, "") === word.toLowerCase().replace(/^the\s+/, ""));
+      if (exact) {
+        body = exact.body;
+        kind = exact.kind === "verb" ? "verb" : "noun";
+        id = exact.id;
+        shown = exact.word;
+      }
+    }
+    emit({ type: "word", word: shown, body, ...fields, ...(kind && id ? { kind, id } : {}) });
+    return { ok: true, message: body ? `"${shown}" is on the page.` : `"${shown}" is on the page, blank, ready to write.` };
   }
   if (what === "panel") {
     const panel = PANELS.find((p) => p === str(input.panel));

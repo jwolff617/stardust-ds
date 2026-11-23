@@ -33,7 +33,9 @@ export type UiDirective =
   // Search results, listed in the rectangle.
   | { type: "results"; query: { word?: string; body?: string } & WordFields; items: FoundWord[] }
   // Back to the blank search form.
-  | { type: "clear" };
+  | { type: "clear" }
+  // Today's Word List changed: reload it.
+  | { type: "word-list" };
 
 export function encodeDirective(d: UiDirective): string {
   return `${UI_MARK}${JSON.stringify(d)}${UI_MARK}`;
