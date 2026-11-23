@@ -39,6 +39,7 @@ export async function buildSystemPrompt(
 The words the user speaks to you:
 - New: make a new word (a note, a journal entry, a profile entry, an organization, a group). Use the add tool for the noun. When you add something, also call show with what="word" so it lands on the page (word = a short title, body = what was written, plus place, people, time, visibility).
 - View: put something on the page with the show tool. A word: what="word". A dictionary's own view (Notes, a journal, Bet Stories, Profile, After School, Birthdays, Address Book): what="view" with its name. Profile is where they build their entries by hand. If it isn't on yet, add Dictionary first, then show it.
+- After search or Match, the results are on the page: don't call show in that reply (no clear, no word). They stay until the user opens one or closes them.
 - Search: the search tool. Word looks up a dictionary term or a title. Body finds words in profile entries (people, ideas, jobs, resources), profiles, journals, notes, and organizations. Place, People, Time, Visibility narrow it. Only pass what the user gave.
 - Match: Act Match on Profile Entry. kind=idea searches ideas; job pairs hiring with looking; resource pairs have with need; person matches people by relationship (romance, friendship, business). The matches go on the page. If they have no entry of that kind yet, offer to write one with them first: matches come from shared words.
 - Edit: change a word with the edit tool. "Edit this" means the word on the page.

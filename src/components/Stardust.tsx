@@ -96,6 +96,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // the rectangle is where its meaning gets written.
   const searching = box.mode === "search";
   const editable = searching || (box.mode === "word" && isLoggedIn);
+  // Renaming a word is rare: it takes the Edit button.
+  const [renaming, setRenaming] = useState(false);
+  const wordEditable = searching || (box.mode === "word" && isLoggedIn && renaming);
 
   // The spark's dictionaries, for views and hotkeys.
   const fetchDictionaries = useCallback(async () => {
@@ -131,6 +134,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }, [fetchDictionaries]);
 
   function clearToSearch() {
+    setRenaming(false);
     setRef(null);
     setDirty(false);
     setWord("");
@@ -140,6 +144,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }
 
   function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields) {
+    setRenaming(false);
     setRef(w.kind && w.id ? { kind: w.kind, id: w.id } : null);
     setDirty(false);
     setWord(w.word);
@@ -162,7 +167,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         case "results":
           setWord(d.query.word ?? "");
           setBody(d.query.body ?? "");
-          setFields({ ...EMPTY_FIELDS, ...d.query } as Fields);
+          setFields({
+            place: d.query.place ?? "",
+            people: d.query.people ?? "",
+            time: d.query.time ?? "",
+            visibility: d.query.visibility ?? "",
+          });
           setBox({ mode: "results", items: d.items });
           break;
         case "view": {
@@ -233,6 +243,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let showedResults = false;
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
@@ -241,7 +252,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           const { text: chunk, directives, rest } = splitStream(buffer);
           buffer = rest;
           if (chunk) setReply((r) => r + chunk);
-          for (const d of directives) await applyDirective(d);
+          for (const d of directives) {
+            // Once results are up, nothing else in the same reply replaces them.
+            if (showedResults && d.type !== "results") continue;
+            if (d.type === "results") showedResults = true;
+            await applyDirective(d);
+          }
         }
       }
       setReloadKey((k) => k + 1);
@@ -358,16 +374,30 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         <input
           id="word"
           value={word}
-          readOnly={!editable}
+          readOnly={!wordEditable}
           onFocus={() => box.mode === "spark" && setBox({ mode: "search" })}
           onChange={(e) => {
             setWord(e.target.value);
             setDirty(true);
           }}
           onKeyDown={onFormKey}
-          placeholder={editable ? "________________" : ""}
-          className="min-w-0 flex-1 border-b-2 border-[var(--foreground)] pb-1 text-2xl outline-none placeholder:opacity-30 sm:text-4xl"
+          aria-label="Word"
+          className={`min-w-0 flex-1 bg-transparent pb-1 text-2xl outline-none sm:text-4xl ${
+            wordEditable ? "border-b border-[var(--line)] focus:border-[var(--foreground)]" : "border-b border-transparent"
+          }`}
         />
+        {box.mode === "word" && isLoggedIn && !renaming && (
+          <button
+            type="button"
+            onClick={() => {
+              setRenaming(true);
+              requestAnimationFrame(() => document.getElementById("word")?.focus());
+            }}
+            className="shrink-0 self-center text-xs tracking-widest opacity-50 hover:opacity-100"
+          >
+            EDIT
+          </button>
+        )}
       </div>
 
       {/* The rectangle */}
@@ -416,7 +446,6 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                 setDirty(true);
               }}
               onKeyDown={onFormKey}
-              placeholder={editable ? "—" : ""}
               className="w-full border-b border-[var(--line)] pb-1 text-center text-base outline-none placeholder:opacity-30"
             />
           </label>
@@ -450,6 +479,16 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           }}
           className="flex items-stretch gap-2 rounded-md border-2 border-[var(--foreground)] p-2"
         >
+          {hasSpeech && (
+            <button
+              type="button"
+              onClick={toggleListening}
+              aria-label={listening ? "Stop listening" : "Speak"}
+              className={`shrink-0 rounded-md px-3 text-sm ${listening ? "bg-red-600 text-white" : "border border-[var(--line)]"}`}
+            >
+              {listening ? "● Stop" : "🎤"}
+            </button>
+          )}
           <textarea
             ref={inputRef}
             value={input}
@@ -465,16 +504,6 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             aria-label="Talk to Sage AI"
             className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1 text-lg outline-none placeholder:opacity-40"
           />
-          {hasSpeech && (
-            <button
-              type="button"
-              onClick={toggleListening}
-              aria-label={listening ? "Stop listening" : "Speak"}
-              className={`shrink-0 rounded-md px-3 text-sm ${listening ? "bg-red-600 text-white" : "border border-[var(--line)]"}`}
-            >
-              {listening ? "● Stop" : "🎤"}
-            </button>
-          )}
           <button
             type="submit"
             disabled={sending || !input.trim()}
