@@ -71,7 +71,11 @@ export const BASIC_APPS: BasicApp[] = [
     table: "journal_entries",
     noun: "Journal Entry",
     nounDescription: "An entry in a Journal: what happened, how it felt. Dated by when it was written. Newest first. Private.",
-    fields: [{ key: "body", label: "Entry", type: "longtext", required: true, max: 50000 }],
+    fields: [
+      { key: "body", label: "Entry", type: "longtext", required: true, max: 50000 },
+      { key: "place", label: "Place", type: "text", max: 120 },
+      { key: "people", label: "People", type: "text", max: 300 },
+    ],
     titleField: "body",
     addLabel: "What happened today?",
     sort: (a, b) => b.createdAt.localeCompare(a.createdAt),

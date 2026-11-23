@@ -64,6 +64,8 @@ const timeFrameField = {
   description: "How long the note lives. A day note archives at the user's midnight; life never expires.",
 };
 const labelField = { name: "label", type: "enum" as const, options: [...NOTE_LABELS, "none"] };
+const placeField = { name: "place", type: "text" as const, max: 120, description: "Where: a town, neighborhood, region, or country." };
+const peopleField = { name: "people", type: "text" as const, max: 300, description: "Who it's about or with, by name." };
 
 export const noteNoun: NounDef = {
   name: "Note",
@@ -72,7 +74,7 @@ export const noteNoun: NounDef = {
   notes: 'If the user doesn\'t say a time frame, pick the one their words imply ("today" is day, "this week" is week) and default to day. ',
   verbs: {
     Add: {
-      params: [{ name: "body", type: "text", required: true }, timeFrameField, labelField],
+      params: [{ name: "body", type: "text", required: true }, timeFrameField, labelField, placeField, peopleField],
       run: async ({ ctx, dictionary, values }) => {
         const timeFrame = (values.time_frame as TimeFrame) ?? "day";
         const label = values.label && values.label !== "none" ? String(values.label) : null;
@@ -84,6 +86,8 @@ export const noteNoun: NounDef = {
           time_frame: timeFrame,
           label,
           expires_at: expiresFor(ctx, timeFrame),
+          ...(values.place ? { place: values.place } : {}),
+          ...(values.people ? { people: values.people } : {}),
         });
         if (error) return { ok: false, error: error.message };
         return { ok: true, message: `Wrote a new ${timeFrame} note${label ? ` labeled ${label}` : ""}.` };
@@ -92,16 +96,18 @@ export const noteNoun: NounDef = {
     Edit: {
       description: "A new time frame starts its life now. Label none clears it.",
       target: NOTE_TARGET,
-      params: [{ name: "body", type: "text" }, timeFrameField, labelField],
+      params: [{ name: "body", type: "text" }, timeFrameField, labelField, placeField, peopleField],
       run: async ({ ctx, dictionary, target, values }) => {
         const update: Record<string, unknown> = {};
         if (values.body) update.body = values.body;
         if (values.label) update.label = values.label === "none" ? null : values.label;
+        if (typeof values.place === "string") update.place = values.place;
+        if (typeof values.people === "string") update.people = values.people;
         if (values.time_frame) {
           update.time_frame = values.time_frame;
           update.expires_at = expiresFor(ctx, values.time_frame as TimeFrame);
         }
-        if (Object.keys(update).length === 0) return { ok: false, error: "Need new content, a label, or a time frame." };
+        if (Object.keys(update).length === 0) return { ok: false, error: "Need new content, a label, a time frame, a place, or people." };
         return updateNote(ctx.supabase, dictionary!.id, target!, update, (l) => `Updated ${l}.`);
       },
     },

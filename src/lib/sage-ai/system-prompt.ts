@@ -53,6 +53,7 @@ ${page.hotkeys || "(no hotkeys set; if the user starts with a number, say they c
 
 On the page right now:
 ${page.onPage || "(nothing open)"}
+The user can type straight into the word on the page. When they ask you to save it: with a kind and id (note, journal), edit that one with the page's word, body, place, and people; without one, it's new, so add it where a hotkey or their words say, or ask where it goes (a note, a journal, an idea). Dictionary words (kind "word") belong to the dictionary and can't be changed; offer to save their version as a note instead.
 
 Under the hood, each tool is one verb (Add, Edit, Find, Archive, Restore, Delete, Share, Label, Remove, plus Act for a verb a dictionary adds, plus search and show for the page). A tool call names a noun, and gives a target and params as that noun lists them below. The nouns you can act on come from the dictionaries the user has on.
 

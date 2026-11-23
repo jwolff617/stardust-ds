@@ -86,7 +86,13 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const hasSpeech = useSyncExternalStore(noopSubscribe, () => Boolean(speechCtor()), () => false);
 
-  const editable = box.mode === "search";
+  // What the open word is, when it came from a search: Sage edits it by id.
+  const [ref, setRef] = useState<{ kind: string; id: string } | null>(null);
+  const [dirty, setDirty] = useState(false);
+  // The search form is always typeable. A word is typeable when signed in:
+  // the rectangle is where its meaning gets written.
+  const searching = box.mode === "search";
+  const editable = searching || (box.mode === "word" && isLoggedIn);
 
   // The spark's dictionaries, for views and hotkeys.
   const fetchDictionaries = useCallback(async () => {
@@ -116,13 +122,17 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }, [fetchDictionaries]);
 
   function clearToSearch() {
+    setRef(null);
+    setDirty(false);
     setWord("");
     setBody("");
     setFields(EMPTY_FIELDS);
     setBox({ mode: "search" });
   }
 
-  function showWord(w: { word: string; body: string } & WordFields) {
+  function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields) {
+    setRef(w.kind && w.id ? { kind: w.kind, id: w.id } : null);
+    setDirty(false);
     setWord(w.word);
     setBody(w.body);
     setFields({
@@ -198,7 +208,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           conversationId: conversationRef.current,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           // What's on the page, so "edit this" and "match it" make sense.
-          onPage: box.mode === "word" || box.mode === "results" ? { word, body: body.slice(0, 2000), ...fields } : null,
+          onPage:
+            box.mode === "word" || box.mode === "results"
+              ? { word, body: body.slice(0, 50000), ...fields, ...(ref ? { kind: ref.kind, id: ref.id } : {}), status: dirty ? "changed, not saved" : "saved" }
+              : null,
         }),
       });
       if (!res.ok) {
@@ -287,12 +300,22 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     setListening(true);
   }
 
+  // Enter searches the form. On a word, Ctrl+Enter saves (Enter is a new line).
   const onFormKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey && editable) {
+    if (searching && e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       searchFromForm();
+    } else if (box.mode === "word" && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      saveWord();
     }
   };
+
+  function saveWord() {
+    if (!word.trim() && !body.trim()) return;
+    send(ref ? `Save my changes to this ${ref.kind}.` : "Save the word on the page. If it's new, ask me where it goes unless it's clear.");
+    setDirty(false);
+  }
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-6 sm:px-8">
@@ -328,7 +351,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           value={word}
           readOnly={!editable}
           onFocus={() => box.mode === "spark" && setBox({ mode: "search" })}
-          onChange={(e) => setWord(e.target.value)}
+          onChange={(e) => {
+            setWord(e.target.value);
+            setDirty(true);
+          }}
           onKeyDown={onFormKey}
           placeholder={editable ? "________________" : ""}
           className="min-w-0 flex-1 border-b-2 border-[var(--foreground)] pb-1 text-2xl outline-none placeholder:opacity-30 sm:text-4xl"
@@ -350,7 +376,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         <Box
           box={box}
           body={body}
-          setBody={setBody}
+          setBody={(b) => {
+            setBody(b);
+            if (box.mode === "word") setDirty(true);
+          }}
           onFormKey={onFormKey}
           isLoggedIn={isLoggedIn}
           reloadKey={reloadKey}
@@ -372,7 +401,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             <input
               value={fields[key]}
               readOnly={!editable}
-              onChange={(e) => setFields((f) => ({ ...f, [key]: e.target.value }))}
+              onChange={(e) => {
+                setFields((f) => ({ ...f, [key]: e.target.value }));
+                setDirty(true);
+              }}
               onKeyDown={onFormKey}
               placeholder={editable ? "—" : ""}
               className="w-full border-b border-[var(--line)] pb-1 text-center text-base outline-none placeholder:opacity-30"
@@ -380,15 +412,15 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           </label>
         ))}
       </div>
-      {editable && (
+      {(searching || (box.mode === "word" && isLoggedIn && dirty)) && (
         <div className="mt-3 flex justify-center">
           <button
             type="button"
-            onClick={searchFromForm}
+            onClick={searching ? searchFromForm : saveWord}
             disabled={sending}
             className="rounded-full border border-[var(--foreground)] px-5 py-1 text-sm tracking-widest disabled:opacity-40"
           >
-            SEARCH
+            {searching ? "SEARCH" : "SAVE"}
           </button>
         </div>
       )}
@@ -478,7 +510,7 @@ function Box({
   isLoggedIn: boolean;
   reloadKey: number;
   dictionaries: MyDictionary[];
-  onOpen: (w: { word: string; body: string } & WordFields) => void;
+  onOpen: (w: { word: string; body: string; kind?: string; id?: string } & WordFields) => void;
   onChanged: () => void;
   onClose: () => void;
 }) {
@@ -486,18 +518,18 @@ function Box({
     case "spark":
       return <Spark />;
     case "search":
+    case "word":
+      if (box.mode === "word" && !isLoggedIn) return <div className="whitespace-pre-wrap pr-6 text-lg leading-relaxed">{body}</div>;
       return (
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
           onKeyDown={onFormKey}
-          placeholder={isLoggedIn ? "" : "Search public words. Log in to write your own."}
+          placeholder={box.mode === "word" ? "Write its meaning here." : isLoggedIn ? "" : "Search public words. Log in to write your own."}
           aria-label="Body"
-          className="min-h-[40vh] w-full flex-1 resize-none text-lg leading-relaxed outline-none placeholder:opacity-30"
+          className="min-h-[40vh] w-full flex-1 resize-none pr-6 text-lg leading-relaxed outline-none placeholder:opacity-30"
         />
       );
-    case "word":
-      return <div className="whitespace-pre-wrap pr-6 text-lg leading-relaxed">{body}</div>;
     case "results":
       return box.items.length === 0 ? (
         <p className="opacity-60">Nothing found. Try fewer words, or a wider time.</p>
