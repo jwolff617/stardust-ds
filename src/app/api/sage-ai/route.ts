@@ -7,6 +7,7 @@ import { NOUNS } from "@/lib/sage-ai/nouns";
 import { pageTools, runPageTool } from "@/lib/sage-ai/page-tools";
 import { encodeDirective, type UiDirective } from "@/lib/sage-ui";
 import { cleanPreferences } from "@/lib/preferences";
+import { resolveCode } from "@/lib/shortcuts";
 import { safeTimeZone } from "@/lib/time-frames";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,8 @@ export async function POST(request: Request) {
   const hotkeyLines = resolved.map((h) => h.line);
   // "4", "go to 4", "open #4": straight there, no guessing.
   const jump = prompt.match(/^\s*(?:go\s+to|goto|open|view|show|take\s+me\s+to)?\s*#?(\d{1,3})\s*[.!]?\s*$/i);
+  // "#j", "#pi", "#md": a built-in letter or a ticker.
+  const codeJump = jump ? null : prompt.match(/^\s*#([a-z][a-z0-9]{0,4})\s*$/i);
   const jumpTo = jump ? resolved.find((h) => h.n === jump[1]) : undefined;
   const pageLines: string[] = onPage
     ? ["word", "body", "place", "people", "time", "visibility", "status"]
@@ -114,6 +117,14 @@ export async function POST(request: Request) {
       nounContext.emit = (d) => enqueue(encodeDirective(d));
 
       try {
+        if (codeJump) {
+          const r = await resolveCode(supabase, user.id, codeJump[1]);
+          const text = !r ? `#${codeJump[1]} isn't anything yet.` : "missing" in r ? r.missing : "";
+          if (r && "go" in r) enqueue(encodeDirective(r.go));
+          if (text) enqueue(text);
+          controller.close();
+          return;
+        }
         if (jump) {
           let text = "";
           if (jumpTo?.go) enqueue(encodeDirective(jumpTo.go));

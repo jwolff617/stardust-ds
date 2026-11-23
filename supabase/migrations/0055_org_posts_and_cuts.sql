@@ -43,3 +43,27 @@ where address in ('after-school-ds', 'address-book-ds', 'birthdays-ds')
 
 update user_dictionaries set opted_in = false
 where dictionary_id in (select id from dictionaries where status = 'rejected');
+
+-- 3. Tickers -------------------------------------------------------------------
+-- A short code (2 to 5 letters or digits, starting with a letter, like
+-- "md") that the shortcut box opens. Each points at an organization. Only
+-- moderators assign them. None are assigned yet. Single letters and
+-- p-codes belong to the app (j journals, n notes, pi idea profile...).
+
+create table if not exists tickers (
+  code text primary key check (code ~ '^[a-z][a-z0-9]{1,4}$' and code not in ('pp', 'pi', 'pj', 'pr')),
+  organization_id uuid not null references organizations(id) on delete cascade,
+  assigned_by uuid references auth.users(id) on delete set null,
+  note text not null default '' check (length(note) <= 300),
+  created_at timestamptz not null default now()
+);
+alter table tickers enable row level security;
+drop policy if exists "anyone reads tickers" on tickers;
+create policy "anyone reads tickers" on tickers for select using (true);
+drop policy if exists "moderators assign tickers" on tickers;
+create policy "moderators assign tickers" on tickers for all to authenticated
+  using (is_moderator()) with check (is_moderator());
+
+-- To assign one (moderator, in SQL for now):
+--   insert into tickers (code, organization_id, assigned_by, note)
+--   select 'md', id, auth.uid(), 'sold 2027-01-01' from organizations where slug = '...';

@@ -66,6 +66,7 @@ New, Edit, Search, View, Match, Contact, Share, Delete, Remove.
 - Match: Act Match on Profile Entry (person, job, resource, idea). The matches go on the page.
 - Contact: say hello about someone's profile entry (Act Hello). Their inbox holds the thread.
 - Share, Delete (ask first), Remove.
+- Shortcuts (the # box, or "#j" in chat; the app opens them itself): numbers 1-50 are their hotkeys; j journals, n notes, i ideas, o orgs, g groups, r resources, w their nouns, p profile (pp person, pi idea, pj job, pr resource), s settings, m inbox. Longer codes are tickers a moderator assigns to an org. To open a profile part yourself: show what="panel", panel="profile".
 - Word list: "new word list", "add to word list hope", "remove from word list hope", "delete word list".
 
 ## How to answer

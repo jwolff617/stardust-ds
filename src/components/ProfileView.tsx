@@ -18,7 +18,9 @@ const BLANK = (kind: EntryKind): EntryInput => ({
 
 // Your Profile: who you are and who you hope to meet, your ideas, jobs, and
 // resources. Each one offered or sought. Sage matches them by shared words.
-export function ProfileView({ reloadKey = 0 }: { reloadKey?: number }) {
+export function ProfileView({ reloadKey = 0, section }: { reloadKey?: number; section?: string }) {
+  // Four profiles in one: person (pp), idea (pi), job (pj), resource (pr).
+  const [only, setOnly] = useState<EntryKind | null>((ENTRY_KINDS as readonly string[]).includes(section ?? "") ? (section as EntryKind) : null);
   const [entries, setEntries] = useState<ProfileEntry[] | null>(null);
   const [editing, setEditing] = useState<{ id: string | null; input: EntryInput } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -46,12 +48,25 @@ export function ProfileView({ reloadKey = 0 }: { reloadKey?: number }) {
 
   return (
     <div className="flex flex-col gap-6 text-neutral-900">
+      <div className="flex flex-wrap gap-1.5 text-xs">
+        {[null, ...ENTRY_KINDS].map((k) => (
+          <button
+            key={k ?? "all"}
+            type="button"
+            onClick={() => setOnly(k)}
+            aria-pressed={only === k}
+            className={`rounded-full border px-3 py-1 ${only === k ? "border-neutral-900 bg-neutral-900 text-white" : "border-neutral-300 text-neutral-700"}`}
+          >
+            {k ? `${KIND_LABELS[k]} profile` : "All"}
+          </button>
+        ))}
+      </div>
       <p className="text-sm text-neutral-600">
-        What you offer and what you seek. Public entries are how sparks find you. Ask Sage to match any of them.
+        What you offer and what you seek. Public: this is how sparks find and match you.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {ENTRY_KINDS.map((kind) => {
+      {ENTRY_KINDS.filter((k) => !only || k === only).map((kind) => {
         const mine = entries.filter((e) => e.kind === kind);
         return (
           <section key={kind} className="flex flex-col gap-2">

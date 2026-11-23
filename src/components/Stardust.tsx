@@ -31,9 +31,9 @@ type Box =
   | { mode: "spark" }
   | { mode: "search" }
   | { mode: "word" }
-  | { mode: "results"; items: FoundWord[] }
+  | { mode: "results"; items: FoundWord[]; title?: string }
   | { mode: "view"; dictionary: MyDictionary }
-  | { mode: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile" };
+  | { mode: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile"; section?: string };
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -239,7 +239,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             body: d.query.body ?? "",
             fields: { place: d.query.place ?? "", people: d.query.people ?? "", time: d.query.time ?? "", visibility: d.query.visibility ?? "" },
           };
-          setBox({ mode: "results", items: d.items });
+          setBox({ mode: "results", items: d.items, title: d.title });
+          // "Your journals": Create makes another one.
+          if (d.thing) setNewType(d.thing as WordType);
           break;
         case "view": {
           let match = dictionaries.find((x) => x.id === d.id);
@@ -255,7 +257,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           setWord(PANEL_TITLES[d.panel]);
           setBody("");
           setFields(EMPTY_FIELDS);
-          setBox({ mode: "panel", panel: d.panel });
+          setBox({ mode: "panel", panel: d.panel, section: d.section });
           break;
         case "clear":
           clearToSearch();
@@ -937,9 +939,10 @@ function Box({
       );
     case "results":
       return box.items.length === 0 ? (
-        <p className="opacity-60">Nothing found. Try fewer words, or a wider time.</p>
+        <p className="text-[var(--muted)]">{box.title ? `No ${box.title.replace(/^Your /, "")} yet. Write a word and press Create.` : "Nothing found. Try fewer words, or a wider time."}</p>
       ) : (
         <ul className="flex flex-col divide-y divide-[var(--line)] pr-6">
+          {box.title && <li className="pb-2 text-xs font-medium text-[var(--muted)]">{box.title}</li>}
           {box.items.map((item) => (
             <li key={`${item.kind}-${item.id}`}>
               <button type="button" onClick={() => onOpen(item)} className="flex w-full flex-col gap-1 py-3 text-left hover:opacity-70">
@@ -974,13 +977,13 @@ function Box({
         case "profile":
           return (
             <div className="light-card -m-2 flex flex-col gap-8 rounded p-2 pr-8">
-              {publicProfileId && (
+              {publicProfileId && !box.section && (
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-semibold tracking-[0.2em] text-neutral-900">ABOUT ME</h3>
                   <ProfileFields dictionaries={[{ id: publicProfileId, name: "Profile" }]} reloadKey={reloadKey} />
                 </div>
               )}
-              <ProfileView reloadKey={reloadKey} />
+              <ProfileView key={box.section ?? "all"} reloadKey={reloadKey} section={box.section} />
             </div>
           );
         case "organizations":
@@ -1280,19 +1283,19 @@ function HotkeyBox({ onGo }: { onGo: (n: string) => void }) {
       #
       <input
         value={n}
-        inputMode="numeric"
-        maxLength={3}
-        onChange={(e) => setN(e.target.value.replace(/\D/g, ""))}
+        maxLength={5}
+        onChange={(e) => setN(e.target.value.replace(/[^a-z0-9]/gi, "").toLowerCase())}
         onKeyDown={(e) => {
           if (e.key === "Enter" && n) {
             e.preventDefault();
-            onGo(n);
+            // Numbers are hotkeys; letters are built-in codes or tickers.
+            onGo(/^\d+$/.test(n) ? n : `#${n}`);
             setN("");
           }
         }}
         aria-label="Hotkey number"
-        title="Hotkey: type a number and press Enter"
-        className="w-9 bg-transparent text-[var(--foreground)] outline-none"
+        title="Shortcut: a hotkey number, or j journals, n notes, i ideas, o orgs, g groups, r resources, w nouns, p profile (pp pi pj pr), s settings, m inbox"
+        className="w-11 bg-transparent text-[var(--foreground)] outline-none"
       />
     </label>
   );

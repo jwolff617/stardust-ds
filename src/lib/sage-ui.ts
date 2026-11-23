@@ -31,9 +31,11 @@ export type UiDirective =
   | ({ type: "word"; word: string; body: string; kind?: string; id?: string } & WordFields)
   // A dictionary's own view, or one of the app's panels, in the rectangle.
   | { type: "view"; id: string; name: string }
-  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile" }
+  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile"; section?: string }
   // Search results, listed in the rectangle.
-  | { type: "results"; query: { word?: string; body?: string } & WordFields; items: FoundWord[] }
+  // A list: search results, or "your journals" from a shortcut (title, and
+  // the thing so Create makes one of them).
+  | { type: "results"; query: { word?: string; body?: string } & WordFields; items: FoundWord[]; title?: string; thing?: string }
   // Back to the blank search form.
   | { type: "clear" }
   // Open one word by what it is and its id (a hotkey to an org or entry).
