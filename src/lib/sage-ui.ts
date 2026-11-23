@@ -25,7 +25,8 @@ export type FoundWord = WordFields & {
 
 export type UiDirective =
   // A word fills WORD, the rectangle, and the row of four.
-  | ({ type: "word"; word: string; body: string } & WordFields)
+  // kind and id say what it is (a note, a journal entry...) so it can be edited.
+  | ({ type: "word"; word: string; body: string; kind?: string; id?: string } & WordFields)
   // A dictionary's own view, or one of the app's panels, in the rectangle.
   | { type: "view"; id: string; name: string }
   | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" }

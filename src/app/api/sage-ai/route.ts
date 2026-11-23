@@ -92,11 +92,15 @@ export async function POST(request: Request) {
     const where = copy ? ` (dictionary "${copy.name}", ${copy.scope === "personal" ? "private" : copy.scope === "group" ? "group" : "public"})` : "";
     return `- ${n} = ${h.meaning || copy?.name || "?"}${where}`;
   });
-  const pageLines = onPage
-    ? ["word", "body", "place", "people", "time", "visibility"]
+  const pageLines: string[] = onPage
+    ? ["word", "body", "place", "people", "time", "visibility", "status"]
         .map((k) => (typeof onPage[k] === "string" && onPage[k] ? `- ${k}: ${String(onPage[k]).slice(0, k === "body" ? 2000 : 200)}` : null))
-        .filter(Boolean)
+        .filter((l): l is string => Boolean(l))
     : [];
+  // What the open word is, whether it's theirs, and how to edit it.
+  const openKind = typeof onPage?.kind === "string" ? onPage.kind : "";
+  const openId = typeof onPage?.id === "string" && /^[0-9a-f-]{36}$/i.test(onPage.id) ? onPage.id : "";
+  if (openKind && openId) pageLines.push(await describeOpenWord(supabase, user.id, openKind, openId));
   const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null, describeNouns(nouns, copies), today, {
     hotkeys: hotkeyLines.join("\n"),
     onPage: pageLines.join("\n"),
@@ -201,4 +205,30 @@ export async function POST(request: Request) {
       "X-Conversation-Id": activeConversationId as string,
     },
   });
+}
+
+// One line telling Sage which noun, target, and dictionary the open word is,
+// and whether the user owns it.
+async function describeOpenWord(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, kind: string, id: string): Promise<string> {
+  const notYours = `- open: ${kind} ${id}. It isn't theirs, so it can't be edited; offer to save their own version.`;
+  if (kind === "note" || kind === "journal") {
+    const table = kind === "note" ? "notes" : "journal_entries";
+    const { data } = await supabase.from(table).select("owner_user_id, dictionary:dictionaries(name)").eq("id", id).maybeSingle();
+    if (!data || data.owner_user_id !== userId) return notYours;
+    const d = Array.isArray(data.dictionary) ? data.dictionary[0] : data.dictionary;
+    const noun = kind === "note" ? "Note" : "Journal Entry";
+    const extra = kind === "note" ? " Visibility goes through Share (public or private); Time is its time_frame (day, week, month, year, decade, life)." : " Journal entries have no visibility or time to change.";
+    return `- open: their ${noun}, target ${id}, dictionary "${d?.name ?? ""}". Edit it with noun ${noun}.${extra}`;
+  }
+  if (["person", "idea", "job", "resource"].includes(kind)) {
+    const { data } = await supabase.from("profile_entries").select("owner_user_id").eq("id", id).maybeSingle();
+    if (!data || data.owner_user_id !== userId) return notYours;
+    return `- open: their Profile Entry (${kind}), target ${id}. Edit word, body, place, people, visibility with noun Profile Entry. Time is when it was made and can't change.`;
+  }
+  if (kind === "organization") {
+    const { data } = await supabase.from("organization_members").select("role").eq("organization_id", id).eq("user_id", userId).maybeSingle();
+    if (data?.role !== "admin") return notYours;
+    return `- open: their Organization, target ${id}. Edit name, body, kind, place (its neighborhood), people, visibility with noun Organization.`;
+  }
+  return `- open: a ${kind} from the dictionary. Dictionary words can't be edited.`;
 }

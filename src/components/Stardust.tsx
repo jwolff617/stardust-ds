@@ -143,9 +143,11 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     setBox({ mode: "search" });
   }
 
-  function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields) {
+  // keep: Sage refreshing the word that's open; if it didn't say which
+  // one, it's still the same word, so it stays editable.
+  function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields, keep = false) {
     setRenaming(false);
-    setRef(w.kind && w.id ? { kind: w.kind, id: w.id } : null);
+    setRef((prev) => (w.kind && w.id ? { kind: w.kind, id: w.id } : keep ? prev : null));
     setDirty(false);
     setWord(w.word);
     setBody(w.body);
@@ -162,7 +164,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     async (d: UiDirective) => {
       switch (d.type) {
         case "word":
-          showWord(d);
+          showWord(d, true);
           break;
         case "results":
           setWord(d.query.word ?? "");

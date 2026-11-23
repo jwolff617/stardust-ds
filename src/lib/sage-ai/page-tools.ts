@@ -38,6 +38,8 @@ export function pageTools(viewNames: string[]): Anthropic.Tool[] {
           ...FIELD_PROPS,
           view: { type: "string", description: `For what="view": the dictionary's name. Theirs now: ${viewNames.join(", ") || "none"}.` },
           panel: { type: "string", enum: [...PANELS] },
+          kind: { type: "string", description: 'For what="word": note, journal, person, idea, job, resource, or organization, when it is one.' },
+          id: { type: "string", description: 'For what="word": its id, so the user can keep editing it.' },
         },
         required: ["what"],
       },
@@ -84,7 +86,9 @@ export async function runPageTool(
   if (what === "word") {
     const word = str(input.word);
     if (!word) return { ok: false, error: 'what="word" needs a word.' };
-    emit({ type: "word", word, body: typeof input.body === "string" ? input.body : "", ...fields });
+    const kind = str(input.kind) || undefined;
+    const id = /^[0-9a-f-]{36}$/i.test(str(input.id)) ? str(input.id) : undefined;
+    emit({ type: "word", word, body: typeof input.body === "string" ? input.body : "", ...fields, ...(kind && id ? { kind, id } : {}) });
     return { ok: true, message: `"${word}" is on the page.` };
   }
   if (what === "panel") {
