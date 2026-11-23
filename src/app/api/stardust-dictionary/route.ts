@@ -6,7 +6,7 @@ const PAGE_SIZE = 12;
 const FILTERS = ["all", "noun", "verb", "organization", "person", "mine"] as const;
 type Filter = (typeof FILTERS)[number];
 
-type Entry = { id: string; term: string; body: string; partOfSpeech: string };
+type Entry = { id: string; term: string; body: string; partOfSpeech: string; kind: string };
 
 // The Stardust Dictionary, a page at a time, for the Dictionary popup.
 // Filter by noun, verb, organization (businesses, governments, nonprofits,
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     if (stardust) {
       const pos = filter === "all" ? (["verb", "noun", "more"] as const) : ([filter] as const);
       const defs = await fetchDefinitions(supabase, { dictionaryIds: [stardust.id], partsOfSpeech: [...pos] });
-      all = defs.map((d) => ({ id: d.id, term: d.term, body: d.body, partOfSpeech: d.partOfSpeech }));
+      all = defs.map((d) => ({ id: d.id, term: d.term, body: d.body, partOfSpeech: d.partOfSpeech, kind: d.partOfSpeech === "verb" ? "verb" : "noun" }));
     }
     // Everything you've written is in your dictionary too.
     if (filter === "all" && user) all = all.concat(await myWords(supabase, user.id));
@@ -53,6 +53,7 @@ export async function GET(request: Request) {
       term: o.name,
       body: [o.about, o.neighborhood].filter(Boolean).join(" · "),
       partOfSpeech: `${o.kind}${o.status === "official" ? " · official" : ""}`,
+      kind: "organization",
     }));
   } else {
     // Romance entries never show here; they only show through a match.
@@ -70,6 +71,7 @@ export async function GET(request: Request) {
       term: e.owner_name || "A spark",
       body: [e.word, e.body].filter(Boolean).join(": "),
       partOfSpeech: String((e.details as Record<string, unknown> | null)?.relationship ?? "person"),
+      kind: "person",
     }));
   }
 
@@ -99,22 +101,24 @@ async function myWords(supabase: Awaited<ReturnType<typeof createClient>>, userI
     const line = (t ?? "").trim().split(/\r?\n/)[0];
     return line.length > 60 ? `${line.slice(0, 60)}...` : line;
   };
-  const [notes, journals, entries, orgs] = await Promise.all([
+  const [notes, journals, entries, orgs, nouns] = await Promise.all([
     supabase.from("notes").select("id, body, visibility").eq("owner_user_id", userId).is("archived_at", null).limit(500),
     supabase.from("journal_entries").select("id, body, dictionary:dictionaries(name)").eq("owner_user_id", userId).limit(500),
     supabase.from("profile_entries").select("id, kind, word, body, visibility").eq("owner_user_id", userId).limit(200),
     supabase.from("organization_members").select("organization:organizations(id, name, kind, about)").eq("user_id", userId),
+    supabase.from("my_words").select("id, word, body, visibility").eq("owner_user_id", userId).limit(2000),
   ]);
   const out: Entry[] = [];
-  for (const n of notes.data ?? []) out.push({ id: n.id, term: firstLine(n.body), body: n.body, partOfSpeech: `note · ${n.visibility}` });
+  for (const w of nouns.data ?? []) out.push({ id: w.id, term: w.word, body: w.body, partOfSpeech: `noun · ${w.visibility}`, kind: "mine" });
+  for (const n of notes.data ?? []) out.push({ id: n.id, term: firstLine(n.body), body: n.body, partOfSpeech: `note · ${n.visibility}`, kind: "note" });
   for (const j of journals.data ?? []) {
     const d = Array.isArray(j.dictionary) ? j.dictionary[0] : j.dictionary;
-    out.push({ id: j.id, term: firstLine(j.body), body: j.body, partOfSpeech: `journal · ${d?.name ?? ""}` });
+    out.push({ id: j.id, term: firstLine(j.body), body: j.body, partOfSpeech: `journal · ${d?.name ?? ""}`, kind: "journal" });
   }
-  for (const e of entries.data ?? []) out.push({ id: e.id, term: e.word, body: e.body, partOfSpeech: `${e.kind} · ${e.visibility}` });
+  for (const e of entries.data ?? []) out.push({ id: e.id, term: e.word, body: e.body, partOfSpeech: `${e.kind} · ${e.visibility}`, kind: e.kind });
   for (const r of orgs.data ?? []) {
     const o = Array.isArray(r.organization) ? r.organization[0] : r.organization;
-    if (o) out.push({ id: o.id, term: o.name, body: o.about ?? "", partOfSpeech: `organization · ${o.kind}` });
+    if (o) out.push({ id: o.id, term: o.name, body: o.about ?? "", partOfSpeech: `organization · ${o.kind}`, kind: "organization" });
   }
   return out;
 }

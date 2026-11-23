@@ -70,6 +70,13 @@ export async function runPageTool(
     const query = { word: str(input.word) || undefined, body: str(input.body) || undefined, ...fields };
     if (!Object.values(query).some(Boolean)) return { ok: false, error: "Give at least one thing to search for." };
     const items = await searchEverything(ctx.supabase, query);
+    // An exact match, any case: open it instead of listing.
+    const n = (t: string) => t.trim().toLowerCase().replace(/^the\s+/, "").replace(/\s+/g, " ");
+    const exact = query.word ? items.find((i) => n(i.word) === n(query.word!)) : undefined;
+    if (exact) {
+      emit({ type: "word", word: exact.word, body: exact.body, kind: exact.kind, id: exact.id, place: exact.place, people: exact.people, time: exact.time, visibility: exact.visibility });
+      return { ok: true, message: `"${exact.word}" is on the page.` };
+    }
     emit({ type: "results", query, items });
     return {
       ok: true,

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Entry = { id: string; term: string; body: string; partOfSpeech: string };
+type Entry = { id: string; term: string; body: string; partOfSpeech: string; kind: string };
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 

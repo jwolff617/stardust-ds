@@ -53,6 +53,12 @@ function speechCtor(): (new () => SpeechRecognitionLike) | undefined {
 
 const noopSubscribe = () => () => {};
 
+// Same word, ignoring case, spaces, and a leading "The".
+function sameWord(a: string, b: string) {
+  const n = (t: string) => t.trim().toLowerCase().replace(/^the\s+/, "").replace(/\s+/g, " ");
+  return n(a) === n(b);
+}
+
 // "Peacemaker's Notes" is stored with the owner's name; on your own page
 // it's just "Notes".
 function shortName(name: string): string {
@@ -103,13 +109,11 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
   // The search form is always typeable. A word is typeable when signed in:
   // the rectangle is where its meaning gets written.
   const searching = box.mode === "search";
-  const editable = searching || (box.mode === "word" && isLoggedIn);
   // Renaming a word is rare: it takes the Edit button.
   const [renaming, setRenaming] = useState(false);
   // Create: what kind of word this is, and that kind's own details.
   const [newType, setNewType] = useState<WordType>("noun");
   const [newDetails, setNewDetails] = useState<Record<string, string>>({});
-  const wordEditable = searching || (box.mode === "word" && isLoggedIn && renaming);
 
   // The spark's dictionaries, for views and hotkeys.
   const fetchDictionaries = useCallback(async () => {
@@ -313,11 +317,7 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
       ...FIELD_NAMES.map(({ key, label }) => fields[key].trim() && `${label.toLowerCase()} "${fields[key].trim()}"`),
     ].filter(Boolean);
     if (parts.length === 0) return;
-    if (!isLoggedIn) {
-      publicSearch();
-      return;
-    }
-    send(`Search: ${parts.join(", ")}`);
+    publicSearch();
   }
 
   // Create: the form's word, body, and four fields become a new word. Sage
@@ -378,8 +378,15 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
       for (const { key } of FIELD_NAMES) if (fields[key].trim()) params.set(key, fields[key].trim());
       const res = await fetch(`/api/search?${params}`);
       const data = await res.json();
-      setBox({ mode: "results", items: data.items ?? [] });
+      const items: FoundWord[] = data.items ?? [];
       setReply(data.error ?? "");
+      // An exact match, any case: open it instead of listing.
+      const exact = word.trim() && items.find((i) => sameWord(i.word, word));
+      if (exact) {
+        if (!(await openWord(exact.kind, exact.id))) showWord(exact);
+        return;
+      }
+      setBox({ mode: "results", items });
     } catch {
       setReply("Search didn't work. Try again.");
     } finally {
@@ -476,6 +483,13 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
   const DICTIONARY_KINDS = ["noun", "verb", "word"];
   const canSave = Boolean(ref) && isLoggedIn && (!DICTIONARY_KINDS.includes(ref!.kind) || isModerator);
   const [saveState, setSaveState] = useState<"" | "saving" | "saved" | "error">("");
+  // One rule for every word: yours (or a dictionary word, for a moderator)
+  // types straight in and saves itself. A new word, not made yet, gets
+  // CREATE. Anyone else's word is read-only.
+  const isDraft = box.mode === "word" && isLoggedIn && !ref;
+  const editable = searching || isDraft || (box.mode === "word" && canSave);
+  // Renaming is rare: it takes the EDIT button, then saves itself too.
+  const wordEditable = searching || isDraft || (box.mode === "word" && canSave && renaming);
 
   // Edits save themselves a moment after you stop typing.
   useEffect(() => {
@@ -498,14 +512,11 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
 
   function saveWord() {
     if (!word.trim() && !body.trim()) return;
-    if (!ref || (DICTIONARY_KINDS.includes(ref.kind) && !isModerator)) {
-      // A dictionary word or a new one: make it yours as a noun.
-      setNewType("noun");
-      setBox({ mode: "search" });
-      setRef(null);
-      setReply("Pick its type and press Create.");
+    if (!ref) {
+      createFromForm();
       return;
     }
+    if (!canSave) return;
     setSending(true);
     saveWordAction(ref.kind, ref.id, { word, body, ...fields })
       .then(() => {
@@ -571,7 +582,7 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
                 wordEditable ? "placeholder:font-normal placeholder:opacity-30" : ""
               }`}
             />
-            {box.mode === "word" && isLoggedIn && !renaming && (
+            {box.mode === "word" && canSave && !renaming && (
               <button
                 type="button"
                 onClick={() => {
@@ -650,20 +661,22 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
             />
           </section>
 
-          {searching && isLoggedIn && (
+          {(searching || isDraft) && isLoggedIn && (
             <TypePicker type={newType} onType={(t) => { setNewType(t); setNewDetails({}); }} details={newDetails} onDetails={setNewDetails} />
           )}
-          {(searching || (box.mode === "word" && isLoggedIn && dirty && !canSave)) && (
+          {(searching || isDraft) && (
             <div className="flex flex-wrap justify-center gap-3">
-              <button
-                type="button"
-                onClick={searching ? searchFromForm : saveWord}
-                disabled={sending}
-                className="border-[1.5px] border-[var(--foreground)] px-5 py-1 text-xs font-bold tracking-[0.2em] hover:bg-[var(--soft)] disabled:opacity-40"
-              >
-                {searching ? "SEARCH" : "SAVE"}
-              </button>
               {searching && (
+                <button
+                  type="button"
+                  onClick={searchFromForm}
+                  disabled={sending}
+                  className="border-[1.5px] border-[var(--foreground)] px-5 py-1 text-xs font-bold tracking-[0.2em] hover:bg-[var(--soft)] disabled:opacity-40"
+                >
+                  SEARCH
+                </button>
+              )}
+              {isLoggedIn && (
                 <button
                   type="button"
                   onClick={createFromForm}
@@ -767,7 +780,7 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
           onRestore={() => setPopup("open")}
           onClose={() => setPopup("closed")}
           onPick={(e) => {
-            showWord({ word: e.term, body: e.body, visibility: "public" });
+            openWord(e.kind, e.id).then((ok) => ok || showWord({ word: e.term, body: e.body, visibility: "public" }));
             setPopup("minimized");
           }}
         />
