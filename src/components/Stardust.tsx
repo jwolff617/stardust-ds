@@ -73,7 +73,7 @@ function belongsOf(scope: string): Belongs {
   return scope === "personal" ? "personal" : scope === "group" ? "group" : "public";
 }
 
-export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null }) {
+export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLoggedIn: boolean; userName: string | null; isModerator?: boolean }) {
   const [word, setWord] = useState("");
   const [body, setBody] = useState("");
   const [fields, setFields] = useState<Fields>(EMPTY_FIELDS);
@@ -174,6 +174,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields, keep = false) {
     setRenaming(false);
     if (w.kind !== "organization") setOrgInfo(null);
+    setSaveState("");
     setRef((prev) => (w.kind && w.id ? { kind: w.kind, id: w.id } : keep ? prev : null));
     setDirty(false);
     setWord(w.word);
@@ -465,9 +466,33 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             ? box.panel
             : "";
 
+  // Words this spark can change: their own, and dictionary words for a moderator.
+  const DICTIONARY_KINDS = ["noun", "verb", "word"];
+  const canSave = Boolean(ref) && isLoggedIn && (!DICTIONARY_KINDS.includes(ref!.kind) || isModerator);
+  const [saveState, setSaveState] = useState<"" | "saving" | "saved" | "error">("");
+
+  // Edits save themselves a moment after you stop typing.
+  useEffect(() => {
+    if (!dirty || !canSave || box.mode !== "word" || !ref) return;
+    const t = setTimeout(() => {
+      setSaveState("saving");
+      saveWordAction(ref.kind, ref.id, { word, body, ...fields })
+        .then(() => {
+          setDirty(false);
+          setSaveState("saved");
+          setReply("");
+        })
+        .catch((err) => {
+          setSaveState("error");
+          setReply((err as Error).message);
+        });
+    }, 1200);
+    return () => clearTimeout(t);
+  }, [dirty, canSave, box.mode, ref, word, body, fields]);
+
   function saveWord() {
     if (!word.trim() && !body.trim()) return;
-    if (!ref || ["noun", "verb", "word"].includes(ref.kind)) {
+    if (!ref || (DICTIONARY_KINDS.includes(ref.kind) && !isModerator)) {
       // A dictionary word or a new one: make it yours as a noun.
       setNewType("noun");
       setBox({ mode: "search" });
@@ -554,6 +579,11 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             )}
 
             {openType && <TypePill type={openType} />}
+            {box.mode === "word" && canSave && (
+              <span className="shrink-0 text-[11px] text-[var(--muted)]">
+                {dirty || saveState === "saving" ? "Saving..." : saveState === "error" ? "Not saved" : saveState === "saved" ? "Saved" : ""}
+              </span>
+            )}
             {(box.mode !== "spark" && box.mode !== "search") || word || body || Object.values(fields).some(Boolean) ? (
               <button
                 type="button"
@@ -617,7 +647,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           {searching && isLoggedIn && (
             <TypePicker type={newType} onType={(t) => { setNewType(t); setNewDetails({}); }} details={newDetails} onDetails={setNewDetails} />
           )}
-          {(searching || (box.mode === "word" && isLoggedIn && dirty)) && (
+          {(searching || (box.mode === "word" && isLoggedIn && dirty && !canSave)) && (
             <div className="flex flex-wrap justify-center gap-3">
               <button
                 type="button"
