@@ -419,7 +419,7 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
 
   // Enter searches the form. On a word, Ctrl+Enter saves (Enter is a new line).
   const onFormKey = (e: React.KeyboardEvent) => {
-    if (searching && e.key === "Enter" && !e.shiftKey) {
+    if (searching && e.key === "Enter" && (!e.shiftKey || e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       searchFromForm();
     } else if (box.mode === "word" && e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -824,7 +824,10 @@ function Box({
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          onKeyDown={onFormKey}
+          // In the body, Enter is a new line. Only Ctrl+Enter acts (search or save).
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) onFormKey(e);
+          }}
           placeholder={box.mode === "word" ? "Write its meaning here." : isLoggedIn ? "" : "Search public words. Log in to write your own."}
           id="body"
           aria-label="Body"
