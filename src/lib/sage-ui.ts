@@ -34,6 +34,8 @@ export type UiDirective =
   | { type: "results"; query: { word?: string; body?: string } & WordFields; items: FoundWord[] }
   // Back to the blank search form.
   | { type: "clear" }
+  // Open one word by what it is and its id (a hotkey to an org or entry).
+  | { type: "open"; kind: string; id: string }
   // Today's Word List changed: reload it.
   | { type: "word-list" };
 

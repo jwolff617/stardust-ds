@@ -5,7 +5,7 @@ import { buildSystemPrompt } from "@/lib/sage-ai/system-prompt";
 import { availableNouns, buildTools, describeNouns, loadCopies, runTool, todayIn, type NounContext } from "@/lib/sage-ai/engine";
 import { NOUNS } from "@/lib/sage-ai/nouns";
 import { pageTools, runPageTool } from "@/lib/sage-ai/page-tools";
-import { encodeDirective } from "@/lib/sage-ui";
+import { encodeDirective, type UiDirective } from "@/lib/sage-ui";
 import { cleanPreferences } from "@/lib/preferences";
 import { safeTimeZone } from "@/lib/time-frames";
 
@@ -87,7 +87,11 @@ export async function POST(request: Request) {
     copies,
   };
   const hotkeys = cleanPreferences(profile?.preferences ?? {}).hotkeys ?? {};
-  const hotkeyLines = await resolveHotkeys(supabase, user.id, hotkeys, copies);
+  const resolved = await resolveHotkeys(supabase, user.id, hotkeys, copies);
+  const hotkeyLines = resolved.map((h) => h.line);
+  // "4", "go to 4", "open #4": straight there, no guessing.
+  const jump = prompt.match(/^\s*(?:go\s+to|goto|open|view|show|take\s+me\s+to)?\s*#?(\d{1,3})\s*[.!]?\s*$/i);
+  const jumpTo = jump ? resolved.find((h) => h.n === jump[1]) : undefined;
   const pageLines: string[] = onPage
     ? ["word", "body", "place", "people", "time", "visibility", "status"]
         .map((k) => (typeof onPage[k] === "string" && onPage[k] ? `- ${k}: ${String(onPage[k]).slice(0, k === "body" ? 2000 : 200)}` : null))
@@ -110,6 +114,15 @@ export async function POST(request: Request) {
       nounContext.emit = (d) => enqueue(encodeDirective(d));
 
       try {
+        if (jump) {
+          let text = "";
+          if (jumpTo?.go) enqueue(encodeDirective(jumpTo.go));
+          else text = jumpTo ? `${jump[1]} is "${jumpTo.want}", and nothing of yours has that name yet.` : `${jump[1]} isn't set. Set it in settings.`;
+          if (text) enqueue(text);
+          await supabase.from("messages").insert({ conversation_id: activeConversationId, role: "assistant", content: text || `Opened ${jumpTo?.want}.` });
+          controller.close();
+          return;
+        }
         let finalText = "";
         let messages: ChatMessage[] = [...history, { role: "user", content: prompt }];
         let model: string = MODEL_FAST;
@@ -238,7 +251,7 @@ async function resolveHotkeys(
   userId: string,
   hotkeys: Record<string, { meaning: string }>,
   copies: { id: string; name: string; address: string; scope: string }[],
-): Promise<string[]> {
+): Promise<{ n: string; want: string; line: string; go?: UiDirective }[]> {
   const entries = Object.entries(hotkeys).filter(([, h]) => h.meaning.trim());
   if (entries.length === 0) return [];
   const norm = (t: string) => t.toLowerCase().replace(/['’]s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
@@ -273,16 +286,31 @@ async function resolveHotkeys(
           : book.scope === "personal"
             ? "private to them"
             : "public";
-      return `- ${n} = "${want}" → their dictionary "${book.name}" (${how}). Write in it with its noun (Journal Entry for a journal, Note for notes) and dictionary "${book.name}".`;
+      return {
+        n,
+        want,
+        line: `- ${n} = "${want}" → their dictionary "${book.name}" (${how}). Write in it with its noun (Journal Entry for a journal, Note for notes) and dictionary "${book.name}".`,
+        go: { type: "view", id: book.id, name: short(book.name) } as UiDirective,
+      };
     }
     const org = pick(orgs, (o) => o.name, want);
     if (org) {
-      return `- ${n} = "${want}" → Organization "${org.name}", target ${org.id}. Public view; ${org.role === "admin" ? "they're its admin, so they can edit it" : "they're a member, not its admin"}.`;
+      return {
+        n,
+        want,
+        line: `- ${n} = "${want}" → Organization "${org.name}", target ${org.id}. Public view; ${org.role === "admin" ? "they're its admin, so they can edit it" : "they're a member, not its admin"}.`,
+        go: { type: "open", kind: "organization", id: org.id } as UiDirective,
+      };
     }
     const entry = pick(entryRows ?? [], (e) => e.word, want);
     if (entry) {
-      return `- ${n} = "${want}" → their Profile Entry (${entry.kind}) "${entry.word}", target ${entry.id}, ${entry.visibility}.`;
+      return {
+        n,
+        want,
+        line: `- ${n} = "${want}" → their Profile Entry (${entry.kind}) "${entry.word}", target ${entry.id}, ${entry.visibility}.`,
+        go: { type: "open", kind: entry.kind, id: entry.id } as UiDirective,
+      };
     }
-    return `- ${n} = "${want}" → nothing of theirs by that name yet. Ask if they want to make it (a journal, a group, an organization, or an idea).`;
+    return { n, want, line: `- ${n} = "${want}" → nothing of theirs by that name yet. Ask if they want to make it (a journal, a group, an organization, or an idea).` };
   });
 }

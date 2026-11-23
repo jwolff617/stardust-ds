@@ -139,6 +139,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     return mine;
   }, [fetchDictionaries]);
 
+  const openWordRef = useRef<((kind: string, id: string) => Promise<boolean>) | null>(null);
   const loadWordList = useCallback(async () => {
     if (!isLoggedIn) return;
     const res = await fetch("/api/word-list");
@@ -230,6 +231,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           break;
         case "word-list":
           await loadWordList();
+          break;
+        case "open":
+          await openWordRef.current?.(d.kind, d.id);
           break;
       }
     },
@@ -358,7 +362,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       .finally(() => setSending(false));
   }
 
-  // Opens one word by what it is and its id.
+  // Opens one word by what it is and its id. (Also reached from Sage, via the ref.)
   async function openWord(kind: string, id: string) {
     const res = await fetch(`/api/word?kind=${encodeURIComponent(kind)}&id=${id}`);
     if (!res.ok) return false;
@@ -427,6 +431,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       saveWord();
     }
   };
+
+  useEffect(() => {
+    openWordRef.current = openWord;
+  });
 
   // A word-list word opens with its body ready to edit.
   async function openListWord(w: ListWord) {
