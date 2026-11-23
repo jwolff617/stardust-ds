@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { DictionaryPopup } from "./DictionaryPopup";
