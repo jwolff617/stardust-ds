@@ -90,14 +90,14 @@ export function DictionaryPopup({
         role="dialog"
         aria-label="Stardust Dictionary"
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[80vh] w-full max-w-5xl flex-col rounded-lg border border-[var(--line)] bg-[var(--background)] text-[var(--foreground)] shadow-2xl sm:h-[75vh] sm:w-[75vw]"
+        className="flex h-[80vh] w-full max-w-5xl flex-col border-[1.5px] border-[var(--foreground)] bg-[var(--background)] text-[var(--foreground)] shadow-2xl sm:h-[75vh] sm:w-[75vw]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-3">
-          <h2 className="text-sm font-medium tracking-[0.3em]">STARDUST DICTIONARY</h2>
-          <button type="button" onClick={onMinimize} aria-label="Minimize" className="ml-auto px-2 text-lg opacity-60 hover:opacity-100">
+          <h2 className="text-[11px] font-bold tracking-[0.25em]">STARDUST DICTIONARY</h2>
+          <button type="button" onClick={onMinimize} aria-label="Minimize" className="ml-auto px-2 text-lg text-[var(--muted)] hover:text-[var(--foreground)]">
             –
           </button>
-          <button type="button" onClick={onClose} aria-label="Close" className="px-2 text-lg opacity-60 hover:opacity-100">
+          <button type="button" onClick={onClose} aria-label="Close" className="px-2 text-lg text-[var(--muted)] hover:text-[var(--foreground)]">
             ×
           </button>
         </div>
@@ -113,7 +113,7 @@ export function DictionaryPopup({
                 setPage(1);
               }}
               className={`rounded-full border px-3 py-0.5 tracking-wider ${
-                filter === f.key ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--line)] opacity-70 hover:opacity-100"
+                filter === f.key ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--line)] hover:border-[var(--foreground)]"
               }`}
             >
               {f.label}
@@ -123,7 +123,7 @@ export function DictionaryPopup({
 
         <div className="flex flex-wrap gap-x-2 gap-y-1 border-b border-[var(--line)] px-5 py-2 text-xs">
           {LETTERS.map((l) => (
-            <button key={l} type="button" onClick={() => setLetter(l)} className="opacity-60 hover:opacity-100">
+            <button key={l} type="button" onClick={() => setLetter(l)} className="text-[var(--muted)] hover:text-[var(--foreground)]">
               {l}
             </button>
           ))}
@@ -142,9 +142,9 @@ export function DictionaryPopup({
                     <button type="button" onClick={() => onPick(e)} className="text-left font-semibold hover:underline">
                       {e.term}
                     </button>
-                    <span className="ml-2 text-xs opacity-50">{e.partOfSpeech}</span>
+                    <span className="ml-2 text-[11px] uppercase tracking-wider text-[var(--muted)]">{e.partOfSpeech}</span>
                   </dt>
-                  <dd className="mt-1 text-sm leading-relaxed opacity-80">{e.body}</dd>
+                  <dd className="mt-1 text-sm leading-relaxed text-[var(--muted)]">{e.body}</dd>
                 </div>
               ))}
             </dl>

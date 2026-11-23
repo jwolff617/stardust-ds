@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProfileFields } from "./ProfileFields";
+import { getDisplayName, setDisplayName } from "@/app/actions/words";
 import { HOTKEY_NUMBERS, type Hotkey } from "@/lib/preferences";
 import { usePreferences } from "@/lib/use-preferences";
 
@@ -10,15 +11,15 @@ type Theme = "light" | "dark" | "device";
 function readTheme(): Theme {
   try {
     const t = window.localStorage.getItem("stardust.theme");
-    return t === "light" || t === "dark" ? t : "device";
+    return t === "dark" || t === "device" ? t : "light";
   } catch {
-    return "device";
+    return "light";
   }
 }
 
 function applyTheme(theme: Theme) {
   try {
-    if (theme === "device") {
+    if (theme === "light") {
       window.localStorage.removeItem("stardust.theme");
       delete document.documentElement.dataset.theme;
     } else {
@@ -26,7 +27,7 @@ function applyTheme(theme: Theme) {
       document.documentElement.dataset.theme = theme;
     }
   } catch {
-    if (theme !== "device") document.documentElement.dataset.theme = theme;
+    if (theme !== "light") document.documentElement.dataset.theme = theme;
   }
 }
 
@@ -38,7 +39,7 @@ export function Settings({
   isLoggedIn: boolean;
   privateProfileId: string | null;
 }) {
-  const [theme, setTheme] = useState<Theme>(() => (typeof window === "undefined" ? "device" : readTheme()));
+  const [theme, setTheme] = useState<Theme>(() => (typeof window === "undefined" ? "light" : readTheme()));
   const { prefs, loaded, update } = usePreferences(isLoggedIn);
   const hotkeys = prefs.hotkeys ?? {};
 
@@ -74,6 +75,8 @@ export function Settings({
           ))}
         </div>
       </div>
+
+      {isLoggedIn && <NameSetting />}
 
       {privateProfileId && (
         <div>
@@ -114,6 +117,60 @@ export function Settings({
           </ol>
         )}
       </div>
+    </div>
+  );
+}
+
+// Your name: what other sparks see on your words and messages.
+function NameSetting() {
+  const [name, setName] = useState<string | null>(null);
+  const [saved, setSaved] = useState("");
+  const [note, setNote] = useState("");
+
+  useEffect(() => {
+    getDisplayName()
+      .then((n) => {
+        setName(n);
+        setSaved(n);
+      })
+      .catch(() => setName(""));
+  }, []);
+
+  if (name === null) return null;
+  return (
+    <div>
+      <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">YOUR NAME</h2>
+      <p className="mb-3 text-sm opacity-70">What other sparks see on your words, groups, and messages. Shows under STARDUST.</p>
+      <form
+        className="flex items-center gap-2"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          try {
+            await setDisplayName(name);
+            setSaved(name.trim());
+            setNote("Saved. It shows under STARDUST next time the page loads.");
+          } catch (err) {
+            setNote((err as Error).message);
+          }
+        }}
+      >
+        <input
+          value={name}
+          onChange={(e) => {
+            setName(e.target.value);
+            setNote("");
+          }}
+          maxLength={60}
+          aria-label="Your name"
+          className="min-w-0 flex-1 border-b border-[var(--line)] py-1 outline-none"
+        />
+        {name.trim() !== saved && (
+          <button type="submit" className="rounded-full border border-[var(--foreground)] px-4 py-0.5 text-sm">
+            Save
+          </button>
+        )}
+      </form>
+      {note && <p className="mt-1 text-xs opacity-70">{note}</p>}
     </div>
   );
 }

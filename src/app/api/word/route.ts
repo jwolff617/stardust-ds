@@ -14,6 +14,11 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const none = Response.json({ error: "That word isn't there anymore." }, { status: 404 });
 
+  if (kind === "mine") {
+    const { data } = await supabase.from("my_words").select("word, body, place, people, visibility, created_at").eq("id", id).maybeSingle();
+    if (!data) return none;
+    return Response.json({ kind, id, word: data.word, body: data.body, place: data.place, people: data.people, time: fmt(data.created_at), visibility: data.visibility });
+  }
   if (kind === "note") {
     const { data } = await supabase.from("notes").select("body, place, people, visibility, time_frame, created_at").eq("id", id).maybeSingle();
     if (!data) return none;
@@ -35,9 +40,16 @@ export async function GET(request: Request) {
     return Response.json({ kind, id, word: data.word, body: data.body, place: data.place, people: data.people, time: fmt(data.created_at), visibility: data.visibility });
   }
   if (kind === "organization") {
-    const { data } = await supabase.from("organizations").select("name, about, neighborhood, people, visibility, created_at").eq("id", id).maybeSingle();
+    const { data } = await supabase
+      .from("organizations")
+      .select("name, kind, website, status, about, neighborhood, people, visibility, created_at")
+      .eq("id", id)
+      .maybeSingle();
     if (!data) return none;
-    return Response.json({ kind, id, word: data.name, body: data.about, place: data.neighborhood, people: data.people, time: fmt(data.created_at), visibility: data.visibility });
+    return Response.json({
+      kind, id, word: data.name, body: data.about, place: data.neighborhood, people: data.people, time: fmt(data.created_at), visibility: data.visibility,
+      org: { kind: data.kind, website: data.website, official: data.status === "official", applied: data.status === "applied" },
+    });
   }
   if (["noun", "verb", "word"].includes(kind)) {
     const { data } = await supabase.from("definitions").select("body, part_of_speech, term:terms(name)").eq("id", id).maybeSingle();

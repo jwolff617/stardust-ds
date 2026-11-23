@@ -6,6 +6,7 @@ import { basicNouns } from "./basics";
 import { builtDictionaryNoun, builtEntryNoun } from "./custom";
 import { organizationNoun, profileEntryNoun } from "./profile";
 import { wordListNoun } from "./word-list";
+import { wordNoun } from "./word";
 
 // Every registered noun. A new dictionary adds its nouns here and Sage AI
 // can use them, with no new tools.
@@ -16,6 +17,7 @@ export const NOUNS: NounDef[] = [
   profileEntryNoun,
   organizationNoun,
   wordListNoun,
+  wordNoun,
   noteNoun,
   lessonNoun,
   themeNoun,

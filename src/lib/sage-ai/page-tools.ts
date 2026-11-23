@@ -17,7 +17,7 @@ const FIELD_PROPS = {
   visibility: { type: "string", enum: ["private", "group", "public"] },
 } as const;
 
-export const PANELS = ["settings", "organizations", "new-notebook", "reports"] as const;
+export const PANELS = ["settings", "organizations", "new-notebook", "reports", "inbox", "profile"] as const;
 
 export function pageTools(viewNames: string[]): Anthropic.Tool[] {
   return [
@@ -30,7 +30,7 @@ export function pageTools(viewNames: string[]): Anthropic.Tool[] {
     {
       name: "show",
       description:
-        'View: put something on the page. what="word" fills WORD, the rectangle, and Place/People/Time/Visibility. what="view" opens one of the user\'s dictionaries in the rectangle by name. what="panel" opens settings, organizations, new-notebook, or reports (moderators only). what="clear" goes back to the blank search form.',
+        'View: put something on the page. what="word" fills WORD, the rectangle, and Place/People/Time/Visibility. what="view" opens one of the user\'s dictionaries in the rectangle by name. what="panel" opens settings, inbox, profile (where they write their person, idea, job, and resource entries), organizations, new-notebook, or reports (moderators only). what="clear" goes back to the blank search form.',
       input_schema: {
         type: "object",
         properties: {

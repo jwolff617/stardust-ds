@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 // Sets the saved light or dark choice before the page paints, so it never
 // flashes the wrong color.
-const THEME_SCRIPT = `try{var t=localStorage.getItem("stardust.theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
+const THEME_SCRIPT = `try{var t=localStorage.getItem("stardust.theme");if(t==="dark"||t==="device")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

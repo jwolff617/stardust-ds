@@ -29,7 +29,7 @@ export type UiDirective =
   | ({ type: "word"; word: string; body: string; kind?: string; id?: string } & WordFields)
   // A dictionary's own view, or one of the app's panels, in the rectangle.
   | { type: "view"; id: string; name: string }
-  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" }
+  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile" }
   // Search results, listed in the rectangle.
   | { type: "results"; query: { word?: string; body?: string } & WordFields; items: FoundWord[] }
   // Back to the blank search form.
