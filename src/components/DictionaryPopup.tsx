@@ -90,10 +90,10 @@ export function DictionaryPopup({
         role="dialog"
         aria-label="Stardust Dictionary"
         onClick={(e) => e.stopPropagation()}
-        className="flex h-[80vh] w-full max-w-5xl flex-col border-[1.5px] border-[var(--foreground)] bg-[var(--background)] text-[var(--foreground)] shadow-2xl sm:h-[75vh] sm:w-[75vw]"
+        className="flex h-[80vh] w-full max-w-5xl flex-col rounded-lg border border-[var(--line)] bg-[var(--background)] text-[var(--foreground)] shadow-2xl sm:h-[75vh] sm:w-[75vw]"
       >
         <div className="flex items-center gap-3 border-b border-[var(--line)] px-5 py-3">
-          <h2 className="text-[11px] font-bold tracking-[0.25em]">STARDUST DICTIONARY</h2>
+          <h2 className="text-sm font-semibold">Stardust Dictionary</h2>
           <button type="button" onClick={onMinimize} aria-label="Minimize" className="ml-auto px-2 text-lg text-[var(--muted)] hover:text-[var(--foreground)]">
             –
           </button>

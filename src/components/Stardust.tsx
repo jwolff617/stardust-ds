@@ -534,25 +534,27 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-6 sm:px-8">
       {/* Top: title in the center, login and the dictionary at the right */}
-      <header className="relative flex flex-col items-center pt-6 sm:pt-8">
-        <div className="absolute right-0 top-6 flex flex-col items-end gap-1 text-sm sm:top-8">
+      <header className="-mx-4 flex items-center justify-between border-b border-[var(--line)] px-4 py-3 sm:-mx-8 sm:px-8">
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-lg font-semibold">Stardust</h1>
+          {isLoggedIn && userName && <span className="text-sm text-[var(--muted)]">{userName}</span>}
+        </div>
+        <div className="flex items-center gap-4 text-sm">
+          <button type="button" onClick={() => setPopup("open")} className="hover:underline">
+            Dictionary
+          </button>
           {isLoggedIn ? (
             <form action={signOut}>
-              <button type="submit" className="hover:underline">
-                Logout
+              <button type="submit" className="text-[var(--muted)] hover:underline">
+                Log out
               </button>
             </form>
           ) : (
             <a href="/login" className="hover:underline">
-              Login
+              Log in
             </a>
           )}
-          <button type="button" onClick={() => setPopup("open")} className="hover:underline">
-            Dictionary
-          </button>
         </div>
-        <h1 className="text-4xl font-light tracking-[0.45em] sm:text-6xl">STARDUST</h1>
-        {isLoggedIn && userName && <p className="mt-1 text-base text-[var(--muted)] sm:text-lg">{userName}</p>}
       </header>
 
       <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22fr_58fr_20fr] lg:gap-5">
@@ -567,7 +569,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
         {/* Center: the word, its type, and its body */}
         <section className="flex min-w-0 flex-col gap-3">
-          <div className="flex items-center gap-3 border-[1.5px] border-[var(--foreground)] px-3 py-2">
+          <div className="flex items-center gap-3 rounded-lg border border-[var(--line)] px-3 py-2">
             <input
               id="word"
               value={word}
@@ -580,7 +582,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               onKeyDown={onFormKey}
               aria-label="Word"
               placeholder={searching || box.mode === "spark" ? "Word" : ""}
-              className={`min-w-0 flex-1 bg-transparent text-2xl font-semibold outline-none sm:text-3xl ${
+              className={`min-w-0 flex-1 bg-transparent text-xl font-semibold outline-none sm:text-2xl ${
                 wordEditable ? "placeholder:font-normal placeholder:opacity-30" : ""
               }`}
             />
@@ -595,9 +597,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                   setReply("");
                   requestAnimationFrame(() => document.getElementById("body")?.focus());
                 }}
-                className="shrink-0 self-center border border-[var(--foreground)] px-2 py-0.5 text-[11px] font-semibold tracking-widest hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                className="shrink-0 text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
               >
-                MAKE IT MINE
+                Make it mine
               </button>
             )}
             {box.mode === "word" && canSave && !renaming && (
@@ -607,9 +609,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                   setRenaming(true);
                   requestAnimationFrame(() => document.getElementById("word")?.focus());
                 }}
-                className="shrink-0 self-center border border-[var(--foreground)] px-2 py-0.5 text-[11px] font-semibold tracking-widest hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                className="shrink-0 text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
               >
-                EDIT
+                Rename
               </button>
             )}
 
@@ -623,9 +625,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               <button
                 type="button"
                 onClick={clearToSearch}
-                className="shrink-0 border border-[var(--foreground)] px-2 py-0.5 text-[11px] font-semibold tracking-widest hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+                className="shrink-0 text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
               >
-                CLEAR
+                Clear
               </button>
             ) : null}
           </div>
@@ -644,7 +646,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             </p>
           )}
           {/* The body */}
-          <section className="relative flex min-h-[45vh] flex-1 flex-col border-[1.5px] border-[var(--foreground)] p-4 sm:p-6">
+          <section className="relative flex min-h-[45vh] flex-1 flex-col rounded-lg border border-[var(--line)] p-4 sm:p-5">
             {box.mode !== "spark" && box.mode !== "search" && (
               <button
                 type="button"
@@ -689,9 +691,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                   type="button"
                   onClick={searchFromForm}
                   disabled={sending}
-                  className="border-[1.5px] border-[var(--foreground)] px-5 py-1 text-xs font-bold tracking-[0.2em] hover:bg-[var(--soft)] disabled:opacity-40"
+                  className="rounded-full border border-[var(--line)] px-4 py-1.5 text-xs font-medium hover:border-[var(--foreground)] disabled:opacity-40"
                 >
-                  SEARCH
+                  Search
                 </button>
               )}
               {isLoggedIn && (
@@ -699,9 +701,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                   type="button"
                   onClick={createFromForm}
                   disabled={sending}
-                  className="border-[1.5px] border-[var(--foreground)] bg-[var(--foreground)] px-5 py-1 text-xs font-bold tracking-[0.2em] text-[var(--background)] disabled:opacity-40"
+                  className="rounded-full bg-[var(--foreground)] px-4 py-1.5 text-xs font-medium text-[var(--background)] disabled:opacity-40"
                 >
-                  CREATE
+                  Create
                 </button>
               )}
             </div>
@@ -710,11 +712,11 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
         {/* Right: Tags */}
         <aside className="min-w-0">
-          <Panel title="TAGS">
+          <Panel title="Tags">
             <div className="flex flex-col gap-3">
               {FIELD_NAMES.map(({ key, label }) => (
                 <label key={key} className="flex flex-col gap-0.5">
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted)]">{label === "Place" ? "Location" : label}</span>
+                  <span className="text-xs text-[var(--muted)]">{label === "Place" ? "Location" : label}</span>
                   <input
                     value={fields[key]}
                     readOnly={!editable}
@@ -745,7 +747,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       <section className="sticky bottom-0 mt-6 bg-[var(--background)] pb-2 pt-2">
         {(reply || sending) && (
           <p className="mb-2 whitespace-pre-wrap text-base leading-relaxed">
-            <span className="mr-2 text-[11px] font-bold tracking-[0.2em]">SAGE</span>
+            <span className="mr-2 text-xs font-medium text-[var(--muted)]">Sage</span>
             {reply || "..."}
           </p>
         )}
@@ -754,14 +756,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             e.preventDefault();
             send(input);
           }}
-          className="flex items-stretch gap-2 border-[1.5px] border-[var(--foreground)] p-1.5"
+          className="flex items-center gap-2 rounded-lg border border-[var(--line)] p-1.5 focus-within:border-[var(--foreground)]"
         >
           {hasSpeech && (
             <button
               type="button"
               onClick={toggleListening}
               aria-label={listening ? "Stop listening" : "Speak"}
-              className={`flex shrink-0 items-center justify-center px-3 ${listening ? "bg-red-600 text-white" : "hover:bg-[var(--soft)]"}`}
+              className={`flex shrink-0 items-center justify-center rounded-full p-2 ${listening ? "bg-red-600 text-white" : "hover:bg-[var(--soft)]"}`}
             >
               <MicIcon />
             </button>
@@ -779,14 +781,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             rows={input.length > 90 ? 3 : 1}
             placeholder={isLoggedIn ? "Talk to Sage. Try: new note, match my idea, open Profile, settings." : "Log in to talk to Sage."}
             aria-label="Talk to Sage AI"
-            className="min-w-0 flex-1 resize-none border-x border-[var(--line)] bg-transparent px-3 py-1.5 text-base outline-none placeholder:text-[var(--muted)]"
+            className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1.5 text-sm outline-none placeholder:text-[var(--muted)]"
           />
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="shrink-0 bg-[var(--foreground)] px-5 text-xs font-bold tracking-[0.2em] text-[var(--background)] disabled:opacity-30"
+            className="shrink-0 rounded-full bg-[var(--foreground)] px-4 py-1.5 text-xs font-medium text-[var(--background)] disabled:opacity-30"
           >
-            ENTER
+            Enter
           </button>
         </form>
       </section>
@@ -837,7 +839,7 @@ function Box({
       return <Spark />;
     case "search":
     case "word":
-      if (box.mode === "word" && !isLoggedIn) return <div className="whitespace-pre-wrap pr-6 text-lg leading-relaxed">{body}</div>;
+      if (box.mode === "word" && !isLoggedIn) return <div className="whitespace-pre-wrap pr-6 text-base leading-relaxed">{body}</div>;
       return (
         <textarea
           value={body}
@@ -849,7 +851,7 @@ function Box({
           placeholder={box.mode === "word" ? "Write its meaning here." : isLoggedIn ? "" : "Search public words. Log in to write your own."}
           id="body"
           aria-label="Body"
-          className="min-h-[40vh] w-full flex-1 resize-none pr-6 text-lg leading-relaxed outline-none placeholder:opacity-30"
+          className="min-h-[40vh] w-full flex-1 resize-none pr-6 text-base leading-relaxed outline-none placeholder:opacity-30"
         />
       );
     case "results":
@@ -936,7 +938,7 @@ function TypePill({ type }: { type: string }) {
   // A list word not made yet has no type until it's created.
   if (type === "new") return null;
   const label = type === "organization" ? "org" : type === "new-notebook" ? "group" : type === "mine" ? "noun" : type;
-  return <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">{label}</span>;
+  return <span className="shrink-0 text-xs text-[var(--muted)]">{label}</span>;
 }
 
 // What the open word is, in the word bar: VERB, NOUN, or THING and which.
@@ -973,8 +975,8 @@ function kindLabel(t: string): { head: string; sub: string } {
 function WordKind({ type }: { type: string }) {
   const { head, sub } = kindLabel(type);
   return (
-    <span className="shrink-0 border-l border-[var(--line)] pl-3 text-xs tracking-wider">
-      <span className="font-bold">{head}</span>
+    <span className="shrink-0 text-xs text-[var(--muted)]">
+      <span className="font-medium text-[var(--foreground)]">{head.charAt(0) + head.slice(1).toLowerCase()}</span>
       {sub && <span className="text-[var(--muted)]"> · {sub}</span>}
     </span>
   );
@@ -983,8 +985,8 @@ function WordKind({ type }: { type: string }) {
 // A bordered panel with a header bar, like the sketch.
 function Panel({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`border-[1.5px] border-[var(--foreground)] ${className}`}>
-      <h2 className="border-b-[1.5px] border-[var(--foreground)] px-3 py-1.5 text-[11px] font-bold tracking-[0.2em]">{title}</h2>
+    <div className={`rounded-lg border border-[var(--line)] ${className}`}>
+      <h2 className="px-3 pb-1 pt-2.5 text-xs font-medium text-[var(--muted)]">{title}</h2>
       <div className="px-3 py-2">{children}</div>
     </div>
   );
@@ -1001,7 +1003,7 @@ function WordListPanel({
 }) {
   const empty = "text-sm text-[var(--muted)]";
   return (
-    <Panel title="TODAY’S WORD LIST">
+    <Panel title="Today’s word list">
       {!isLoggedIn ? (
         <p className={empty}>Log in to keep a word list.</p>
       ) : !list.exists ? (
@@ -1041,7 +1043,7 @@ const ITEM = "px-1.5 py-0.5 text-left text-sm hover:bg-[var(--soft)] hover:under
 
 function Verbs({ onVerb }: { onVerb: (text: string) => void }) {
   return (
-    <Panel title="VERBS">
+    <Panel title="Verbs">
       <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 sm:grid-cols-3 lg:grid-cols-2">
         {VERBS.map((v) => (
           <button key={v} type="button" onClick={() => onVerb(v)} className={ITEM}>
@@ -1055,7 +1057,7 @@ function Verbs({ onVerb }: { onVerb: (text: string) => void }) {
 
 function Things({ onThing }: { onThing: (thing: string) => void }) {
   return (
-    <Panel title="THINGS">
+    <Panel title="Things">
       <div className="-mx-3 flex flex-col">
         {THINGS.map((g) => (
           <div key={g.who} title={g.who} className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-[var(--line)] px-3 py-1.5 last:border-b-0 sm:grid-cols-3 lg:grid-cols-2">
@@ -1112,7 +1114,7 @@ function TypePicker({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-1.5" role="radiogroup" aria-label="Word type">
-        <span className="mr-1 text-[10px] font-semibold tracking-[0.2em] text-[var(--muted)]">TYPE</span>
+        <span className="mr-1 text-xs text-[var(--muted)]">Type</span>
         {WORD_TYPES.map((t) => (
           <button
             key={t.type}
@@ -1120,7 +1122,7 @@ function TypePicker({
             role="radio"
             aria-checked={type === t.type}
             onClick={() => onType(t.type)}
-            className={`border px-2.5 py-0.5 text-xs ${
+            className={`rounded-full border px-2.5 py-0.5 text-xs ${
               type === t.type ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--background)]" : "border-[var(--line)] hover:border-[var(--foreground)]"
             }`}
           >

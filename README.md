@@ -85,6 +85,8 @@ Run each file in order in the Supabase SQL editor, or with the Supabase CLI link
 
 ## Ideas, not built
 
+- **Numbered hotkeys for organizations (Sage, 2026-11-23).** 1 to 50 stay free for each spark to set. 51 to 999 are reserved numbers a business or organization buys; a # box at the bottom left jumps to the noun a number belongs to. A revenue idea. Open question first: Sage AI's rules say Stardust never sells to users and has no ads or paid promotion, and a paid number is a kind of paid placement. Decide whether this fits the mission (maybe: flat price, no ranking, nonprofits free) before building.
+
 Notes on where Stardust DS could go. Nothing here exists yet.
 
 - **Your Stardust order.** Your profile is a dictionary whose word order you can change, so the words that matter most to you sit on top. That order shapes your connections: who you are close to and who is farther away, scored by points.

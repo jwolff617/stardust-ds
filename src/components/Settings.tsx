@@ -57,7 +57,7 @@ export function Settings({
   return (
     <div className="flex flex-col gap-8 pr-6">
       <div>
-        <h2 className="mb-3 text-sm font-semibold tracking-[0.25em]">SCREEN</h2>
+        <h2 className="mb-3 text-sm font-semibold">Screen</h2>
         <div className="flex gap-2">
           {(["light", "dark", "device"] as Theme[]).map((t) => (
             <button
@@ -80,7 +80,7 @@ export function Settings({
 
       {privateProfileId && (
         <div>
-          <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">PRIVATE</h2>
+          <h2 className="mb-1 text-sm font-semibold">Private</h2>
           <p className="mb-3 text-sm opacity-70">Only you see these: your name, email, birthday, anything else.</p>
           <div className="light-card rounded p-2">
             <ProfileFields dictionaries={[{ id: privateProfileId, name: "Private" }]} />
@@ -89,7 +89,7 @@ export function Settings({
       )}
 
       <div>
-        <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">HOTKEYS</h2>
+        <h2 className="mb-1 text-sm font-semibold">Hotkeys</h2>
         <p className="mb-4 text-sm opacity-70">
           Give a number one of your words: a journal, a group, an organization, an idea. Then &ldquo;4. new entry ...&rdquo; goes straight there.
         </p>
@@ -139,7 +139,7 @@ function NameSetting() {
   if (name === null) return null;
   return (
     <div>
-      <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">YOUR NAME</h2>
+      <h2 className="mb-1 text-sm font-semibold">Your name</h2>
       <p className="mb-3 text-sm opacity-70">What other sparks see on your words, groups, and messages. Shows under STARDUST.</p>
       <form
         className="flex items-center gap-2"
