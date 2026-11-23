@@ -4,6 +4,9 @@ import { anthropic, MODEL_CAPABLE, MODEL_FAST } from "@/lib/anthropic";
 import { buildSystemPrompt } from "@/lib/sage-ai/system-prompt";
 import { availableNouns, buildTools, describeNouns, loadCopies, runTool, todayIn, type NounContext } from "@/lib/sage-ai/engine";
 import { NOUNS } from "@/lib/sage-ai/nouns";
+import { pageTools, runPageTool } from "@/lib/sage-ai/page-tools";
+import { encodeDirective } from "@/lib/sage-ui";
+import { cleanPreferences } from "@/lib/preferences";
 import { safeTimeZone } from "@/lib/time-frames";
 
 export const dynamic = "force-dynamic";
@@ -26,13 +29,15 @@ export async function POST(request: Request) {
   const prompt = String(body.message ?? "").trim();
   const conversationId: string | undefined = body.conversationId;
   const timeZone = safeTimeZone(body.timeZone);
+  // What's on the page now, so "edit this" or "match it" has a meaning.
+  const onPage = body.onPage && typeof body.onPage === "object" ? (body.onPage as Record<string, unknown>) : null;
   if (!prompt) {
     return Response.json({ error: "Message can't be empty." }, { status: 400 });
   }
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, preferences")
     .eq("id", user.id)
     .single();
 
@@ -69,7 +74,9 @@ export async function POST(request: Request) {
   // Tools come from the nouns of the dictionaries the user has on.
   const copies = await loadCopies(supabase);
   const nouns = availableNouns(NOUNS, copies);
-  const tools = buildTools(nouns);
+  const viewNames = copies.map((c) => c.name.replace(/^.{1,40}?['’]s\s+/, "") || c.name);
+  const tools = [...buildTools(nouns), ...pageTools(viewNames)];
+  const { data: isModerator } = await supabase.rpc("is_moderator");
   const today = todayIn(timeZone);
   const nounContext: NounContext = {
     supabase,
@@ -79,7 +86,21 @@ export async function POST(request: Request) {
     today,
     copies,
   };
-  const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null, describeNouns(nouns, copies), today);
+  const hotkeys = cleanPreferences(profile?.preferences ?? {}).hotkeys ?? {};
+  const hotkeyLines = Object.entries(hotkeys).map(([n, h]) => {
+    const copy = h.dictionaryId ? copies.find((c) => c.id === h.dictionaryId) : undefined;
+    const where = copy ? ` (dictionary "${copy.name}", ${copy.scope === "personal" ? "private" : copy.scope === "group" ? "group" : "public"})` : "";
+    return `- ${n} = ${h.meaning || copy?.name || "?"}${where}`;
+  });
+  const pageLines = onPage
+    ? ["word", "body", "place", "people", "time", "visibility"]
+        .map((k) => (typeof onPage[k] === "string" && onPage[k] ? `- ${k}: ${String(onPage[k]).slice(0, k === "body" ? 2000 : 200)}` : null))
+        .filter(Boolean)
+    : [];
+  const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null, describeNouns(nouns, copies), today, {
+    hotkeys: hotkeyLines.join("\n"),
+    onPage: pageLines.join("\n"),
+  });
   const conversationIdForClosure = activeConversationId;
 
   const encoder = new TextEncoder();
@@ -136,7 +157,11 @@ export async function POST(request: Request) {
 
           const toolResults: Anthropic.ToolResultBlockParam[] = [];
           for (const block of toolBlocks) {
-            const result = await runTool(nouns, nounContext, block.name, block.input as Record<string, unknown>);
+            const input = block.input as Record<string, unknown>;
+            const result =
+              block.name === "search" || block.name === "show"
+                ? await runPageTool(block.name, input, { supabase, copies, isModerator: Boolean(isModerator) }, (d) => enqueue(encodeDirective(d)))
+                : await runTool(nouns, nounContext, block.name, input);
             toolResults.push({
               type: "tool_result",
               tool_use_id: block.id,

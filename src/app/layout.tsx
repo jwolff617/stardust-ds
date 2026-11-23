@@ -13,16 +13,24 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Stardust DS",
-  description: "Build your own universe from dictionaries.",
+  title: "Stardust",
+  description: "Feel your spark. Love. Spirit.",
 };
+
+// Sets the saved light or dark choice before the page paints, so it never
+// flashes the wrong color.
+const THEME_SCRIPT = `try{var t=localStorage.getItem("stardust.theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

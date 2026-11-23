@@ -27,7 +27,32 @@ export type Preferences = {
   };
   module1?: { storeHidden?: boolean; collapsed?: boolean };
   module3?: { collapsed?: boolean };
+  // Hotkeys 1 to 9: a number Sage reads as a noun. "4. new entry ..."
+  // writes to whatever 4 points at.
+  hotkeys?: Record<string, Hotkey>;
 };
+
+export type Hotkey = {
+  // What the number means, in the spark's own words ("Playbound City journal").
+  meaning: string;
+  // The dictionary it points at, when it's one of theirs.
+  dictionaryId?: string;
+};
+
+export const HOTKEY_NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+
+function cleanHotkeys(raw: unknown): Record<string, Hotkey> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const out: Record<string, Hotkey> = {};
+  for (const n of HOTKEY_NUMBERS) {
+    const h = (raw as Record<string, unknown>)[n] as Record<string, unknown> | undefined;
+    if (!h || typeof h !== "object") continue;
+    const meaning = typeof h.meaning === "string" ? h.meaning.trim().slice(0, 120) : "";
+    const dictionaryId = typeof h.dictionaryId === "string" && /^[0-9a-f-]{36}$/i.test(h.dictionaryId) ? h.dictionaryId : undefined;
+    if (meaning || dictionaryId) out[n] = { meaning, dictionaryId };
+  }
+  return out;
+}
 
 const BROWSER_KEY = "stardust.preferences";
 
@@ -61,6 +86,7 @@ export function cleanPreferences(raw: unknown): Preferences {
     },
     module1: { storeHidden: flag(m1.storeHidden), collapsed: flag(m1.collapsed) },
     module3: { collapsed: flag(m3.collapsed) },
+    hotkeys: cleanHotkeys((r as Record<string, unknown>).hotkeys),
   };
 }
 
