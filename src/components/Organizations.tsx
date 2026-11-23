@@ -17,6 +17,7 @@ const KINDS = [
   { key: "nonprofit", label: "Nonprofit" },
   { key: "government", label: "Government" },
   { key: "business", label: "Business" },
+  { key: "other", label: "Other" },
 ];
 
 const STATUS: Record<Organization["status"], string> = {
@@ -56,7 +57,7 @@ function OrgForm({ start, button, onSave, onCancel }: { start: Fields; button: s
         </select>
       </div>
       <input value={f.website} onChange={set("website")} maxLength={200} placeholder="Website (helps you get Official)" aria-label="Website" className={input} />
-      <textarea value={f.about} onChange={set("about")} maxLength={1000} rows={2} placeholder="What you do, in a line or two" aria-label="About" className={`${input} resize-y`} />
+      <textarea value={f.about} onChange={set("about")} maxLength={5000} rows={6} placeholder="Its definition: your mission, announcements, how to reach you" aria-label="About" className={`${input} resize-y`} />
       <div className="flex gap-2">
         <button type="submit" disabled={!f.name.trim()} className={primary}>
           {button}

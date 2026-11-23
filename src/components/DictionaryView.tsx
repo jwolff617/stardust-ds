@@ -3,16 +3,12 @@
 import { useState, type ReactNode } from "react";
 import { GroupMembers } from "./GroupMembers";
 import { ProfileFields } from "./ProfileFields";
+import { ProfileView } from "./ProfileView";
 import { NightNotes } from "./NightNotes";
-import { AccountsView } from "./AccountsView";
-import { WorthyView } from "./WorthyView";
 import { AfterSchoolView } from "./AfterSchoolView";
-import { ManifestoView } from "./ManifestoView";
 import { CustomView } from "./CustomView";
-import { ListingView } from "./ListingView";
 import { BasicsView } from "./BasicsView";
 import { JournalView } from "./JournalView";
-import { DictionaryLabels } from "./DictionaryLabels";
 import { basicApp } from "@/lib/basics";
 import type { NightView } from "@/lib/preferences";
 
@@ -35,7 +31,7 @@ function SharedWith({ d, reloadKey, children }: { d: MyDictionary; reloadKey: nu
   );
 }
 
-// A dictionary's own view (Night Notes, Worthy, Marketplace...), opened
+// A dictionary's own view (Notes, a journal, Birthdays...), opened
 // in the rectangle when Sage AI is asked for it.
 export function DictionaryView({ d, reloadKey }: { d: MyDictionary; reloadKey: number }) {
   const [night, setNight] = useState<NightView>({});
@@ -48,11 +44,13 @@ export function DictionaryView({ d, reloadKey }: { d: MyDictionary; reloadKey: n
         </SharedWith>
       );
     case "profile":
-      return <ProfileFields dictionaries={[dictionary]} reloadKey={reloadKey} />;
-    case "accounts":
-      return <AccountsView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "worthy":
-      return <WorthyView dictionary={dictionary} reloadKey={reloadKey} />;
+      // Your public lines, then what you offer and seek.
+      return (
+        <div className="flex flex-col gap-8">
+          <ProfileFields dictionaries={[dictionary]} reloadKey={reloadKey} />
+          <ProfileView reloadKey={reloadKey} />
+        </div>
+      );
     case "after_school":
       return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
     case "journal":
@@ -61,15 +59,8 @@ export function DictionaryView({ d, reloadKey }: { d: MyDictionary; reloadKey: n
           <JournalView dictionary={dictionary} reloadKey={reloadKey} />
         </SharedWith>
       );
-    case "manifesto":
-      return <ManifestoView dictionary={dictionary} reloadKey={reloadKey} />;
     case "custom":
       return <CustomView dictionary={dictionary} reloadKey={reloadKey} />;
-    case "listing":
-      return <ListingView dictionaryId={d.id} reloadKey={reloadKey} />;
-    case "search":
-      // Marketplace, Job Match, Idea Index: their search and "+ New".
-      return <DictionaryLabels dictionaryId={d.id} reloadKey={reloadKey} />;
     default: {
       const app = basicApp(d.displayKind);
       return app ? (

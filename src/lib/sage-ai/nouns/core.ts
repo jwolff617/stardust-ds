@@ -18,7 +18,7 @@ async function findDictionary(supabase: SupabaseClient, nameOrAddress: string) {
   return data;
 }
 
-const DICTIONARY_TARGET = "the dictionary's name or address, e.g. 'Night DS'";
+const DICTIONARY_TARGET = "the dictionary's name or address, e.g. 'Notes'";
 
 export const dictionaryNoun: NounDef = {
   name: "Dictionary",
@@ -27,7 +27,7 @@ export const dictionaryNoun: NounDef = {
   description: "A named set of words that is also an app. Turning one on makes its nouns available.",
   verbs: {
     Add: {
-      description: "Turn a dictionary on. A personal template (Night DS) makes the user's own copy. A group template (After School DS) needs a group name the first time, so send them to the Dictionaries panel for that.",
+      description: "Turn a dictionary on. A personal template (Notes) makes the user's own copy. A group template (After School) needs a group name the first time: open the new-notebook panel for that.",
       target: DICTIONARY_TARGET,
       run: async ({ ctx, target }) => {
         const dictionary = await findDictionary(ctx.supabase, target!);
@@ -98,7 +98,7 @@ export const dictionaryNoun: NounDef = {
       },
     },
     Label: {
-      description: "Add or remove a label on a dictionary the user owns, including their own copies (Night DS, Public Profile). Labels help people find it.",
+      description: "Add or remove a label on a dictionary the user owns, including their own copies (Notes, Profile). Labels help people find it.",
       target: DICTIONARY_TARGET,
       params: [
         { name: "label", type: "text", required: true, max: 40 },

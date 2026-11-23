@@ -18,6 +18,9 @@ export type FoundWord = WordFields & {
   word: string;
   body: string;
   createdAt?: string;
+  // Matches: the words shared, and a line of the kind's own details.
+  shared?: string[];
+  details?: string;
 };
 
 export type UiDirective =

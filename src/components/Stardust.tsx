@@ -57,6 +57,7 @@ function shortName(name: string): string {
 
 type DictionaryResult = {
   id: string;
+  address: string;
   name: string;
   scope: string;
   optedIn: boolean;
@@ -74,6 +75,8 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const [fields, setFields] = useState<Fields>(EMPTY_FIELDS);
   const [box, setBox] = useState<Box>(isLoggedIn ? { mode: "search" } : { mode: "spark" });
   const [dictionaries, setDictionaries] = useState<MyDictionary[]>([]);
+  // The private profile lives behind Settings, not in the list.
+  const [privateProfileId, setPrivateProfileId] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
 
@@ -96,28 +99,34 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
   // The spark's dictionaries, for views and hotkeys.
   const fetchDictionaries = useCallback(async () => {
-    if (!isLoggedIn) return [] as MyDictionary[];
+    if (!isLoggedIn) return { mine: [] as MyDictionary[], privateId: null as string | null };
     const res = await fetch("/api/dictionaries/search?q=");
     const data = await res.json();
-    const mine: MyDictionary[] = ((data.dictionaries ?? []) as DictionaryResult[])
-      .filter((d) => d.optedIn)
+    const all = (data.dictionaries ?? []) as DictionaryResult[];
+    const priv = all.find((d) => d.address === "private-profile");
+    const mine: MyDictionary[] = all
+      .filter((d) => d.optedIn && d.address !== "private-profile")
       .map((d) =>
         d.instance
           ? { id: d.instance.id, name: shortName(d.instance.name), displayKind: d.instance.displayKind, belongs: belongsOf(d.scope) }
           : { id: d.id, name: d.name, displayKind: d.displayKind, belongs: belongsOf(d.scope) },
       );
-    return mine;
+    return { mine, privateId: priv?.instance?.id ?? null };
   }, [isLoggedIn]);
 
   const loadDictionaries = useCallback(async () => {
-    const mine = await fetchDictionaries();
+    const { mine, privateId } = await fetchDictionaries();
     setDictionaries(mine);
+    setPrivateProfileId(privateId);
     return mine;
   }, [fetchDictionaries]);
 
   useEffect(() => {
     fetchDictionaries()
-      .then(setDictionaries)
+      .then(({ mine, privateId }) => {
+        setDictionaries(mine);
+        setPrivateProfileId(privateId);
+      })
       .catch(() => {});
   }, [fetchDictionaries]);
 
@@ -384,6 +393,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           isLoggedIn={isLoggedIn}
           reloadKey={reloadKey}
           dictionaries={dictionaries}
+          privateProfileId={privateProfileId}
           onOpen={(f) => showWord(f)}
           onChanged={() => {
             setReloadKey((k) => k + 1);
@@ -451,7 +461,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               }
             }}
             rows={input.length > 90 ? 4 : 2}
-            placeholder={isLoggedIn ? "Talk to Sage. Try: new note, search hope, open Worthy, settings." : "Log in to talk to Sage."}
+            placeholder={isLoggedIn ? "Talk to Sage. Try: new note, match my idea, open Profile, settings." : "Log in to talk to Sage."}
             aria-label="Talk to Sage AI"
             className="min-w-0 flex-1 resize-none bg-transparent px-2 py-1 text-lg outline-none placeholder:opacity-40"
           />
@@ -499,6 +509,7 @@ function Box({
   isLoggedIn,
   reloadKey,
   dictionaries,
+  privateProfileId,
   onOpen,
   onChanged,
   onClose,
@@ -510,6 +521,7 @@ function Box({
   isLoggedIn: boolean;
   reloadKey: number;
   dictionaries: MyDictionary[];
+  privateProfileId: string | null;
   onOpen: (w: { word: string; body: string; kind?: string; id?: string } & WordFields) => void;
   onChanged: () => void;
   onClose: () => void;
@@ -544,8 +556,11 @@ function Box({
                 </span>
                 <span className="line-clamp-2 text-sm opacity-75">{item.body}</span>
                 <span className="text-xs opacity-50">
-                  {[item.place, item.people, item.time, item.visibility].filter(Boolean).join(" · ")}
+                  {[item.details, item.place, item.people, item.time, item.visibility].filter(Boolean).join(" · ")}
                 </span>
+                {item.shared && item.shared.length > 0 && (
+                  <span className="text-xs opacity-70">Shares: {item.shared.slice(0, 8).join(", ")}</span>
+                )}
               </button>
             </li>
           ))}
@@ -560,7 +575,7 @@ function Box({
     case "panel":
       switch (box.panel) {
         case "settings":
-          return <Settings dictionaries={dictionaries} isLoggedIn={isLoggedIn} />;
+          return <Settings dictionaries={dictionaries} isLoggedIn={isLoggedIn} privateProfileId={privateProfileId} />;
         case "organizations":
           return (
             <div className="light-card -m-2 rounded p-2 pr-8">

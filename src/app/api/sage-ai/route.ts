@@ -107,6 +107,7 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const enqueue = (text: string) => controller.enqueue(encoder.encode(text));
+      nounContext.emit = (d) => enqueue(encodeDirective(d));
 
       try {
         let finalText = "";

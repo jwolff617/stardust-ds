@@ -70,7 +70,7 @@ const peopleField = { name: "people", type: "text" as const, max: 300, descripti
 export const noteNoun: NounDef = {
   name: "Note",
   dictionary: "night-ds",
-  description: "A note in Night DS. Notes have no title, only content, and live for a time frame. When it runs out the note archives itself.",
+  description: "A note in Notes. Notes have no title, only content, and live for a time frame. When it runs out the note archives itself.",
   notes: 'If the user doesn\'t say a time frame, pick the one their words imply ("today" is day, "this week" is week) and default to day. ',
   verbs: {
     Add: {

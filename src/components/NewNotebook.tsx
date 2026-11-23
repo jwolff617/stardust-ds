@@ -7,7 +7,7 @@ import { chip, input, link, primary } from "./ui";
 type Style = "night" | "journal";
 
 const STYLES: { style: Style; title: string; about: string; placeholder: string }[] = [
-  { style: "night", title: "Night Notes", about: "Short notes. Each lives a day, a week, or a life. Card or line view.", placeholder: "Book ideas" },
+  { style: "night", title: "Notes", about: "Short notes. Each lives a day, a week, or a life. Card or line view.", placeholder: "Book ideas" },
   { style: "journal", title: "Journal", about: "Longer entries about your days, to look back on in a year or a decade.", placeholder: "Morning pages" },
 ];
 

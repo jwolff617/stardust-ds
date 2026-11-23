@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { MyDictionary } from "./DictionaryView";
+import { ProfileFields } from "./ProfileFields";
 import { HOTKEY_NUMBERS, type Hotkey } from "@/lib/preferences";
 import { usePreferences } from "@/lib/use-preferences";
 
@@ -31,7 +32,15 @@ function applyTheme(theme: Theme) {
 }
 
 // Opened by typing "settings" to Sage. Light or dark, and hotkeys 1 to 9.
-export function Settings({ dictionaries, isLoggedIn }: { dictionaries: MyDictionary[]; isLoggedIn: boolean }) {
+export function Settings({
+  dictionaries,
+  isLoggedIn,
+  privateProfileId,
+}: {
+  dictionaries: MyDictionary[];
+  isLoggedIn: boolean;
+  privateProfileId: string | null;
+}) {
   const [theme, setTheme] = useState<Theme>(() => (typeof window === "undefined" ? "device" : readTheme()));
   const { prefs, loaded, update } = usePreferences(isLoggedIn);
   const hotkeys = prefs.hotkeys ?? {};
@@ -67,6 +76,16 @@ export function Settings({ dictionaries, isLoggedIn }: { dictionaries: MyDiction
           ))}
         </div>
       </div>
+
+      {privateProfileId && (
+        <div>
+          <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">PRIVATE</h2>
+          <p className="mb-3 text-sm opacity-70">Only you see these: your name, email, birthday, anything else.</p>
+          <div className="light-card rounded p-2">
+            <ProfileFields dictionaries={[{ id: privateProfileId, name: "Private" }]} />
+          </div>
+        </div>
+      )}
 
       <div>
         <h2 className="mb-1 text-sm font-semibold tracking-[0.25em]">HOTKEYS</h2>
