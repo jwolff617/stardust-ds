@@ -163,10 +163,6 @@ export async function saveWord(kind: string, id: string, w: { word: string; body
     fail((await supabase.from("notes").update(row).eq("id", id).eq("owner_user_id", user.id)).error);
   } else if (kind === "journal") {
     fail((await supabase.from("journal_entries").update({ body: w.body, place: w.place, people: w.people }).eq("id", id).eq("owner_user_id", user.id)).error);
-  } else if (["noun", "verb", "word"].includes(kind)) {
-    // Dictionary words: moderators only (0051).
-    const { error } = await supabase.rpc("save_definition", { p_id: id, p_body: w.body });
-    if (error) throw new Error(/save_definition/.test(error.message) ? "Editing dictionary words needs migration 0051." : error.message);
   } else {
     throw new Error("That word can't be changed here.");
   }

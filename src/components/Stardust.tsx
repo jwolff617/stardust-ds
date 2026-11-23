@@ -79,7 +79,7 @@ function belongsOf(scope: string): Belongs {
   return scope === "personal" ? "personal" : scope === "group" ? "group" : "public";
 }
 
-export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLoggedIn: boolean; userName: string | null; isModerator?: boolean }) {
+export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null; isModerator?: boolean }) {
   const [word, setWord] = useState("");
   const [body, setBody] = useState("");
   const [fields, setFields] = useState<Fields>(EMPTY_FIELDS);
@@ -481,7 +481,9 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
 
   // Words this spark can change: their own, and dictionary words for a moderator.
   const DICTIONARY_KINDS = ["noun", "verb", "word"];
-  const canSave = Boolean(ref) && isLoggedIn && (!DICTIONARY_KINDS.includes(ref!.kind) || isModerator);
+  // The Stardust Dictionary is fixed: nobody edits it. You edit your own words.
+  const isDictionaryWord = box.mode === "word" && Boolean(ref) && DICTIONARY_KINDS.includes(ref!.kind);
+  const canSave = Boolean(ref) && isLoggedIn && !isDictionaryWord;
   const [saveState, setSaveState] = useState<"" | "saving" | "saved" | "error">("");
   // One rule for every word: yours (or a dictionary word, for a moderator)
   // types straight in and saves itself. A new word, not made yet, gets
@@ -582,6 +584,22 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
                 wordEditable ? "placeholder:font-normal placeholder:opacity-30" : ""
               }`}
             />
+            {isDictionaryWord && isLoggedIn && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Your own copy, to write in your own words.
+                  setRef(null);
+                  setNewType("noun");
+                  setNewDetails({});
+                  setReply("");
+                  requestAnimationFrame(() => document.getElementById("body")?.focus());
+                }}
+                className="shrink-0 self-center border border-[var(--foreground)] px-2 py-0.5 text-[11px] font-semibold tracking-widest hover:bg-[var(--foreground)] hover:text-[var(--background)]"
+              >
+                MAKE IT MINE
+              </button>
+            )}
             {box.mode === "word" && canSave && !renaming && (
               <button
                 type="button"
