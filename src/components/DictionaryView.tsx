@@ -5,8 +5,6 @@ import { GroupMembers } from "./GroupMembers";
 import { ProfileFields } from "./ProfileFields";
 import { ProfileView } from "./ProfileView";
 import { NightNotes } from "./NightNotes";
-import { AfterSchoolView } from "./AfterSchoolView";
-import { CustomView } from "./CustomView";
 import { BasicsView } from "./BasicsView";
 import { JournalView } from "./JournalView";
 import { basicApp } from "@/lib/basics";
@@ -51,16 +49,12 @@ export function DictionaryView({ d, reloadKey }: { d: MyDictionary; reloadKey: n
           <ProfileView reloadKey={reloadKey} />
         </div>
       );
-    case "after_school":
-      return <AfterSchoolView dictionary={dictionary} reloadKey={reloadKey} />;
     case "journal":
       return (
         <SharedWith d={d} reloadKey={reloadKey}>
           <JournalView dictionary={dictionary} reloadKey={reloadKey} />
         </SharedWith>
       );
-    case "custom":
-      return <CustomView dictionary={dictionary} reloadKey={reloadKey} />;
     default: {
       const app = basicApp(d.displayKind);
       return app ? (

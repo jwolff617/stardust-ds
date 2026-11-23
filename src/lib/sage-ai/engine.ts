@@ -1,7 +1,5 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mondayOf, toIsoDate } from "@/lib/after-school";
-import { CUSTOM_ADDRESS, isCustomAddress } from "@/lib/custom";
 import type { UiDirective } from "@/lib/sage-ui";
 
 // Sage AI's verb engine. Every tool is one Core verb. Every dictionary
@@ -10,10 +8,10 @@ import type { UiDirective } from "@/lib/sage-ui";
 // dictionary copy, and runs the noun's handler. Adding a noun never adds a
 // tool. Sage AI only sees the nouns of dictionaries the user has on.
 
-export const CORE_VERBS = ["Add", "Edit", "Find", "Archive", "Restore", "Delete", "Share", "Label", "Remove"] as const;
+export const CORE_VERBS = ["Add", "Edit", "Find", "Archive", "Restore", "Delete", "Share", "Remove"] as const;
 export type CoreVerb = (typeof CORE_VERBS)[number];
 
-export type FieldType = "text" | "number" | "integer" | "date" | "week" | "weekday" | "enum" | "enum[]";
+export type FieldType = "text" | "number" | "integer" | "date" | "enum" | "enum[]";
 
 export type Field = {
   name: string;
@@ -23,8 +21,6 @@ export type Field = {
   options?: readonly string[];
   min?: number;
   max?: number;
-  // "week" fields only: also accept "template".
-  allowTemplate?: boolean;
 };
 
 export type Values = Record<string, unknown>;
@@ -82,14 +78,14 @@ export type NounDef = {
   actions?: Record<string, VerbDef>;
 };
 
-const WEEKDAY_NAMES = ["mon", "tue", "wed", "thu", "fri"];
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function parseIsoDate(value: string): Date | null {
   if (!ISO_DATE.test(value)) return null;
   const [y, m, d] = value.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  return toIsoDate(date) === value ? date : null;
+  const back = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return back === value ? date : null;
 }
 
 // Checks and converts one field. Returns the clean value, or an error a
@@ -114,22 +110,6 @@ function coerce(field: Field, raw: unknown): { value?: unknown; error?: string }
     case "date": {
       const s = String(raw).trim();
       return parseIsoDate(s) ? { value: s } : { error: `${label} must be a date like 2026-11-02.` };
-    }
-    case "week": {
-      const s = String(raw).trim().toLowerCase();
-      if (field.allowTemplate && s === "template") return { value: "template" };
-      const date = parseIsoDate(s);
-      if (!date) {
-        return { error: `${label} must be a date like 2026-11-02${field.allowTemplate ? ' or "template"' : ""}.` };
-      }
-      return { value: mondayOf(date) };
-    }
-    case "weekday": {
-      const s = String(raw).trim().toLowerCase();
-      const n = Number(s);
-      if (Number.isInteger(n) && n >= 1 && n <= 5) return { value: n };
-      const i = WEEKDAY_NAMES.indexOf(s.slice(0, 3));
-      return i >= 0 ? { value: i + 1 } : { error: `${label} must be Mon, Tue, Wed, Thu, or Fri.` };
     }
     case "enum": {
       const s = String(raw).trim().toLowerCase();
@@ -175,10 +155,6 @@ function describeField(field: Field): string {
   let type: string = field.type;
   if (field.type === "enum" || field.type === "enum[]") {
     type = field.options!.join("|") + (field.type === "enum[]" ? " (list)" : "");
-  } else if (field.type === "week") {
-    type = `a date, its week's Monday is used${field.allowTemplate ? ', or "template"' : ""}`;
-  } else if (field.type === "weekday") {
-    type = "Mon|Tue|Wed|Thu|Fri";
   }
   const range = field.min !== undefined || field.max !== undefined ? ` ${field.min ?? ""}..${field.max ?? ""}` : "";
   return `${field.name}${field.required ? "*" : ""} (${type}${field.type === "integer" ? range : ""})${field.description ? `: ${field.description}` : ""}`;
@@ -217,13 +193,13 @@ export function describeNouns(nouns: NounDef[], copies: DictionaryCopy[]): strin
 export async function loadCopies(supabase: SupabaseClient): Promise<DictionaryCopy[]> {
   const { data } = await supabase
     .from("user_dictionaries")
-    .select("dictionary:dictionaries(id, name, address, scope, template_id)")
+    .select("dictionary:dictionaries(id, name, address, scope, template_id, display_kind, status)")
     .eq("opted_in", true);
 
-  type Row = { id: string; name: string; address: string; scope: string; template_id: string | null };
+  type Row = { id: string; name: string; address: string; scope: string; template_id: string | null; display_kind: string; status: string };
   const rows = (data ?? [])
     .map((r) => (Array.isArray(r.dictionary) ? r.dictionary[0] : r.dictionary) as Row | null)
-    .filter((d): d is Row => Boolean(d));
+    .filter((d): d is Row => Boolean(d) && d!.status === "approved");
 
   const templateIds = [...new Set(rows.map((d) => d.template_id).filter((id): id is string => Boolean(id)))];
   const addressById = new Map<string, string>();
@@ -235,12 +211,14 @@ export async function loadCopies(supabase: SupabaseClient): Promise<DictionaryCo
   return rows.map((d) => ({
     id: d.id,
     name: d.name,
-    // Every dictionary someone built shares one noun; Bet Stories is a journal.
-    address: isCustomAddress(d.address)
-      ? CUSTOM_ADDRESS
-      : d.address === "bet-stories"
+    // Every notebook (your journals, notes, ideas, groups, Bet Stories) uses
+    // the noun of its kind: Journal Entry or Note.
+    address:
+      d.display_kind === "journal"
         ? "journal-ds"
-        : (d.template_id && addressById.get(d.template_id)) || d.address,
+        : d.display_kind === "notes_list"
+          ? "night-ds"
+          : (d.template_id && addressById.get(d.template_id)) || d.address,
     scope: d.scope,
   }));
 }
@@ -272,7 +250,6 @@ const VERB_HELP: Record<CoreVerb, string> = {
   Restore: "Bring an archived thing back.",
   Delete: "Erase a thing for good.",
   Share: "Change who can see a thing.",
-  Label: "Add or remove a label.",
   Remove: "Turn a dictionary off.",
 };
 

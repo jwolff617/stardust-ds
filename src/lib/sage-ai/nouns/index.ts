@@ -1,9 +1,7 @@
 import type { NounDef } from "../engine";
 import { dictionaryNoun, profileFieldNoun, termNoun } from "./core";
 import { noteNoun } from "./night-ds";
-import { activityNoun, lessonNoun, themeNoun } from "./after-school";
 import { basicNouns } from "./basics";
-import { builtDictionaryNoun, builtEntryNoun } from "./custom";
 import { organizationNoun, profileEntryNoun } from "./profile";
 import { wordListNoun } from "./word-list";
 import { wordNoun } from "./word";
@@ -19,10 +17,5 @@ export const NOUNS: NounDef[] = [
   wordListNoun,
   wordNoun,
   noteNoun,
-  lessonNoun,
-  themeNoun,
-  activityNoun,
   ...basicNouns,
-  builtDictionaryNoun,
-  builtEntryNoun,
 ];

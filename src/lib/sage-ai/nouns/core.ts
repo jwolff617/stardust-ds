@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ensurePersonalInstance, findPersonalInstance } from "@/lib/personal-instance";
 import { fetchDefinitions, getOptedInDictionaries } from "@/lib/dictionary";
-import { addDictionaryLabel, removeDictionaryLabel } from "@/lib/dictionary-labels";
 import { searchDictionaries } from "@/lib/dictionary-search";
 import type { NounDef } from "../engine";
 
@@ -94,42 +93,6 @@ export const dictionaryNoun: NounDef = {
             on: d.optedIn,
             publicProfile: d.isOtherProfile,
           })),
-        };
-      },
-    },
-    Label: {
-      description: "Add or remove a label on a dictionary the user owns, including their own copies (Notes, Profile). Labels help people find it.",
-      target: DICTIONARY_TARGET,
-      params: [
-        { name: "label", type: "text", required: true, max: 40 },
-        { name: "action", type: "enum", options: ["add", "remove"], required: true },
-      ],
-      run: async ({ ctx, target, values }) => {
-        const dictionary = await findDictionary(ctx.supabase, target!);
-        if (!dictionary) return { ok: false, error: `No dictionary matches "${target}".` };
-
-        let dictionaryId: string | null = null;
-        if (dictionary.kind === "instance_template") {
-          const instance = await findPersonalInstance(ctx.supabase, ctx.userId, dictionary.id);
-          if (!instance) return { ok: false, error: `Add "${dictionary.name}" first, then label it.` };
-          dictionaryId = instance.id;
-        } else if (dictionary.owner_user_id === ctx.userId) {
-          dictionaryId = dictionary.id;
-        }
-        if (!dictionaryId) return { ok: false, error: "You can only label dictionaries you own." };
-
-        const label = String(values.label);
-        const result =
-          values.action === "add"
-            ? await addDictionaryLabel(ctx.supabase, dictionaryId, label)
-            : await removeDictionaryLabel(ctx.supabase, dictionaryId, label);
-        if (!result.ok) return result;
-        return {
-          ok: true,
-          message:
-            values.action === "add"
-              ? `Labeled "${dictionary.name}" with "${result.label}".`
-              : `Removed "${result.label}" from "${dictionary.name}".`,
         };
       },
     },
