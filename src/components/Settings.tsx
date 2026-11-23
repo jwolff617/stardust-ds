@@ -99,7 +99,7 @@ export function Settings({
           <p className="text-sm opacity-60">Loading...</p>
         ) : (
           <ol className="flex flex-col gap-2">
-            {HOTKEY_NUMBERS.map((n) => {
+            {HOTKEY_NUMBERS.filter((n, i) => hotkeys[n] || i < 9 || hotkeys[String(i)]).map((n) => {
               const h = hotkeys[n];
               return (
                 <li key={n} className="grid grid-cols-[2rem_1fr] items-center gap-2">

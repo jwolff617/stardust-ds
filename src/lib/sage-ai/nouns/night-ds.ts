@@ -70,7 +70,7 @@ const peopleField = { name: "people", type: "text" as const, max: 300, descripti
 export const noteNoun: NounDef = {
   name: "Note",
   dictionary: "night-ds",
-  description: "A note in Notes. Notes have no title, only content, and live for a time frame. When it runs out the note archives itself.",
+  description: "A note in Notes, always private. Notes have no title, only content, and live for a time frame. When it runs out the note archives itself.",
   notes: 'If the user doesn\'t say a time frame, pick the one their words imply ("today" is day, "this week" is week) and default to day. ',
   verbs: {
     Add: {
@@ -185,13 +185,6 @@ export const noteNoun: NounDef = {
         if (error) return { ok: false, error: error.message };
         return { ok: true, message: `Deleted ${note.label}.` };
       },
-    },
-    Share: {
-      description: "Set a note public (other users can read it) or private.",
-      target: NOTE_TARGET,
-      params: [{ name: "visibility", type: "enum", options: ["public", "private"], required: true }],
-      run: ({ ctx, dictionary, target, values }) =>
-        updateNote(ctx.supabase, dictionary!.id, target!, { visibility: values.visibility }, (l) => `${l[0].toUpperCase()}${l.slice(1)} is now ${values.visibility}.`),
     },
   },
   actions: {

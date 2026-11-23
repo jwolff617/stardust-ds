@@ -14,6 +14,17 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const none = Response.json({ error: "That word isn't there anymore." }, { status: 404 });
 
+  if (kind === "notebook") {
+    const { data } = await supabase.from("dictionaries").select("id, name, address, scope, display_kind").eq("id", id).maybeSingle();
+    if (!data) return none;
+    const idea = data.address.startsWith("idea-");
+    return Response.json({
+      kind: idea ? "idea" : data.scope === "group" ? "group" : data.display_kind === "notes_list" ? "notes" : "journal",
+      id,
+      word: data.name,
+      view: { id: data.id, name: data.name, displayKind: data.display_kind, belongs: data.scope === "group" ? "group" : "personal" },
+    });
+  }
   if (kind === "mine") {
     const { data } = await supabase.from("my_words").select("word, body, place, people, visibility, created_at").eq("id", id).maybeSingle();
     if (!data) return none;
@@ -25,7 +36,7 @@ export async function GET(request: Request) {
     const word = data.body.trim().split(/\r?\n/)[0].slice(0, 60);
     return Response.json({ kind, id, word, body: data.body, place: data.place, people: data.people, time: data.time_frame, visibility: data.visibility });
   }
-  if (kind === "journal") {
+  if (kind === "journal" || kind === "idea-entry") {
     const { data } = await supabase.from("journal_entries").select("body, place, people, created_at, dictionary:dictionaries(name, scope)").eq("id", id).maybeSingle();
     if (!data) return none;
     const d = Array.isArray(data.dictionary) ? data.dictionary[0] : data.dictionary;

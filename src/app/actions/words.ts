@@ -44,19 +44,17 @@ async function signedIn() {
   return { supabase, user };
 }
 
-const vis = (v: string, fallback: "public" | "private") => (v === "public" || v === "private" ? v : fallback);
 
 export async function createWord(d: WordDraft): Promise<Made> {
   const { supabase, user } = await signedIn();
   const word = d.word.trim().slice(0, 120);
   if (!word) throw new Error("Give it a word.");
-  const visibility = d.visibility.trim().toLowerCase();
 
   switch (d.type) {
     case "noun": {
       const { data, error } = await supabase
         .from("my_words")
-        .insert({ owner_user_id: user.id, word, body: d.body, place: d.place, people: d.people, visibility: vis(visibility, "private") })
+        .insert({ owner_user_id: user.id, word, body: d.body, place: d.place, people: d.people, visibility: "private" })
         .select("id")
         .single();
       if (error) throw new Error(/my_words/.test(error.message) ? "Nouns need migration 0050." : error.message);
@@ -67,15 +65,24 @@ export async function createWord(d: WordDraft): Promise<Made> {
         p_name: word,
         p_kind: d.details.kind || "other",
         p_website: d.details.website ?? "",
-        p_about: d.body,
+        // A board in plain text: start with sections they can change or delete.
+        p_about: d.body.trim() || "Mission\n\n\nAnnouncements\n\n\nContact\n",
         p_place: d.place,
         p_people: d.people,
-        p_visibility: vis(visibility, "public"),
+        p_visibility: "public",
       });
       if (error) throw new Error(error.message);
       return { open: "word", kind: "organization", id: data as string };
     }
-    case "idea":
+    case "idea": {
+      // A journal anyone can read.
+      const { data: id, error } = await supabase.rpc("create_idea", { p_name: word });
+      if (error) throw new Error(/create_idea/.test(error.message) ? "Ideas need migration 0054." : error.message);
+      if (d.body.trim()) {
+        await supabase.from("journal_entries").insert({ dictionary_id: id, owner_user_id: user.id, body: d.body.trim(), place: d.place, people: d.people });
+      }
+      return { open: "view", id: id as string, name: word, displayKind: "journal", belongs: "personal" };
+    }
     case "job":
     case "resource":
     case "person": {
@@ -92,7 +99,7 @@ export async function createWord(d: WordDraft): Promise<Made> {
           body: d.body,
           place: d.place,
           people: d.people,
-          visibility: vis(visibility, "public"),
+          visibility: "public",
           details,
         })
         .select("id")
@@ -129,17 +136,14 @@ export async function createWord(d: WordDraft): Promise<Made> {
 // Saves the open word's word, body, and tags.
 export async function saveWord(kind: string, id: string, w: { word: string; body: string; place: string; people: string; visibility: string }) {
   const { supabase, user } = await signedIn();
-  const visibility = w.visibility.trim().toLowerCase();
   const fail = (error: { message: string } | null) => {
     if (error) throw new Error(error.message);
   };
   if (kind === "mine") {
     const row: Record<string, string> = { word: w.word.trim().slice(0, 120), body: w.body, place: w.place, people: w.people };
-    if (visibility === "public" || visibility === "private") row.visibility = visibility;
     fail((await supabase.from("my_words").update(row).eq("id", id).eq("owner_user_id", user.id)).error);
   } else if (["idea", "job", "resource", "person"].includes(kind)) {
     const row: Record<string, string> = { word: w.word.trim().slice(0, 120), body: w.body, place: w.place, people: w.people };
-    if (visibility === "public" || visibility === "private") row.visibility = visibility;
     fail((await supabase.from("profile_entries").update(row).eq("id", id).eq("owner_user_id", user.id)).error);
   } else if (kind === "organization") {
     const { data: org } = await supabase.from("organizations").select("kind, website").eq("id", id).maybeSingle();
@@ -153,13 +157,12 @@ export async function saveWord(kind: string, id: string, w: { word: string; body
           p_about: w.body,
           p_place: w.place,
           p_people: w.people,
-          p_visibility: visibility === "public" || visibility === "private" ? visibility : null,
+          p_visibility: null,
         })
       ).error,
     );
   } else if (kind === "note") {
     const row: Record<string, string> = { body: w.body, place: w.place, people: w.people };
-    if (visibility === "public" || visibility === "private") row.visibility = visibility;
     fail((await supabase.from("notes").update(row).eq("id", id).eq("owner_user_id", user.id)).error);
   } else if (kind === "journal") {
     fail((await supabase.from("journal_entries").update({ body: w.body, place: w.place, people: w.people }).eq("id", id).eq("owner_user_id", user.id)).error);

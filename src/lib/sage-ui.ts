@@ -18,6 +18,8 @@ export type FoundWord = WordFields & {
   word: string;
   body: string;
   createdAt?: string;
+  // How well it fits the search: higher shows first.
+  score?: number;
   // Matches: the words shared, and a line of the kind's own details.
   shared?: string[];
   details?: string;

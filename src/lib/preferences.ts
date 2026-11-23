@@ -39,7 +39,8 @@ export type Hotkey = {
   dictionaryId?: string;
 };
 
-export const HOTKEY_NUMBERS = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+// 1 to 50 are each spark's own. (51 to 999 are held for later.)
+export const HOTKEY_NUMBERS = Array.from({ length: 50 }, (_, i) => String(i + 1));
 
 function cleanHotkeys(raw: unknown): Record<string, Hotkey> | undefined {
   if (!raw || typeof raw !== "object") return undefined;

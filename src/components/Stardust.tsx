@@ -11,6 +11,7 @@ import { Spark } from "./Spark";
 import { signOut } from "@/app/login/actions";
 import { createWord, saveWord as saveWordAction, type WordType } from "@/app/actions/words";
 import { InboxView } from "./InboxView";
+import { visibilityOf } from "@/lib/visibility";
 import { ProfileView } from "./ProfileView";
 import { ProfileFields } from "./ProfileFields";
 import { splitStream, type FoundWord, type UiDirective, type WordFields } from "@/lib/sage-ui";
@@ -164,6 +165,25 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       .catch(() => {});
   }, [fetchDictionaries]);
 
+  // Clear steps back: from a word you opened out of search, to those
+  // results; from the results (or anything else), to an empty page.
+  const lastResults = useRef<{ items: FoundWord[]; word: string; body: string; fields: Fields } | null>(null);
+  function clearStep() {
+    const back = lastResults.current;
+    if (back && box.mode !== "results" && box.mode !== "search") {
+      setRenaming(false);
+      setRef(null);
+      setDirty(false);
+      setWord(back.word);
+      setBody(back.body);
+      setFields(back.fields);
+      setBox({ mode: "results", items: back.items });
+      return;
+    }
+    lastResults.current = null;
+    clearToSearch();
+  }
+
   function clearToSearch() {
     setRenaming(false);
     setRef(null);
@@ -208,6 +228,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             time: d.query.time ?? "",
             visibility: d.query.visibility ?? "",
           });
+          lastResults.current = {
+            items: d.items,
+            word: d.query.word ?? "",
+            body: d.query.body ?? "",
+            fields: { place: d.query.place ?? "", people: d.query.people ?? "", time: d.query.time ?? "", visibility: d.query.visibility ?? "" },
+          };
           setBox({ mode: "results", items: d.items });
           break;
         case "view": {
@@ -367,6 +393,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     const res = await fetch(`/api/word?kind=${encodeURIComponent(kind)}&id=${id}`);
     if (!res.ok) return false;
     const d = await res.json();
+    if (d.view) {
+      setWord(d.view.name);
+      setBody("");
+      setFields(EMPTY_FIELDS);
+      setRef(null);
+      setBox({ mode: "view", dictionary: d.view });
+      return true;
+    }
     showWord({ word: d.word, body: d.body ?? "", kind: d.kind, id: d.id, place: d.place, people: d.people, time: d.time, visibility: d.visibility });
     setOrgInfo(d.org ?? null);
     return true;
@@ -390,6 +424,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         if (!(await openWord(exact.kind, exact.id))) showWord(exact);
         return;
       }
+      lastResults.current = { items, word, body, fields };
       setBox({ mode: "results", items });
     } catch {
       setReply("Search didn't work. Try again.");
@@ -632,7 +667,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             {(box.mode !== "spark" && box.mode !== "search") || word || body || Object.values(fields).some(Boolean) ? (
               <button
                 type="button"
-                onClick={clearToSearch}
+                onClick={clearStep}
                 className="shrink-0 text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]"
               >
                 Clear
@@ -658,7 +693,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             {box.mode !== "spark" && box.mode !== "search" && (
               <button
                 type="button"
-                onClick={clearToSearch}
+                onClick={clearStep}
                 aria-label="Close"
                 className="absolute right-2 top-1 px-2 text-2xl leading-none text-[var(--muted)] hover:text-[var(--foreground)]"
               >
@@ -722,7 +757,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         <aside className="min-w-0">
           <Panel title="Tags">
             <div className="flex flex-col gap-3">
-              {FIELD_NAMES.map(({ key, label }) => (
+              {FIELD_NAMES.filter(({ key }) => key !== "visibility").map(({ key, label }) => (
                 <label key={key} className="flex flex-col gap-0.5">
                   <span className="text-xs text-[var(--muted)]">{label === "Place" ? "Location" : label}</span>
                   <input
@@ -737,6 +772,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                   />
                 </label>
               ))}
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)]">Visibility</span>
+                <span className="pb-0.5 text-sm">{(openType && visibilityOf(openType.replace(/^new:/, ""))) || (searching ? "any" : "")}</span>
+              </div>
             </div>
           </Panel>
           <div className="mt-6 hidden lg:block">
@@ -766,6 +805,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           }}
           className="flex items-center gap-2 rounded-lg border border-[var(--line)] p-1.5 focus-within:border-[var(--foreground)]"
         >
+          {isLoggedIn && <HotkeyBox onGo={(n) => send(n)} />}
           {hasSpeech && (
             <button
               type="button"
@@ -1094,14 +1134,14 @@ const PANEL_TITLES: Record<string, string> = {
 // idea, job, resource, or person is a word and a body (plus its details);
 // notes, journal, and group make a notebook that works like one.
 const WORD_TYPES: { type: WordType; label: string; about: string }[] = [
-  { type: "noun", label: "noun", about: "A word and what it means to you." },
-  { type: "org", label: "org", about: "A business, government, nonprofit, or other: its mission, news, contact." },
-  { type: "idea", label: "idea", about: "On your profile. Others with matching words find it." },
-  { type: "job", label: "job", about: "On your profile: hiring, or looking for work." },
-  { type: "resource", label: "resource", about: "On your profile: something you have or need." },
-  { type: "person", label: "person", about: "On your profile: who you are, or who you hope to meet." },
-  { type: "notes", label: "notes", about: "A notebook of short notes that each live a day to a life." },
-  { type: "journal", label: "journal", about: "A private journal of longer entries." },
+  { type: "noun", label: "noun", about: "A word and what it means to you. Private." },
+  { type: "org", label: "org", about: "A board: mission, announcements, contact. Public." },
+  { type: "idea", label: "idea", about: "A journal anyone can read. Write entries over time." },
+  { type: "job", label: "job", about: "On your profile: hiring, or looking for work. Public." },
+  { type: "resource", label: "resource", about: "Something you have to lend or sell, or need. Public." },
+  { type: "person", label: "person", about: "On your profile: who you are, or who you hope to meet. Public." },
+  { type: "notes", label: "notes", about: "Short notes that live a day to a life. Private." },
+  { type: "journal", label: "journal", about: "Entries over time. Private." },
   { type: "group", label: "group", about: "A shared notebook. Put members' emails in People." },
 ];
 
@@ -1151,7 +1191,7 @@ function TypePicker({
             <input value={details.website ?? ""} onChange={set("website")} placeholder="Website" aria-label="Website" className={sel} />
           </>
         )}
-        {(type === "idea" || type === "job" || type === "resource" || type === "person") && (
+        {(type === "job" || type === "resource" || type === "person") && (
           <select value={details.side ?? "offer"} onChange={set("side")} aria-label="Offer or seek" className={sel}>
             <option value="offer">{type === "person" ? "Who I am" : type === "job" ? "Hiring" : type === "resource" ? "Have" : "My idea"}</option>
             <option value="seek">{type === "person" ? "Who I hope to meet" : type === "job" ? "Looking for work" : type === "resource" ? "Need" : "An idea to join"}</option>
@@ -1196,5 +1236,31 @@ function MicIcon() {
       <path d="M5 11a7 7 0 0 0 14 0" />
       <line x1="12" y1="18" x2="12" y2="21" />
     </svg>
+  );
+}
+
+// The # box: type a hotkey number (1 to 50) and Enter goes straight there.
+function HotkeyBox({ onGo }: { onGo: (n: string) => void }) {
+  const [n, setN] = useState("");
+  return (
+    <label className="flex shrink-0 items-center gap-0.5 border-r border-[var(--line)] pl-1 pr-2 text-sm text-[var(--muted)]">
+      #
+      <input
+        value={n}
+        inputMode="numeric"
+        maxLength={3}
+        onChange={(e) => setN(e.target.value.replace(/\D/g, ""))}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && n) {
+            e.preventDefault();
+            onGo(n);
+            setN("");
+          }
+        }}
+        aria-label="Hotkey number"
+        title="Hotkey: type a number and press Enter"
+        className="w-9 bg-transparent text-[var(--foreground)] outline-none"
+      />
+    </label>
   );
 }

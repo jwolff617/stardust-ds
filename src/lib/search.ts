@@ -65,7 +65,7 @@ export async function searchEverything(supabase: SupabaseClient, q: SearchQuery,
     if (/stardust_search/.test(error.message)) throw new Error("Search needs migration 0046 first.");
     throw new Error(error.message);
   }
-  type Row = { kind: string; id: string; word: string; body: string; place: string; people: string; visibility: string; created_at: string };
+  type Row = { kind: string; id: string; word: string; body: string; place: string; people: string; visibility: string; created_at: string; score?: number };
   return ((data ?? []) as Row[]).map((r) => ({
     kind: r.kind,
     id: r.id,
@@ -76,5 +76,6 @@ export async function searchEverything(supabase: SupabaseClient, q: SearchQuery,
     visibility: r.visibility,
     time: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : undefined,
     createdAt: r.created_at,
+    score: r.score,
   }));
 }
