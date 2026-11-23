@@ -457,14 +457,20 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
   // What kind of word is open, for the oval next to it.
   const openType =
     box.mode === "word"
-      ? ref?.kind ?? "word"
+      ? ref?.kind ?? "noun"
       : box.mode === "results"
         ? "search"
         : box.mode === "view"
-          ? "view"
+          ? box.dictionary.belongs === "group"
+            ? "group"
+            : box.dictionary.displayKind === "notes_list"
+              ? "note"
+              : box.dictionary.displayKind
           : box.mode === "panel"
             ? box.panel
-            : "";
+            : searching && word.trim() && isLoggedIn
+              ? `new:${newType}`
+              : "";
 
   // Words this spark can change: their own, and dictionary words for a moderator.
   const DICTIONARY_KINDS = ["noun", "verb", "word"];
@@ -578,7 +584,7 @@ export function Stardust({ isLoggedIn, userName, isModerator = false }: { isLogg
               </button>
             )}
 
-            {openType && <TypePill type={openType} />}
+            {openType && <WordKind type={openType} />}
             {box.mode === "word" && canSave && (
               <span className="shrink-0 text-[11px] text-[var(--muted)]">
                 {dirty || saveState === "saving" ? "Saving..." : saveState === "error" ? "Not saved" : saveState === "saved" ? "Saved" : ""}
@@ -895,6 +901,48 @@ type ListWord = { id: string; word: string; kind: string; refId: string | null }
 function TypePill({ type }: { type: string }) {
   const label = type === "organization" ? "org" : type === "new-notebook" ? "group" : type === "mine" ? "noun" : type;
   return <span className="shrink-0 text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">{label}</span>;
+}
+
+// What the open word is, in the word bar: VERB, NOUN, or THING and which.
+const THING_OF: Record<string, string> = {
+  note: "note",
+  notes: "note",
+  journal: "journal",
+  idea: "idea",
+  resource: "resource",
+  organization: "org",
+  org: "org",
+  organizations: "org",
+  person: "profile · person",
+  job: "profile · job",
+  profile: "profile",
+  group: "group",
+  "new-notebook": "group",
+  inbox: "inbox",
+  settings: "settings",
+};
+
+function kindLabel(type: string): { head: string; sub: string } {
+  if (type.startsWith("new:")) {
+    const t = type.slice(4);
+    return { head: "NEW", sub: t === "noun" ? "noun" : THING_OF[t] ?? t };
+  }
+  if (type === "verb") return { head: "VERB", sub: "" };
+  if (type === "noun" || type === "word" || type === "mine") return { head: "NOUN", sub: "" };
+  if (type === "search") return { head: "SEARCH", sub: "results" };
+  if (type === "reports") return { head: "REPORTS", sub: "" };
+  const thing = THING_OF[type];
+  return thing ? { head: "THING", sub: thing } : { head: type.toUpperCase(), sub: "" };
+}
+
+function WordKind({ type }: { type: string }) {
+  const { head, sub } = kindLabel(type);
+  return (
+    <span className="shrink-0 border-l border-[var(--line)] pl-3 text-xs tracking-wider">
+      <span className="font-bold">{head}</span>
+      {sub && <span className="text-[var(--muted)]"> · {sub}</span>}
+    </span>
+  );
 }
 
 // A bordered panel with a header bar, like the sketch.
