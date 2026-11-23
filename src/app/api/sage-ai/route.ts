@@ -87,11 +87,7 @@ export async function POST(request: Request) {
     copies,
   };
   const hotkeys = cleanPreferences(profile?.preferences ?? {}).hotkeys ?? {};
-  const hotkeyLines = Object.entries(hotkeys).map(([n, h]) => {
-    const copy = h.dictionaryId ? copies.find((c) => c.id === h.dictionaryId) : undefined;
-    const where = copy ? ` (dictionary "${copy.name}", ${copy.scope === "personal" ? "private" : copy.scope === "group" ? "group" : "public"})` : "";
-    return `- ${n} = ${h.meaning || copy?.name || "?"}${where}`;
-  });
+  const hotkeyLines = await resolveHotkeys(supabase, user.id, hotkeys, copies);
   const pageLines: string[] = onPage
     ? ["word", "body", "place", "people", "time", "visibility", "status"]
         .map((k) => (typeof onPage[k] === "string" && onPage[k] ? `- ${k}: ${String(onPage[k]).slice(0, k === "body" ? 2000 : 200)}` : null))
@@ -231,4 +227,62 @@ async function describeOpenWord(supabase: Awaited<ReturnType<typeof createClient
     return `- open: their Organization, target ${id}. Edit name, body, kind, place (its neighborhood), people, visibility with noun Organization.`;
   }
   return `- open: a ${kind} from the dictionary. Dictionary words can't be edited.`;
+}
+
+// A hotkey is one of the user's words. Finds what it names and says how it
+// can be used: journals are private, a group's notebook is shared with its
+// members, an organization is public and its admins edit it, ideas and other
+// profile entries are public unless made private.
+async function resolveHotkeys(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  hotkeys: Record<string, { meaning: string }>,
+  copies: { id: string; name: string; address: string; scope: string }[],
+): Promise<string[]> {
+  const entries = Object.entries(hotkeys).filter(([, h]) => h.meaning.trim());
+  if (entries.length === 0) return [];
+  const norm = (t: string) => t.toLowerCase().replace(/['’]s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const short = (name: string) => name.replace(/^.{1,40}?['’]s\s+/, "") || name;
+
+  const [{ data: orgRows }, { data: entryRows }] = await Promise.all([
+    supabase.from("organization_members").select("role, organization:organizations(id, name)").eq("user_id", userId),
+    supabase.from("profile_entries").select("id, kind, word, visibility").eq("owner_user_id", userId).limit(200),
+  ]);
+  const orgs = (orgRows ?? []).flatMap((r) => {
+    const o = Array.isArray(r.organization) ? r.organization[0] : r.organization;
+    return o ? [{ id: o.id as string, name: o.name as string, role: r.role as string }] : [];
+  });
+
+  // Best match: exact, then one name inside the other (longest wins).
+  function pick<T>(items: T[], nameOf: (t: T) => string, want: string): T | undefined {
+    const w = norm(want);
+    const scored = items
+      .map((t) => ({ t, n: norm(nameOf(t)) }))
+      .filter(({ n }) => n && (n === w || w.includes(n) || n.includes(w)))
+      .sort((a, b) => Number(b.n === w) - Number(a.n === w) || b.n.length - a.n.length);
+    return scored[0]?.t;
+  }
+
+  return entries.map(([n, h]) => {
+    const want = h.meaning.trim();
+    const book = pick(copies.filter((c) => c.address !== "stardust"), (c) => short(c.name), want);
+    if (book) {
+      const how =
+        book.scope === "group"
+          ? "a group notebook: its members read and write it"
+          : book.scope === "personal"
+            ? "private to them"
+            : "public";
+      return `- ${n} = "${want}" → their dictionary "${book.name}" (${how}). Write in it with its noun (Journal Entry for a journal, Note for notes) and dictionary "${book.name}".`;
+    }
+    const org = pick(orgs, (o) => o.name, want);
+    if (org) {
+      return `- ${n} = "${want}" → Organization "${org.name}", target ${org.id}. Public view; ${org.role === "admin" ? "they're its admin, so they can edit it" : "they're a member, not its admin"}.`;
+    }
+    const entry = pick(entryRows ?? [], (e) => e.word, want);
+    if (entry) {
+      return `- ${n} = "${want}" → their Profile Entry (${entry.kind}) "${entry.word}", target ${entry.id}, ${entry.visibility}.`;
+    }
+    return `- ${n} = "${want}" → nothing of theirs by that name yet. Ask if they want to make it (a journal, a group, an organization, or an idea).`;
+  });
 }

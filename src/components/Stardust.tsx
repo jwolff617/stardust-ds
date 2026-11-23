@@ -285,6 +285,26 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     send(`Search: ${parts.join(", ")}`);
   }
 
+  // Create: the form's word, body, and four fields become a new word. Sage
+  // puts it where it belongs (a note, a journal entry, an idea, an
+  // organization...) or asks.
+  function createFromForm() {
+    if (!word.trim() && !body.trim()) {
+      setReply("Write a word or a body first.");
+      return;
+    }
+    if (!isLoggedIn) {
+      setReply("Log in to create words.");
+      return;
+    }
+    const parts = [
+      `word "${word.trim()}"`,
+      body.trim() && `body "${body.trim()}"`,
+      ...FIELD_NAMES.map(({ key, label }) => fields[key].trim() && `${label.toLowerCase()} "${fields[key].trim()}"`),
+    ].filter(Boolean);
+    send(`Create a new word: ${parts.join(", ")}. If it's not clear what it is (a note, a journal entry, an idea, a job, a resource, a person, an organization), ask me.`);
+  }
+
   // Signed out, search goes straight to the public words.
   async function publicSearch() {
     setSending(true);
@@ -424,7 +444,6 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           onFormKey={onFormKey}
           isLoggedIn={isLoggedIn}
           reloadKey={reloadKey}
-          dictionaries={dictionaries}
           privateProfileId={privateProfileId}
           onOpen={(f) => showWord(f)}
           onChanged={() => {
@@ -454,7 +473,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         ))}
       </div>
       {(searching || (box.mode === "word" && isLoggedIn && dirty)) && (
-        <div className="mt-3 flex justify-center">
+        <div className="mt-3 flex justify-center gap-3">
           <button
             type="button"
             onClick={searching ? searchFromForm : saveWord}
@@ -463,6 +482,16 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           >
             {searching ? "SEARCH" : "SAVE"}
           </button>
+          {searching && (
+            <button
+              type="button"
+              onClick={createFromForm}
+              disabled={sending}
+              className="rounded-full bg-[var(--foreground)] px-5 py-1 text-sm tracking-widest text-[var(--background)] disabled:opacity-40"
+            >
+              CREATE
+            </button>
+          )}
         </div>
       )}
 
@@ -539,7 +568,6 @@ function Box({
   onFormKey,
   isLoggedIn,
   reloadKey,
-  dictionaries,
   privateProfileId,
   onOpen,
   onChanged,
@@ -551,7 +579,6 @@ function Box({
   onFormKey: (e: React.KeyboardEvent) => void;
   isLoggedIn: boolean;
   reloadKey: number;
-  dictionaries: MyDictionary[];
   privateProfileId: string | null;
   onOpen: (w: { word: string; body: string; kind?: string; id?: string } & WordFields) => void;
   onChanged: () => void;
@@ -606,7 +633,7 @@ function Box({
     case "panel":
       switch (box.panel) {
         case "settings":
-          return <Settings dictionaries={dictionaries} isLoggedIn={isLoggedIn} privateProfileId={privateProfileId} />;
+          return <Settings isLoggedIn={isLoggedIn} privateProfileId={privateProfileId} />;
         case "organizations":
           return (
             <div className="light-card -m-2 rounded p-2 pr-8">

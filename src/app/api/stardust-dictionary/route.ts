@@ -3,7 +3,7 @@ import { fetchDefinitions } from "@/lib/dictionary";
 
 const PAGE_SIZE = 12;
 
-const FILTERS = ["all", "noun", "verb", "organization", "person"] as const;
+const FILTERS = ["all", "noun", "verb", "organization", "person", "mine"] as const;
 type Filter = (typeof FILTERS)[number];
 
 type Entry = { id: string; term: string; body: string; partOfSpeech: string };
@@ -27,13 +27,19 @@ export async function GET(request: Request) {
   let all: Entry[] = [];
   let note = "";
 
-  if (filter === "all" || filter === "noun" || filter === "verb") {
+  if (filter === "mine" && !user) {
+    note = "Log in to see your words.";
+  } else if (filter === "mine") {
+    all = await myWords(supabase, user!.id);
+  } else if (filter === "all" || filter === "noun" || filter === "verb") {
     const { data: stardust } = await supabase.from("dictionaries").select("id").eq("address", "stardust").maybeSingle();
     if (stardust) {
       const pos = filter === "all" ? (["verb", "noun", "more"] as const) : ([filter] as const);
       const defs = await fetchDefinitions(supabase, { dictionaryIds: [stardust.id], partsOfSpeech: [...pos] });
       all = defs.map((d) => ({ id: d.id, term: d.term, body: d.body, partOfSpeech: d.partOfSpeech }));
     }
+    // Everything you've written is in your dictionary too.
+    if (filter === "all" && user) all = all.concat(await myWords(supabase, user.id));
   } else if (!user) {
     note = "Log in to see organizations and people.";
   } else if (filter === "organization") {
@@ -82,4 +88,33 @@ export async function GET(request: Request) {
   const start = (current - 1) * PAGE_SIZE;
 
   return Response.json({ items: all.slice(start, start + PAGE_SIZE), page: current, totalPages, total, note });
+}
+
+// Every word the user has written: notes, journal entries, profile entries,
+// and the organizations they run. The book's words live in the Stardust
+// dictionary table; these live in their own tables, each with its own
+// visibility, and show here for their writer.
+async function myWords(supabase: Awaited<ReturnType<typeof createClient>>, userId: string): Promise<Entry[]> {
+  const firstLine = (t: string) => {
+    const line = (t ?? "").trim().split(/\r?\n/)[0];
+    return line.length > 60 ? `${line.slice(0, 60)}...` : line;
+  };
+  const [notes, journals, entries, orgs] = await Promise.all([
+    supabase.from("notes").select("id, body, visibility").eq("owner_user_id", userId).is("archived_at", null).limit(500),
+    supabase.from("journal_entries").select("id, body, dictionary:dictionaries(name)").eq("owner_user_id", userId).limit(500),
+    supabase.from("profile_entries").select("id, kind, word, body, visibility").eq("owner_user_id", userId).limit(200),
+    supabase.from("organization_members").select("organization:organizations(id, name, kind, about)").eq("user_id", userId),
+  ]);
+  const out: Entry[] = [];
+  for (const n of notes.data ?? []) out.push({ id: n.id, term: firstLine(n.body), body: n.body, partOfSpeech: `note · ${n.visibility}` });
+  for (const j of journals.data ?? []) {
+    const d = Array.isArray(j.dictionary) ? j.dictionary[0] : j.dictionary;
+    out.push({ id: j.id, term: firstLine(j.body), body: j.body, partOfSpeech: `journal · ${d?.name ?? ""}` });
+  }
+  for (const e of entries.data ?? []) out.push({ id: e.id, term: e.word, body: e.body, partOfSpeech: `${e.kind} · ${e.visibility}` });
+  for (const r of orgs.data ?? []) {
+    const o = Array.isArray(r.organization) ? r.organization[0] : r.organization;
+    if (o) out.push({ id: o.id, term: o.name, body: o.about ?? "", partOfSpeech: `organization · ${o.kind}` });
+  }
+  return out;
 }

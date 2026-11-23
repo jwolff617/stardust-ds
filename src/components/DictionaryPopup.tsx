@@ -12,6 +12,7 @@ const FILTERS = [
   { key: "verb", label: "Verbs" },
   { key: "organization", label: "Organizations" },
   { key: "person", label: "People" },
+  { key: "mine", label: "Mine" },
 ] as const;
 type Filter = (typeof FILTERS)[number]["key"];
 
