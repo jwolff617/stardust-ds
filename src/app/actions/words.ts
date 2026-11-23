@@ -254,3 +254,32 @@ export async function setDisplayName(name: string) {
   const { error } = await supabase.from("profiles").update({ display_name: clean || null }).eq("id", user.id);
   if (error) throw new Error(error.message);
 }
+
+// --- Org announcements (0055) ------------------------------------------------------
+
+export type OrgPost = { id: string; body: string; at: string };
+
+export async function orgPosts(orgId: string): Promise<{ posts: OrgPost[]; isAdmin: boolean }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [{ data, error }, admin] = await Promise.all([
+    supabase.from("organization_posts").select("id, body, created_at").eq("organization_id", orgId).order("created_at", { ascending: false }).limit(50),
+    user ? supabase.rpc("is_org_admin", { p_org: orgId }) : Promise.resolve({ data: false }),
+  ]);
+  if (error) throw new Error(/organization_posts/.test(error.message) ? "Announcements need migration 0055." : error.message);
+  return { posts: (data ?? []).map((p) => ({ id: p.id, body: p.body, at: p.created_at })), isAdmin: Boolean(admin.data) };
+}
+
+export async function addOrgPost(orgId: string, body: string) {
+  const { supabase, user } = await signedIn();
+  const { error } = await supabase.from("organization_posts").insert({ organization_id: orgId, author_user_id: user.id, body: body.trim().slice(0, 5000) });
+  if (error) throw new Error(error.message);
+}
+
+export async function deleteOrgPost(id: string) {
+  const { supabase } = await signedIn();
+  const { error } = await supabase.from("organization_posts").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}

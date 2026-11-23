@@ -11,6 +11,7 @@ import { Spark } from "./Spark";
 import { signOut } from "@/app/login/actions";
 import { createWord, saveWord as saveWordAction, type WordType } from "@/app/actions/words";
 import { InboxView } from "./InboxView";
+import { OrgPosts } from "./OrgPosts";
 import { visibilityOf } from "@/lib/visibility";
 import { ProfileView } from "./ProfileView";
 import { ProfileFields } from "./ProfileFields";
@@ -753,6 +754,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               }}
               onClose={clearToSearch}
             />
+            {box.mode === "word" && ref?.kind === "organization" && <OrgPosts orgId={ref.id} />}
           </section>
 
           {(searching || isDraft) && isLoggedIn && (
