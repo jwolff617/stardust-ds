@@ -145,7 +145,9 @@ export async function POST(request: Request) {
 
           const run = anthropic.messages.stream({
             model,
-            max_tokens: 1024,
+            // Room for its thinking plus a short answer or a few tool calls.
+            max_tokens: 4096,
+            ...(model === MODEL_FAST ? { output_config: { effort: "low" as const } } : {}),
             system: systemPrompt,
             tools,
             messages,
