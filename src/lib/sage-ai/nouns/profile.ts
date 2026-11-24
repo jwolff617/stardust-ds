@@ -245,7 +245,7 @@ export const organizationNoun: NounDef = {
   dictionary: "core",
   alwaysOn: true,
   description:
-    "A business, government, nonprofit, or other group, defined in its own words. The body holds its mission, announcements, contact info. Anyone can make one (up to 3) and it shows right away; Official is a badge a moderator grants after Act Apply Official.",
+    "A business, government, nonprofit, or other group, defined in its own words. The body holds its mission, announcements, contact info. Anyone can make one and it shows right away; Official is a badge a moderator grants after Act Apply Official.",
   verbs: {
     Add: {
       params: [{ name: "name", type: "text", required: true, max: 80 }, ...ORG_FIELDS],

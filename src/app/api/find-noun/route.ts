@@ -26,11 +26,13 @@ export async function GET(request: Request) {
   const want = norm(name);
   const like = `%${name.replace(/[%_]/g, "")}%`;
 
-  const [mine, { data: orgs }, { data: ideas }, { data: entries }] = await Promise.all([
-    myNouns(supabase, user.id, {}),
+  const [mine, { data: orgs }, { data: ideas }, { data: entries }, { data: found }] = await Promise.all([
+    myNouns(supabase, user.id, {}).catch(() => []),
     supabase.from("organizations").select("id, name, about").ilike("name", like).limit(20),
     supabase.from("dictionaries").select("id, name").like("address", "idea-%").eq("status", "approved").ilike("name", like).limit(20),
     supabase.from("profile_entries").select("id, kind, word, body").eq("owner_user_id", user.id).ilike("word", like).limit(20),
+    // Everything else in Supabase you can see (notes, journal entries, groups...), by name.
+    supabase.rpc("stardust_search", { p_word: name, p_limit: 60 }),
   ]);
 
   const pool: FoundWord[] = [
@@ -38,6 +40,10 @@ export async function GET(request: Request) {
     ...(entries ?? []).map((e) => ({ kind: e.kind, id: e.id, word: e.word, body: e.body ?? "", details: `${e.kind} profile` })),
     ...(orgs ?? []).map((o) => ({ kind: "organization", id: o.id, word: o.name, body: o.about ?? "", details: "org" })),
     ...(ideas ?? []).map((d) => ({ kind: "notebook", id: d.id, word: d.name, body: "", details: "idea" })),
+    // Not the Stardust Dictionary: people read that in the Dictionary.
+    ...((found ?? []) as { kind: string; id: string; word: string; body: string }[])
+      .filter((f) => !["noun", "verb", "word"].includes(f.kind))
+      .map((f) => ({ kind: f.kind, id: f.id, word: f.word, body: f.body ?? "", details: f.kind })),
   ];
   const seen = new Set<string>();
   const items = pool.filter((p) => {

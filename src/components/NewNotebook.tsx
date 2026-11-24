@@ -89,7 +89,7 @@ export function NewNotebook({ onDone, onClose }: { onDone: () => void; onClose: 
           <button type="submit" disabled={saving || !name.trim()} className={primary}>
             Make it
           </button>
-          {shared && <p className="w-full text-xs text-neutral-500">You add people by email after, up to 30. Everyone sees who wrote what.</p>}
+          {shared && <p className="w-full text-xs text-neutral-500">You add people by email after. Everyone sees who wrote what.</p>}
           {error && <p className="w-full text-xs text-red-600">{error}</p>}
         </form>
       )}

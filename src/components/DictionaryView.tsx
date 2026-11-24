@@ -16,7 +16,7 @@ export type Belongs = "personal" | "group" | "public";
 export type MyDictionary = { id: string; name: string; displayKind: string; belongs: Belongs };
 
 // A shared notebook shows who's in it above the notes: the owner adds
-// people by email (up to 30) and anyone can leave.
+// people by email and anyone can leave.
 function SharedWith({ d, reloadKey, children }: { d: MyDictionary; reloadKey: number; children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   if (d.belongs !== "group") return <>{children}</>;
