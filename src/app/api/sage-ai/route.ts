@@ -262,7 +262,7 @@ async function describeOpenWord(supabase: Awaited<ReturnType<typeof createClient
 async function resolveHotkeys(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
-  hotkeys: Record<string, { meaning: string }>,
+  hotkeys: Record<string, { meaning: string; kind?: string; id?: string }>,
   copies: { id: string; name: string; address: string; scope: string }[],
 ): Promise<{ n: string; want: string; line: string; go?: UiDirective }[]> {
   const entries = Object.entries(hotkeys).filter(([, h]) => h.meaning.trim());
@@ -291,6 +291,15 @@ async function resolveHotkeys(
 
   return entries.map(([n, h]) => {
     const want = h.meaning.trim();
+    // Picked in My List: it already knows which noun.
+    if (h.kind && h.id) {
+      return {
+        n,
+        want,
+        line: `- ${n} = "${want}" → their ${h.kind} "${want}", target ${h.id}.`,
+        go: { type: "open", kind: h.kind, id: h.id } as UiDirective,
+      };
+    }
     const book = pick(copies.filter((c) => c.address !== "stardust"), (c) => short(c.name), want);
     if (book) {
       const how =

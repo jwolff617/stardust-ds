@@ -479,6 +479,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     if (!res.ok) return false;
     const d = await res.json();
     if (d.view) {
+      linkSlot(d.view.name, "notebook", d.view.id);
       setView("card");
       setWord(d.view.name);
       setBody("");
@@ -572,31 +573,22 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     setCardsOverride(null);
   }
 
-  // What a typed name means: the freshest list of your nouns, the cards on
-  // the grid, then anything search can find by that exact name.
-  async function resolveSlot(text: string): Promise<Slot> {
-    const norm = (t: string) => t.toLowerCase().replace(/^the\s+/, "").replace(/['’]s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
-    const want = norm(text);
-    const fresh: MyNoun[] = await fetch("/api/my-nouns")
-      .then((r) => r.json())
-      .then((d) => {
-        setNouns(d.nouns ?? []);
-        return d.nouns ?? [];
-      })
-      .catch(() => nouns);
-    const pool: Slot[] = [
-      ...cards.filter((c): c is Slot => Boolean(c?.kind && c?.id)),
-      ...fresh.map((x) => ({ meaning: x.word, kind: x.kind, id: x.id })),
-    ];
-    const exact = pool.find((c) => norm(c.meaning) === want);
-    if (exact) return { meaning: exact.meaning, kind: exact.kind, id: exact.id };
-    const starts = pool.filter((c) => norm(c.meaning).startsWith(want));
-    if (want.length >= 3 && starts.length === 1) return { ...starts[0] };
+  // What a typed name means: an exact name among your own nouns (and public
+  // orgs and ideas). No exact match: show what's close, pick one to open.
+  async function findNoun(text: string): Promise<{ exact: FoundWord | null; items: FoundWord[] }> {
     try {
-      const d = await fetch(`/api/search?${new URLSearchParams({ word: text })}`).then((r) => r.json());
-      const hit = ((d.items ?? []) as FoundWord[]).find((i) => i.id && norm(i.word) === want);
-      if (hit) return { meaning: hit.word, kind: hit.kind, id: hit.id };
-    } catch {}
+      const d = await fetch(`/api/find-noun?${new URLSearchParams({ name: text })}`).then((r) => r.json());
+      return { exact: d.exact ?? null, items: d.items ?? [] };
+    } catch {
+      return { exact: null, items: [] };
+    }
+  }
+
+  async function resolveSlot(text: string): Promise<Slot> {
+    const { exact, items } = await findNoun(text);
+    if (exact) return { meaning: exact.word, kind: exact.kind, id: exact.id };
+    // Not found exactly: put the close ones on the page. Opening one links the slot.
+    applyDirective({ type: "results", query: { word: text }, items, title: items.length ? `Which "${text}"? Open one and it goes in your list.` : `Nothing named "${text}" yet. Write it and press Create.` });
     return { meaning: text };
   }
 
@@ -614,10 +606,24 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // Open a list slot: straight to its noun when we know it, else Sage reads the name.
   function openSlot(n: string) {
     const slot = prefs.hotkeys?.[n];
-    if (slot?.kind && slot.id) openWord(slot.kind, slot.id).then((ok) => {
-      if (!ok) send(n);
+    if (!slot?.meaning) return;
+    if (slot.kind && slot.id) {
+      openWord(slot.kind, slot.id).then((ok) => {
+        if (!ok) resolveSlot(slot.meaning).then((r) => {
+          if (r.id) {
+            setSlot(n, r);
+            openWord(r.kind!, r.id);
+          }
+        });
+      });
+      return;
+    }
+    resolveSlot(slot.meaning).then((r) => {
+      if (r.id) {
+        setSlot(n, r);
+        openWord(r.kind!, r.id);
+      }
     });
-    else send(n);
   }
 
   // Home: the default grid (your card count, your list in order).
@@ -635,12 +641,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     activeCard.current = i;
     if (c?.kind && c.id) {
       openWord(c.kind, c.id).then((ok) => {
-        if (!ok) send(c.meaning);
+        if (!ok) resolveSlot(c.meaning);
       });
       return;
     }
     if (c?.meaning) {
-      send(c.meaning);
+      resolveSlot(c.meaning).then((r) => {
+        if (r.id) openWord(r.kind!, r.id);
+      });
       return;
     }
     // An empty card is a workspace: search or create here.
@@ -1058,6 +1066,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             <HotkeyBox
               onGo={(n) => {
                 if (n === "#m") return send("match");
+                if (/^[1-9]$/.test(n)) return openSlot(n);
                 send(n);
               }}
             />
