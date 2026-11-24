@@ -237,18 +237,18 @@ async function describeOpenWord(supabase: Awaited<ReturnType<typeof createClient
     if (!data || data.owner_user_id !== userId) return notYours;
     const d = Array.isArray(data.dictionary) ? data.dictionary[0] : data.dictionary;
     const noun = kind === "note" ? "Note" : "Journal Entry";
-    const extra = kind === "note" ? " Visibility goes through Share (public or private); Time is its time_frame (day, week, month, year, decade, life)." : " Journal entries have no visibility or time to change.";
+    const extra = kind === "note" ? " Notes are always private; Time is its time_frame (day, week, month, year, decade, life)." : " Journal entries have no visibility or time to change.";
     return `- open: their ${noun}, target ${id}, dictionary "${d?.name ?? ""}". Edit it with noun ${noun}.${extra}`;
   }
   if (["person", "idea", "job", "resource"].includes(kind)) {
     const { data } = await supabase.from("profile_entries").select("owner_user_id").eq("id", id).maybeSingle();
     if (!data || data.owner_user_id !== userId) return notYours;
-    return `- open: their Profile Entry (${kind}), target ${id}. Edit word, body, place, people, visibility with noun Profile Entry. Time is when it was made and can't change.`;
+    return `- open: their Profile Entry (${kind}), target ${id}. Edit word, body, place, people with noun Profile Entry (always public). Time is when it was made and can't change.`;
   }
   if (kind === "organization") {
     const { data } = await supabase.from("organization_members").select("role").eq("organization_id", id).eq("user_id", userId).maybeSingle();
     if (data?.role !== "admin") return notYours;
-    return `- open: their Organization, target ${id}. Edit name, body, kind, place (its neighborhood), people, visibility with noun Organization.`;
+    return `- open: their Organization, target ${id}. Edit name, body, kind, place (its neighborhood), people with noun Organization (always public).`;
   }
   return `- open: a ${kind} from the dictionary. Dictionary words can't be edited.`;
 }
