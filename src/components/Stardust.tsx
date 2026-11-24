@@ -417,8 +417,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   }
 
   // Opens one word by what it is and its id. (Also reached from Sage, via the ref.)
+  // Phones: Things and My nouns sit below the display, so bring it into view.
+  function showDisplay() {
+    if (window.innerWidth < 1024) document.getElementById("word")?.scrollIntoView({ block: "start", behavior: "smooth" });
+  }
+
   async function openWord(kind: string, id: string) {
     countOpen(kind, id);
+    showDisplay();
     const res = await fetch(`/api/word?kind=${encodeURIComponent(kind)}&id=${id}`);
     if (!res.ok) return false;
     const d = await res.json();
@@ -518,6 +524,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // Profile, inbox, and settings open; other things set the type to create;
   // verbs go to the Sage bar.
   function pickThing(thing: string) {
+    showDisplay();
     if (thing === "profile" || thing === "inbox" || thing === "settings") {
       applyDirective({ type: "panel", panel: thing });
       return;
