@@ -34,15 +34,15 @@ export async function GET(request: Request) {
     const { data } = await supabase.from("notes").select("body, place, people, visibility, time_frame, created_at").eq("id", id).maybeSingle();
     if (!data) return none;
     const word = data.body.trim().split(/\r?\n/)[0].slice(0, 60);
-    return Response.json({ kind, id, word, body: data.body, place: data.place, people: data.people, time: data.time_frame, visibility: data.visibility });
+    return Response.json({ kind, id, word, body: data.body, place: data.place, people: data.people, time: data.time_frame, visibility: "private" });
   }
   if (kind === "journal" || kind === "idea-entry") {
-    const { data } = await supabase.from("journal_entries").select("body, place, people, created_at, dictionary:dictionaries(name, scope)").eq("id", id).maybeSingle();
+    const { data } = await supabase.from("journal_entries").select("body, place, people, created_at, dictionary:dictionaries(name, scope, address)").eq("id", id).maybeSingle();
     if (!data) return none;
     const d = Array.isArray(data.dictionary) ? data.dictionary[0] : data.dictionary;
     return Response.json({
       kind, id, word: d?.name ?? "Journal", body: data.body, place: data.place, people: data.people,
-      time: fmt(data.created_at), visibility: d?.scope === "group" ? "group" : d?.scope === "shared" ? "public" : "private",
+      time: fmt(data.created_at), visibility: d?.address?.startsWith("idea-") || d?.scope === "shared" ? "public" : d?.scope === "group" ? "group" : "private",
     });
   }
   if (["person", "idea", "job", "resource"].includes(kind)) {
