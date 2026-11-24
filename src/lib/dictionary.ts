@@ -67,7 +67,8 @@ export async function fetchDefinitions(
     });
   }
 
-  results.sort((a, b) => a.term.localeCompare(b.term));
+  // Fixed order, so Sage's cached prompt stays the same byte for byte.
+  results.sort((a, b) => a.term.localeCompare(b.term) || a.dictionaryName.localeCompare(b.dictionaryName) || a.id.localeCompare(b.id));
   return results;
 }
 

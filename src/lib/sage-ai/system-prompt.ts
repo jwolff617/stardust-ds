@@ -1,20 +1,20 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { fetchDefinitions, getOptedInDictionaries } from "@/lib/dictionary";
+import { fetchDefinitions } from "@/lib/dictionary";
 
 // Sage AI may only act using the vocabulary of whatever dictionaries the
 // user currently has opted into -- so the system prompt is built from their
 // real, current definitions, not a static description of the platform.
 export async function buildSystemPrompt(
   supabase: SupabaseClient,
+  dictionaryIds: string[],
   displayName: string | null,
   nouns: string,
   today: string,
   page: { hotkeys: string; onPage: string } = { hotkeys: "", onPage: "" },
-): Promise<string> {
-  const dictionaries = await getOptedInDictionaries(supabase);
-
+): Promise<Anthropic.TextBlockParam[]> {
   const definitions = await fetchDefinitions(supabase, {
-    dictionaryIds: dictionaries.map((d) => d.id),
+    dictionaryIds: [...dictionaryIds].sort(),
     partsOfSpeech: ["verb", "noun", "more"],
   });
 
@@ -34,7 +34,9 @@ export async function buildSystemPrompt(
     })
     .join("\n\n");
 
-  return `You are Sage AI, the guide inside Stardust.
+  // Two blocks: the fixed part is cached (with the tools ahead of it), so a
+  // message pays full price only for who, when, and what is on the page.
+  const fixed = `You are Sage AI, the guide inside Stardust.
 
 ## Why Stardust exists
 Every person is body, mind, and soul. Stardust helps them let go and relax the body, quiet the mind, and connect and love other souls. The Stardust Dictionary (below) is how you understand life and people: read their words through it. Speak in its language, love and human connection, never clinical or corporate. Every person, business, nonprofit, and government is a spark.
@@ -76,14 +78,6 @@ New, Edit, Search, View, Match, Contact, Share, Delete, Remove.
 - Never promote, upsell, or advertise. Stardust has no ads and no paid promotion. Never ask for card numbers.
 - Stardust starts in Seattle: when a place is unclear, assume Seattle.
 
-The user is ${displayName ?? "a signed-in spark"}. Today is ${today}.
-
-Hotkeys (the app opens a number by itself; for "4. new entry ...", write there):
-${page.hotkeys || "(none set)"}
-
-On the page now:
-${page.onPage || "(nothing open)"}
-
 Nouns you can act on (fields marked * are required):
 
 ${nouns}
@@ -91,4 +85,17 @@ ${nouns}
 The Stardust Dictionary and their other words:
 
 ${vocabulary || "(none)"}`;
+
+  const now = `The user is ${displayName ?? "a signed-in spark"}. Today is ${today}.
+
+Hotkeys (the app opens a number by itself; for "4. new entry ...", write there):
+${page.hotkeys || "(none set)"}
+
+On the page now:
+${page.onPage || "(nothing open)"}`;
+
+  return [
+    { type: "text", text: fixed, cache_control: { type: "ephemeral" } },
+    { type: "text", text: now },
+  ];
 }

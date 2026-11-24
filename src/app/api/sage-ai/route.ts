@@ -66,18 +66,14 @@ export async function POST(request: Request) {
       .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
   }
 
-  await supabase.from("messages").insert({
-    conversation_id: activeConversationId,
-    role: "user",
-    content: prompt,
-  });
-
   // Tools come from the nouns of the dictionaries the user has on.
-  const copies = await loadCopies(supabase);
+  const [copies] = await Promise.all([
+    loadCopies(supabase),
+    supabase.from("messages").insert({ conversation_id: activeConversationId, role: "user", content: prompt }),
+  ]);
   const nouns = availableNouns(NOUNS, copies);
   const viewNames = copies.map((c) => c.name.replace(/^.{1,40}?['’]s\s+/, "") || c.name);
   const tools = [...buildTools(nouns), ...pageTools(viewNames)];
-  const { data: isModerator } = await supabase.rpc("is_moderator");
   const today = todayIn(timeZone);
   const nounContext: NounContext = {
     supabase,
@@ -88,7 +84,7 @@ export async function POST(request: Request) {
     copies,
   };
   const hotkeys = cleanPreferences(profile?.preferences ?? {}).hotkeys ?? {};
-  const resolved = await resolveHotkeys(supabase, user.id, hotkeys, copies);
+  const [resolved, { data: isModerator }] = await Promise.all([resolveHotkeys(supabase, user.id, hotkeys, copies), supabase.rpc("is_moderator")]);
   const hotkeyLines = resolved.map((h) => h.line);
   // "4", "go to 4", "open #4": straight there, no guessing.
   const jump = prompt.match(/^\s*(?:go\s+to|goto|open|view|show|take\s+me\s+to)?\s*#?(\d{1,3})\s*[.!]?\s*$/i);
@@ -103,11 +99,14 @@ export async function POST(request: Request) {
   // What the open word is, whether it's theirs, and how to edit it.
   const openKind = typeof onPage?.kind === "string" ? onPage.kind : "";
   const openId = typeof onPage?.id === "string" && /^[0-9a-f-]{36}$/i.test(onPage.id) ? onPage.id : "";
-  if (openKind && openId) pageLines.push(await describeOpenWord(supabase, user.id, openKind, openId));
-  const systemPrompt = await buildSystemPrompt(supabase, profile?.display_name ?? null, describeNouns(nouns, copies), today, {
-    hotkeys: hotkeyLines.join("\n"),
-    onPage: pageLines.join("\n"),
-  });
+  // Shortcuts never reach the model, so build its prompt only when needed.
+  const buildPrompt = async () => {
+    if (openKind && openId) pageLines.push(await describeOpenWord(supabase, user.id, openKind, openId));
+    return buildSystemPrompt(supabase, copies.map((c) => c.id), profile?.display_name ?? null, describeNouns(nouns, copies), today, {
+      hotkeys: hotkeyLines.join("\n"),
+      onPage: pageLines.join("\n"),
+    });
+  };
   const conversationIdForClosure = activeConversationId;
 
   const encoder = new TextEncoder();
@@ -134,6 +133,7 @@ export async function POST(request: Request) {
           controller.close();
           return;
         }
+        const systemPrompt = await buildPrompt();
         let finalText = "";
         let messages: ChatMessage[] = [...history, { role: "user", content: prompt }];
         let model: string = MODEL_FAST;
