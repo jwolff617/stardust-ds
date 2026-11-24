@@ -11,16 +11,16 @@ export const LETTERS: Record<string, { label: string; thing?: string; panel?: "p
   i: { label: "ideas", thing: "idea" },
   o: { label: "orgs", thing: "org" },
   g: { label: "groups", thing: "group" },
-  r: { label: "resources", thing: "resource" },
+  r: { label: "resource profile", panel: "profile", section: "resource" },
+  l: { label: "idea profile", panel: "profile", section: "idea" },
+  b: { label: "inbox", panel: "inbox" },
   w: { label: "your nouns", thing: "noun" },
-  p: { label: "profile", panel: "profile" },
+  p: { label: "person profile", panel: "profile", section: "person" },
   s: { label: "settings", panel: "settings" },
-  m: { label: "inbox", panel: "inbox" },
+
   a: { label: "my nouns", panel: "nouns" },
-  // l and r hide the left and right menus; the page handles them itself.
   pp: { label: "person profile", panel: "profile", section: "person" },
   pi: { label: "idea profile", panel: "profile", section: "idea" },
-  pj: { label: "job profile", panel: "profile", section: "job" },
   pr: { label: "resource profile", panel: "profile", section: "resource" },
 };
 

@@ -7,19 +7,21 @@ import { signOut } from "@/app/login/actions";
 import { createWord, saveWord as saveWordAction, type WordType } from "@/app/actions/words";
 import { OrgPosts } from "./OrgPosts";
 import { visibilityOf } from "@/lib/visibility";
-import { HotkeyBox, MicIcon, PANEL_TITLES, Panel, Things, TypePicker, Verbs, WordKind, WordListPanel, type ListWord } from "./StardustParts";
+import { HotkeyBox, MicIcon, PANEL_TITLES, Panel, TypePicker, WordKind } from "./StardustParts";
+import { CardGrid, HideButton, NavPanel, SearchPanel, ToolsPanel, type Preview, type Slot } from "./HomeParts";
+import { usePreferences } from "@/lib/use-preferences";
+import { HOTKEY_NUMBERS, type Hotkey } from "@/lib/preferences";
 import { StardustDisplay, type Box } from "./StardustDisplay";
-import { MyNounsBox } from "./MyNouns";
 import type { MyNoun } from "@/lib/shortcuts";
 import { splitStream, type FoundWord, type UiDirective, type WordFields } from "@/lib/sage-ui";
 
 type Fields = Required<WordFields>;
 const EMPTY_FIELDS: Fields = { place: "", people: "", time: "", visibility: "" };
 const FIELD_NAMES: { key: keyof Fields; label: string }[] = [
-  { key: "place", label: "Place" },
+  { key: "place", label: "Location" },
   { key: "people", label: "People" },
-  { key: "time", label: "Time" },
-  { key: "visibility", label: "Visibility" },
+  { key: "visibility", label: "Privacy" },
+  { key: "time", label: "Timeframe" },
 ];
 
 
@@ -69,12 +71,12 @@ function belongsOf(scope: string): Belongs {
   return scope === "personal" ? "personal" : scope === "group" ? "group" : "public";
 }
 
-// Literal classes so Tailwind keeps them.
+// Side columns are narrow (about 15 characters). Literal classes so Tailwind keeps them.
 const GRID: Record<string, string> = {
-  "22fr_58fr_20fr": "lg:grid-cols-[22fr_58fr_20fr]",
-  "58fr_20fr": "lg:grid-cols-[58fr_20fr]",
-  "22fr_58fr": "lg:grid-cols-[22fr_58fr]",
-  "58fr": "lg:grid-cols-1",
+  LR: "lg:grid-cols-[11rem_minmax(0,1fr)_11rem]",
+  R: "lg:grid-cols-[1.5rem_minmax(0,1fr)_11rem]",
+  L: "lg:grid-cols-[11rem_minmax(0,1fr)_1.5rem]",
+  "": "lg:grid-cols-[1.5rem_minmax(0,1fr)_1.5rem]",
 };
 
 export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null; isModerator?: boolean }) {
@@ -87,13 +89,24 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const [privateProfileId, setPrivateProfileId] = useState<string | null>(null);
   const publicProfile = dictionaries.find((d) => d.displayKind === "profile") ?? null;
   const [reloadKey, setReloadKey] = useState(0);
-  // Wide screens: hide either side menu (l, r in the # box) so the display grows.
+  // Wide screens: hide either side column with its small arrow.
   const [hideLeft, setHideLeft] = useState(false);
   const [hideRight, setHideRight] = useState(false);
-  const cols = `${hideLeft ? "" : "22fr_"}58fr${hideRight ? "" : "_20fr"}`;
+  const cols = `${hideLeft ? "" : "L"}${hideRight ? "" : "R"}`;
+
+  // Home: My List (1-9, the hotkeys) fills a grid of cards, in order.
+  const { prefs, update } = usePreferences(isLoggedIn);
+  const slots: (Hotkey | undefined)[] = HOTKEY_NUMBERS.map((n) => prefs.hotkeys?.[n]);
+  const cardCount = prefs.home?.cards ?? 9;
+  const [view, setView] = useState<"grid" | "card">(isLoggedIn ? "grid" : "card");
+  const [cardsOverride, setCardsOverride] = useState<(Slot | null)[] | null>(null);
+  const activeCard = useRef<number | null>(null);
+  const filledSlots = slots.filter((x): x is Hotkey => Boolean(x?.meaning)).map((x) => ({ meaning: x.meaning, kind: x.kind, id: x.id }));
+  const defaultCards: (Slot | null)[] = Array.from({ length: cardCount }, (_, i) => filledSlots[i] ?? null);
+  const cards = cardsOverride && cardsOverride.length === cardCount ? cardsOverride : defaultCards;
+  const [previews, setPreviews] = useState<Record<string, Preview>>({});
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
   const [nouns, setNouns] = useState<MyNoun[]>([]);
-  const [wordList, setWordList] = useState<{ exists: boolean; words: ListWord[] }>({ exists: false, words: [] });
 
   const [input, setInput] = useState("");
   const [reply, setReply] = useState("");
@@ -144,12 +157,6 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
   const flushSaveRef = useRef<(() => void) | null>(null);
   const openWordRef = useRef<((kind: string, id: string) => Promise<boolean>) | null>(null);
-  const loadWordList = useCallback(async () => {
-    if (!isLoggedIn) return;
-    const res = await fetch("/api/word-list");
-    const data = await res.json();
-    setWordList({ exists: Boolean(data.exists), words: data.words ?? [] });
-  }, [isLoggedIn]);
 
   const loadNouns = useCallback(() => {
     if (!isLoggedIn) return;
@@ -181,13 +188,41 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     fetch("/api/my-nouns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: n.kind, id: n.id, favorite: !n.favorite }) }).catch(() => {});
   }
 
+  // Card previews: each listed noun's opening lines.
+  const previewKeys = cards
+    .filter((c): c is Slot => Boolean(c?.kind && c?.id))
+    .map((c) => `${c.kind}:${c.id}`)
+    .join(",");
   useEffect(() => {
-    if (!isLoggedIn) return;
-    fetch("/api/word-list")
-      .then((r) => r.json())
-      .then((data) => setWordList({ exists: Boolean(data.exists), words: data.words ?? [] }))
-      .catch(() => {});
-  }, [isLoggedIn]);
+    if (!previewKeys) return;
+    let cancelled = false;
+    for (const key of previewKeys.split(",")) {
+      const [kind, id] = key.split(":");
+      fetch(`/api/word?kind=${encodeURIComponent(kind)}&id=${id}`)
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (cancelled || !d) return;
+          const tool = d.view
+            ? d.view.belongs === "group"
+              ? "group"
+              : d.view.displayKind === "notes_list"
+                ? "note"
+                : d.kind === "idea"
+                  ? "idea"
+                  : "journal"
+            : d.kind === "organization"
+              ? "org"
+              : d.kind === "mine"
+                ? "noun"
+                : d.kind;
+          setPreviews((p) => ({ ...p, [key]: { body: d.body ?? "", tool } }));
+        })
+        .catch(() => {});
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [previewKeys, reloadKey]);
 
   useEffect(() => {
     fetchDictionaries()
@@ -233,6 +268,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   function showWord(w: { word: string; body: string; kind?: string; id?: string } & WordFields, keep = false) {
     // Opening another word: save the one you were on first.
     if (!keep) flushSaveRef.current?.();
+    setView("card");
     setRenaming(false);
     if (w.kind !== "organization") setOrgInfo(null);
     setSaveState("");
@@ -256,6 +292,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           showWord(d, true);
           break;
         case "results":
+          setView("card");
           setWord(d.query.word ?? "");
           setBody(d.query.body ?? "");
           setFields({
@@ -275,6 +312,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           if (d.thing) setNewType(d.thing as WordType);
           break;
         case "view": {
+          setView("card");
           let match = dictionaries.find((x) => x.id === d.id);
           // Sage may have just turned it on.
           if (!match) match = (await loadDictionaries()).find((x) => x.id === d.id);
@@ -285,6 +323,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           break;
         }
         case "panel":
+          setView("card");
           setWord(PANEL_TITLES[d.panel]);
           setBody("");
           setFields(EMPTY_FIELDS);
@@ -294,14 +333,13 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           clearToSearch();
           break;
         case "word-list":
-          await loadWordList();
           break;
         case "open":
           await openWordRef.current?.(d.kind, d.id);
           break;
       }
     },
-    [dictionaries, loadDictionaries, loadWordList],
+    [dictionaries, loadDictionaries],
   );
 
   async function send(text: string) {
@@ -441,6 +479,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     if (!res.ok) return false;
     const d = await res.json();
     if (d.view) {
+      setView("card");
       setWord(d.view.name);
       setBody("");
       setFields(EMPTY_FIELDS);
@@ -473,6 +512,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         return;
       }
       lastResults.current = { items, word, body, fields };
+      setView("card");
       setBox({ mode: "results", items });
     } catch {
       setReply("Search didn't work. Try again.");
@@ -520,42 +560,76 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     flushSaveRef.current = flushSave;
   });
 
-  // A word-list word opens with its body ready to edit.
-  async function openListWord(w: ListWord) {
-    if (w.refId && w.kind !== "new") {
-      if (await openWord(w.kind, w.refId)) {
-        requestAnimationFrame(() => document.getElementById("body")?.focus());
-        return;
-      }
-    }
-    // A new word: its body is blank and waiting.
-    showWord({ word: w.word, body: "" });
-    requestAnimationFrame(() => document.getElementById("body")?.focus());
+  // My List: set or clear a slot (1-9). Settings edits the same list.
+  function setSlot(n: string, slot: Slot | null) {
+    update((p) => {
+      const next = { ...(p.hotkeys ?? {}) };
+      if (!slot) delete next[n];
+      else next[n] = { meaning: slot.meaning, ...(slot.kind && slot.id ? { kind: slot.kind, id: slot.id } : {}) };
+      return { ...p, hotkeys: next };
+    });
+    setCardsOverride(null);
   }
 
-  // Profile, inbox, and settings open; other things set the type to create;
-  // verbs go to the Sage bar.
-  function pickThing(thing: string) {
-    showDisplay();
-    if (thing === "profile" || thing === "inbox" || thing === "settings") {
-      applyDirective({ type: "panel", panel: thing });
-      return;
-    }
-    if (thing === "my nouns") {
-      applyDirective({ type: "panel", panel: "nouns" });
-      return;
-    }
-    const t = (thing === "note" ? "notes" : thing) as WordType;
+  // Open a list slot: straight to its noun when we know it, else Sage reads the name.
+  function openSlot(n: string) {
+    const slot = prefs.hotkeys?.[n];
+    if (slot?.kind && slot.id) openWord(slot.kind, slot.id).then((ok) => {
+      if (!ok) send(n);
+    });
+    else send(n);
+  }
+
+  // Home: the default grid (your card count, your list in order).
+  function goHome() {
+    flushSave();
     clearToSearch();
-    setNewType(t);
-    setNewDetails({});
+    lastResults.current = null;
+    setCardsOverride(null);
+    activeCard.current = null;
+    setView(isLoggedIn ? "grid" : "card");
+  }
+
+  function openCard(i: number) {
+    const c = cards[i];
+    activeCard.current = i;
+    if (c?.kind && c.id) {
+      openWord(c.kind, c.id).then((ok) => {
+        if (!ok) send(c.meaning);
+      });
+      return;
+    }
+    if (c?.meaning) {
+      send(c.meaning);
+      return;
+    }
+    // An empty card is a workspace: search or create here.
+    clearToSearch();
+    setView("card");
     requestAnimationFrame(() => document.getElementById("word")?.focus());
   }
 
-  // Clicking a verb puts it in the Sage bar.
-  function toBar(text: string) {
-    setInput((prev) => (prev.trim() ? `${prev.trim()} ${text} ` : `${text} `));
-    requestAnimationFrame(() => inputRef.current?.focus());
+  // Clear one card: its space opens up; nothing is deleted.
+  function clearCard(i: number) {
+    setCardsOverride(cards.map((c, j) => (j === i ? null : c)));
+  }
+
+  // Clear all: back to one card, ready to search or create.
+  function clearAll() {
+    clearToSearch();
+    activeCard.current = null;
+    setView("card");
+  }
+
+  // Tools: open what each letter opens. Match asks which profile.
+  function pickTool(key: string) {
+    showDisplay();
+    if (key === "m") return send("match");
+    if (key === "e") {
+      setReply("Events are coming next.");
+      return;
+    }
+    send(`#${key}`);
   }
 
   // What kind of word is open, for the oval next to it.
@@ -626,6 +700,20 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       });
   }
 
+  // Something opened from an empty card takes that card's place on the grid.
+  useEffect(() => {
+    const i = activeCard.current;
+    if (i === null || view !== "card") return;
+    const opened = ref ? { kind: ref.kind, id: ref.id } : box.mode === "view" ? { kind: "notebook", id: box.dictionary.id } : null;
+    if (!opened || !word.trim()) return;
+    setCardsOverride((prev) => {
+      const base = prev && prev.length === cardCount ? prev : defaultCards;
+      if (base[i]) return prev;
+      return base.map((c, j) => (j === i ? { meaning: word.trim(), ...opened } : c));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref, box, view]);
+
   // Leaving the page with unsaved typing: save it on the way out.
   useEffect(() => {
     const onLeave = () => flushSave();
@@ -652,18 +740,25 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       .finally(() => setSending(false));
   }
 
+  const editorOpen = view === "card" || !isLoggedIn;
+
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-6 sm:px-8">
-      {/* Top: title in the center, login and the dictionary at the right */}
-      <header className="-mx-4 flex items-center justify-between border-b border-[var(--line)] px-4 py-3 sm:-mx-8 sm:px-8">
-        <div className="flex items-baseline gap-3">
-          <h1 className="text-lg font-semibold">Stardust</h1>
-          {isLoggedIn && userName && <span className="text-sm text-[var(--muted)]">{userName}</span>}
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <button type="button" onClick={() => setPopup("open")} className="hover:underline">
-            Dictionary
+    <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col px-4 pb-4 sm:px-6">
+      {/* Header: Home, Settings | Stardust | name, log in/out */}
+      <header className="-mx-4 grid grid-cols-[1fr_auto_1fr] items-center border-b border-[var(--line)] px-4 py-2.5 sm:-mx-6 sm:px-6">
+        <nav className="flex items-center gap-4 text-sm">
+          <button type="button" onClick={goHome} className="font-medium hover:underline">
+            Home
           </button>
+          {isLoggedIn && (
+            <button type="button" onClick={() => applyDirective({ type: "panel", panel: "settings" })} className="text-[var(--muted)] hover:text-[var(--foreground)] hover:underline">
+              Settings
+            </button>
+          )}
+        </nav>
+        <h1 className="text-center text-lg font-semibold tracking-wide">Stardust</h1>
+        <div className="flex items-center justify-end gap-4 text-sm">
+          {isLoggedIn && userName && <span className="hidden truncate text-[var(--muted)] sm:inline">{userName}</span>}
           {isLoggedIn ? (
             <form action={signOut}>
               <button type="submit" className="text-[var(--muted)] hover:underline">
@@ -678,28 +773,42 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         </div>
       </header>
 
-      <div className={`mt-6 grid flex-1 grid-cols-1 gap-6 lg:gap-5 ${GRID[cols]}`}>
-        {/* Left: Today's Word List, then Verbs and Things. On phones the list
-            comes first and Verbs and Things drop below the tags. */}
-        <aside className={`flex min-w-0 flex-col gap-6 ${hideLeft ? "lg:hidden" : ""}`}>
-          <WordListPanel isLoggedIn={isLoggedIn} list={wordList} onOpen={openListWord} />
-          <div className="hidden lg:block">
-            <Things onThing={pickThing} />
+      <div className={`mt-4 grid flex-1 grid-cols-1 gap-4 ${GRID[cols]}`}>
+        {/* Left: Nav (My List or Recent), then Tools */}
+        {hideLeft ? (
+          <div className="hidden pt-2 lg:block">
+            <HideButton side="left" hidden onToggle={() => setHideLeft(false)} />
           </div>
-          {isLoggedIn && (
-            <div className="hidden lg:block">
-              <MyNounsBox
-                nouns={nouns}
-                onOpen={(n) => openWord(n.kind, n.id)}
-                onStar={starNoun}
-                onViewAll={() => applyDirective({ type: "panel", panel: "nouns" })}
-              />
-            </div>
-          )}
-        </aside>
+        ) : (
+          <aside className="flex min-w-0 flex-col gap-4">
+            {isLoggedIn ? (
+              <NavPanel slots={slots} nouns={nouns} onOpenSlot={openSlot} onSetSlot={setSlot} onOpenNoun={(n) => openWord(n.kind, n.id)} onHide={() => setHideLeft(true)} />
+            ) : (
+              <Panel title="My List">
+                <p className="text-sm text-[var(--muted)]">Log in to keep your list.</p>
+              </Panel>
+            )}
+            <ToolsPanel onTool={(k) => (isLoggedIn ? pickTool(k) : setReply("Log in to use your tools."))} />
+          </aside>
+        )}
 
-        {/* Center: the word, its type, and its body */}
+        {/* Center: the cards, or one card open */}
         <section className="flex min-w-0 flex-col gap-3">
+          {!editorOpen ? (
+            <CardGrid
+              cards={cards}
+              count={cardCount}
+              previews={previews}
+              onCount={(n) => {
+                update((p) => ({ ...p, home: { cards: n } }));
+                setCardsOverride(null);
+              }}
+              onOpen={openCard}
+              onClearCard={clearCard}
+              onClearAll={clearAll}
+            />
+          ) : (
+            <>
           <div className="flex items-center gap-3 rounded-lg border border-[var(--line)] px-3 py-2">
             <input
               id="word"
@@ -747,6 +856,11 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             )}
 
             {openType && <WordKind type={openType} />}
+            {isLoggedIn && (
+              <button type="button" onClick={() => setView("grid")} className="shrink-0 text-xs text-[var(--muted)] underline hover:text-[var(--foreground)]" title="Back to your cards">
+                Cards
+              </button>
+            )}
             {box.mode === "word" && canSave && (
               <span className="shrink-0 text-[11px] text-[var(--muted)]">
                 {dirty || saveState === "saving" ? "Saving..." : saveState === "error" ? "Not saved" : saveState === "saved" ? "Saved" : ""}
@@ -778,12 +892,6 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           )}
           {/* The body */}
           <section className="relative flex min-h-[45vh] flex-1 flex-col rounded-lg border border-[var(--line)] p-4 sm:p-5">
-            <button type="button" onClick={() => setHideLeft((h) => !h)} aria-label={hideLeft ? "Show left menu (l)" : "Hide left menu (l)"} title={hideLeft ? "Show left menu (l)" : "Hide left menu (l)"} className="absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--line)] bg-[var(--background)] px-1 text-xs text-[var(--muted)] hover:text-[var(--foreground)] lg:block">
-              {hideLeft ? "›" : "‹"}
-            </button>
-            <button type="button" onClick={() => setHideRight((h) => !h)} aria-label={hideRight ? "Show right menu (r)" : "Hide right menu (r)"} title={hideRight ? "Show right menu (r)" : "Hide right menu (r)"} className="absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 rounded-full border border-[var(--line)] bg-[var(--background)] px-1 text-xs text-[var(--muted)] hover:text-[var(--foreground)] lg:block">
-              {hideRight ? "‹" : "›"}
-            </button>
             {box.mode !== "spark" && box.mode !== "search" && (
               <button
                 type="button"
@@ -849,51 +957,46 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               )}
             </div>
           )}
+            </>
+          )}
         </section>
 
-        {/* Right: Tags */}
-        <aside className={`min-w-0 ${hideRight ? "lg:hidden" : ""}`}>
-          <Panel title="Tags">
-            <div className="flex flex-col gap-3">
-              {FIELD_NAMES.filter(({ key }) => key !== "visibility").map(({ key, label }) => (
-                <label key={key} className="flex flex-col gap-0.5">
-                  <span className="text-xs text-[var(--muted)]">{label === "Place" ? "Location" : label}</span>
-                  <input
-                    value={fields[key]}
-                    readOnly={!editable}
-                    onChange={(e) => {
-                      setFields((f) => ({ ...f, [key]: e.target.value }));
-                      setDirty(true);
-                    }}
-                    onKeyDown={onFormKey}
-                    className="w-full min-w-0 border-b border-[var(--line)] pb-0.5 text-sm outline-none focus:border-[var(--foreground)]"
-                  />
-                </label>
-              ))}
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-[var(--muted)]">Visibility</span>
-                <span className="pb-0.5 text-sm">{(openType && visibilityOf(openType.replace(/^new:/, ""))) || (searching ? "any" : "")}</span>
-              </div>
-            </div>
-          </Panel>
-          <div className="mt-6 hidden lg:block">
-            <Verbs onVerb={toBar} />
+        {/* Right: Search shortcuts, then Tags */}
+        {hideRight ? (
+          <div className="hidden pt-2 lg:block">
+            <HideButton side="right" hidden onToggle={() => setHideRight(false)} />
           </div>
-        </aside>
-
-        {/* Phones: Verbs and Things below the tags */}
-        <div className="flex flex-col gap-6 lg:hidden">
-          <Verbs onVerb={toBar} />
-          <Things onThing={pickThing} />
-          {isLoggedIn && (
-            <MyNounsBox
-              nouns={nouns}
-              onOpen={(n) => openWord(n.kind, n.id)}
-              onStar={starNoun}
-              onViewAll={() => applyDirective({ type: "panel", panel: "nouns" })}
-            />
-          )}
-        </div>
+        ) : (
+          <aside className="flex min-w-0 flex-col gap-4">
+            <SearchPanel onAsk={(t) => (isLoggedIn ? send(t) : setReply("Log in to search people and ideas."))} onHide={() => setHideRight(true)} />
+            <Panel title="Tags">
+              <div className="flex flex-col gap-3">
+                {FIELD_NAMES.map(({ key, label }) =>
+                  key === "visibility" ? (
+                    <div key={key} className="flex flex-col gap-0.5">
+                      <span className="text-xs text-[var(--muted)]">{label}</span>
+                      <span className="pb-0.5 text-sm">{(openType && visibilityOf(openType.replace(/^new:/, ""))) || (searching ? "any" : "")}</span>
+                    </div>
+                  ) : (
+                    <label key={key} className="flex flex-col gap-0.5">
+                      <span className="text-xs text-[var(--muted)]">{label}</span>
+                      <input
+                        value={fields[key]}
+                        readOnly={!editable}
+                        onChange={(e) => {
+                          setFields((f) => ({ ...f, [key]: e.target.value }));
+                          setDirty(true);
+                        }}
+                        onKeyDown={onFormKey}
+                        className="w-full min-w-0 border-b border-[var(--line)] bg-transparent pb-0.5 text-sm outline-none focus:border-[var(--foreground)]"
+                      />
+                    </label>
+                  ),
+                )}
+              </div>
+            </Panel>
+          </aside>
+        )}
       </div>
 
       {/* Sage AI */}
@@ -914,8 +1017,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           {isLoggedIn && (
             <HotkeyBox
               onGo={(n) => {
-                if (n === "#l") return setHideLeft((h) => !h);
-                if (n === "#r") return setHideRight((h) => !h);
+                if (n === "#m") return send("match");
                 send(n);
               }}
             />
@@ -951,6 +1053,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
             className="shrink-0 rounded-full bg-[var(--foreground)] px-4 py-1.5 text-xs font-medium text-[var(--background)] disabled:opacity-30"
           >
             Enter
+          </button>
+          <button type="button" onClick={() => setPopup("open")} className="shrink-0 border-l border-[var(--line)] pl-2 pr-1 text-xs text-[var(--muted)] hover:text-[var(--foreground)] hover:underline">
+            Dictionary
           </button>
         </form>
       </section>

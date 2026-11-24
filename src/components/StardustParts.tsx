@@ -29,7 +29,7 @@ const THING_OF: Record<string, string> = {
   org: "org",
   organizations: "org",
   person: "profile · person",
-  job: "profile · job",
+
   profile: "profile",
   group: "group",
   "new-notebook": "group",
@@ -168,8 +168,7 @@ export const WORD_TYPES: { type: WordType; label: string; about: string }[] = [
   { type: "noun", label: "noun", about: "A word and what it means to you. Private." },
   { type: "org", label: "org", about: "A board: mission, announcements, contact. Public." },
   { type: "idea", label: "idea", about: "A journal anyone can read. Write entries over time." },
-  { type: "job", label: "job", about: "On your profile: hiring, or looking for work. Public." },
-  { type: "resource", label: "resource", about: "Something you have to lend or sell, or need. Public." },
+  { type: "resource", label: "resource", about: "Something you have or need: a thing, or a job (money is a resource). Public." },
   { type: "person", label: "person", about: "On your profile: who you are, or who you hope to meet. Public." },
   { type: "notes", label: "notes", about: "Short notes that live a day to a life. Private." },
   { type: "journal", label: "journal", about: "Entries over time. Private." },
@@ -222,10 +221,10 @@ export function TypePicker({
             <input value={details.website ?? ""} onChange={set("website")} placeholder="Website" aria-label="Website" className={sel} />
           </>
         )}
-        {(type === "job" || type === "resource" || type === "person") && (
+        {(type === "resource" || type === "person") && (
           <select value={details.side ?? "offer"} onChange={set("side")} aria-label="Offer or seek" className={sel}>
-            <option value="offer">{type === "person" ? "Who I am" : type === "job" ? "Hiring" : type === "resource" ? "Have" : "My idea"}</option>
-            <option value="seek">{type === "person" ? "Who I hope to meet" : type === "job" ? "Looking for work" : type === "resource" ? "Need" : "An idea to join"}</option>
+            <option value="offer">{type === "person" ? "Who I am" : details.what === "job" ? "Hiring" : "Have"}</option>
+            <option value="seek">{type === "person" ? "Who I hope to meet" : details.what === "job" ? "Looking for work" : "Need"}</option>
           </select>
         )}
         {type === "person" && (
@@ -237,16 +236,20 @@ export function TypePicker({
             </option>
           </select>
         )}
-        {type === "job" && <input value={details.pay ?? ""} onChange={set("pay")} placeholder="Pay" aria-label="Pay" className={sel} />}
         {type === "resource" && (
           <>
-            <select value={details.deal ?? ""} onChange={set("deal")} aria-label="Free, sale, or trade" className={sel}>
+            <select value={details.what ?? ""} onChange={set("what")} aria-label="A thing or a job" className={sel}>
+              <option value="">A thing</option>
+              <option value="job">A job</option>
+            </select>
+            {details.what === "job" && <input value={details.pay ?? ""} onChange={set("pay")} placeholder="Pay" aria-label="Pay" className={sel} />}
+            {details.what !== "job" && <select value={details.deal ?? ""} onChange={set("deal")} aria-label="Free, sale, or trade" className={sel}>
               <option value="">Free, sale, or trade?</option>
               <option value="free">Free</option>
               <option value="sale">For sale</option>
               <option value="trade">Trade</option>
-            </select>
-            {details.deal === "sale" && <input value={details.price ?? ""} onChange={set("price")} placeholder="Price" aria-label="Price" className={sel} />}
+            </select>}
+            {details.what !== "job" && details.deal === "sale" && <input value={details.price ?? ""} onChange={set("price")} placeholder="Price" aria-label="Price" className={sel} />}
           </>
         )}
         {type === "group" && (

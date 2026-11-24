@@ -3,7 +3,10 @@ import { fetchDefinitions } from "@/lib/dictionary";
 
 const PAGE_SIZE = 12;
 
-const FILTERS = ["all", "noun", "verb", "organization", "person", "mine"] as const;
+const FILTERS = ["all", "verb", "tool", "noun", "organization", "person", "mine"] as const;
+// Tools: the nouns that do something. Every other noun is a plain noun.
+const TOOLS = new Set(["journal", "note", "notes", "idea", "organization", "org", "group", "resource", "profile", "inbox", "event", "project", "match", "settings"]);
+const isTool = (term: string) => TOOLS.has(term.trim().toLowerCase().replace(/^the\s+/, ""));
 type Filter = (typeof FILTERS)[number];
 
 type Entry = { id: string; term: string; body: string; partOfSpeech: string; kind: string };
@@ -31,12 +34,14 @@ export async function GET(request: Request) {
     note = "Log in to see your words.";
   } else if (filter === "mine") {
     all = await myWords(supabase, user!.id);
-  } else if (filter === "all" || filter === "noun" || filter === "verb") {
+  } else if (filter === "all" || filter === "noun" || filter === "verb" || filter === "tool") {
     const { data: stardust } = await supabase.from("dictionaries").select("id").eq("address", "stardust").maybeSingle();
     if (stardust) {
-      const pos = filter === "all" ? (["verb", "noun", "more"] as const) : ([filter] as const);
+      const pos = filter === "all" ? (["verb", "noun", "more"] as const) : filter === "verb" ? (["verb"] as const) : (["noun"] as const);
       const defs = await fetchDefinitions(supabase, { dictionaryIds: [stardust.id], partsOfSpeech: [...pos] });
       all = defs.map((d) => ({ id: d.id, term: d.term, body: d.body, partOfSpeech: d.partOfSpeech, kind: d.partOfSpeech === "verb" ? "verb" : "noun" }));
+      if (filter === "tool") all = all.filter((e) => isTool(e.term));
+      if (filter === "noun") all = all.filter((e) => !isTool(e.term));
     }
     // Everything you've written is in your dictionary too.
     if (filter === "all" && user) all = all.concat(await myWords(supabase, user.id));

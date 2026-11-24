@@ -8,8 +8,9 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 const FILTERS = [
   { key: "all", label: "All" },
-  { key: "noun", label: "Nouns" },
   { key: "verb", label: "Verbs" },
+  { key: "tool", label: "Tools" },
+  { key: "noun", label: "Nouns" },
   { key: "organization", label: "Organizations" },
   { key: "person", label: "People" },
   { key: "mine", label: "Mine" },

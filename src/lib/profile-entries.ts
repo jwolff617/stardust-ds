@@ -2,7 +2,9 @@
 // word, a body, and Place, People, Visibility. Sage matches them by the
 // words they share. Pure, safe to import from client and server.
 
-export const ENTRY_KINDS = ["person", "idea", "job", "resource"] as const;
+// Three profiles: person, idea, resource. Jobs are resources (money is a
+// resource): a resource with what = "job".
+export const ENTRY_KINDS = ["person", "idea", "resource"] as const;
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 export const SIDES = ["offer", "seek"] as const;
 export type Side = (typeof SIDES)[number];
@@ -12,15 +14,16 @@ export const DEALS = ["free", "sale", "trade"] as const;
 export const KIND_LABELS: Record<EntryKind, string> = {
   person: "Person",
   idea: "Idea",
-  job: "Job",
   resource: "Resource",
 };
 
 // What offer and seek mean for each kind, in plain words.
+// A job resource: hiring, or looking for work.
+export const JOB_SIDES: Record<Side, string> = { offer: "Hiring", seek: "Looking for work" };
+
 export const SIDE_LABELS: Record<EntryKind, Record<Side, string>> = {
   person: { offer: "Who I am", seek: "Who I hope to meet" },
   idea: { offer: "My idea", seek: "An idea I want to join" },
-  job: { offer: "Hiring", seek: "Looking for work" },
   resource: { offer: "Have", seek: "Need" },
 };
 
@@ -88,8 +91,7 @@ export function toEntry(r: Row, me: string | null): ProfileEntry {
 export function detailsLine(e: Pick<ProfileEntry, "kind" | "details">): string {
   const d = e.details;
   if (e.kind === "person") return [d.relationship, d.relationship === "romance" && d.age ? `${d.age}` : ""].filter(Boolean).join(" · ");
-  if (e.kind === "job") return d.pay ? `pay ${d.pay}` : "";
-  if (e.kind === "resource") return [d.deal, d.price].filter(Boolean).join(" · ");
+  if (e.kind === "resource") return d.what === "job" ? ["job", d.pay && `pay ${d.pay}`].filter(Boolean).join(" · ") : [d.deal, d.price].filter(Boolean).join(" · ");
   return "";
 }
 
@@ -98,8 +100,7 @@ export function cleanDetails(kind: EntryKind, raw: Record<string, unknown>): Rec
   const keys: Record<EntryKind, string[]> = {
     person: ["relationship", "age", "iam", "meet", "age_min", "age_max"],
     idea: [],
-    job: ["pay"],
-    resource: ["deal", "price"],
+    resource: ["what", "deal", "price", "pay"],
   };
   const out: Record<string, string> = {};
   for (const k of keys[kind]) {
@@ -108,5 +109,6 @@ export function cleanDetails(kind: EntryKind, raw: Record<string, unknown>): Rec
   }
   if (out.price) out.price = String(raw.price).trim().slice(0, 60);
   if (out.pay) out.pay = String(raw.pay).trim().slice(0, 60);
+  if (out.what && out.what !== "job") delete out.what;
   return out;
 }

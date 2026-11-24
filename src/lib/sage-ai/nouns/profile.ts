@@ -4,7 +4,7 @@ import type { Field, NounDef, VerbResult } from "../engine";
 // Profile entries: what a spark offers or seeks (a person, an idea, a job, a
 // resource). Matching is Sage searching these. No dictionary needed.
 
-const KIND_FIELD: Field = { name: "kind", type: "enum", options: ENTRY_KINDS, description: "person, idea, job, or resource." };
+const KIND_FIELD: Field = { name: "kind", type: "enum", options: ENTRY_KINDS, description: "person, idea, or resource. A job is a resource with what=job." };
 const SIDE_FIELD: Field = {
   name: "side",
   type: "enum",
@@ -16,18 +16,19 @@ const ENTRY_FIELDS: Field[] = [
   { name: "body", type: "text", max: 5000, description: "What they wrote about it." },
   { name: "place", type: "text", max: 120 },
   { name: "people", type: "text", max: 300 },
+  { name: "what", type: "enum", options: ["job", "thing"], description: "resource only: job (hiring or looking for work) or a thing." },
+  { name: "pay", type: "text", max: 60, description: "job resources only." },
   { name: "relationship", type: "enum", options: RELATIONSHIPS, description: "person only." },
   { name: "age", type: "integer", min: 18, max: 120, description: "romance only." },
   { name: "iam", type: "enum", options: ["woman", "man", "nonbinary"], description: "romance only." },
   { name: "meet", type: "enum", options: ["women", "men", "everyone"], description: "romance only." },
   { name: "age_min", type: "integer", min: 18, max: 120, description: "romance only." },
   { name: "age_max", type: "integer", min: 18, max: 120, description: "romance only." },
-  { name: "pay", type: "text", max: 60, description: "job only." },
   { name: "deal", type: "enum", options: ["free", "sale", "trade"], description: "resource only." },
   { name: "price", type: "text", max: 60, description: "resource only, when for sale." },
 ];
 
-const DETAIL_KEYS = ["relationship", "age", "iam", "meet", "age_min", "age_max", "pay", "deal", "price"];
+const DETAIL_KEYS = ["relationship", "age", "iam", "meet", "age_min", "age_max", "what", "pay", "deal", "price"];
 const TARGET = "the entry's id, from Find or Match";
 
 function oneLine(e: { id: string; kind: string; side: string; word: string; ownerName?: string; place: string; details: Record<string, string> }) {
@@ -114,7 +115,7 @@ export const profileEntryNoun: NounDef = {
   actions: {
     Match: {
       description:
-        "Find others' public entries that share words with the user's. idea: ideas. job: hiring meets looking. resource: have meets need. person: same relationship; romance only when both fit. The matches go on the page.",
+        "Find others' public entries that share words with the user's. idea: ideas. resource: have meets need (jobs: what=job, hiring meets looking). person: same relationship; romance only when both fit. The matches go on the page.",
       params: [
         { ...KIND_FIELD, required: true },
         { name: "query", type: "text", description: "Extra words to match on." },

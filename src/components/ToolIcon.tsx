@@ -24,6 +24,10 @@ const PATHS: Record<string, string> = {
   settings: "M50 50 m0 -6 a6 6 0 1 1 -6 6 a12 12 0 1 1 12 12 a20 20 0 1 1 -20 -20 a30 30 0 1 1 30 30",
   // a star: your favorites
   "my nouns": "M50 14 L59 40 L86 40 L64 56 L72 84 L50 67 L28 84 L36 56 L14 40 L41 40 Z",
+  // a crescent over a horizon: a gathering at a set time
+  event: "M14 74 H86 M50 74 V54 M38 62 L50 54 L62 62 M66 18 A16 16 0 1 0 66 50 A12 12 0 1 1 66 18 Z",
+  // two flames leaning in: a match
+  match: "M30 84 C18 80 18 62 28 50 C30 60 36 58 36 50 C38 42 34 36 40 28 C46 44 44 70 30 84 Z M70 84 C82 80 82 62 72 50 C70 60 64 58 64 50 C62 42 66 36 60 28 C54 44 56 70 70 84 Z",
   // a pebble: a plain noun of your own
   noun: "M22 60 C18 40 36 26 54 28 C74 30 86 46 80 62 C74 78 30 80 22 60 Z",
   mine: "M22 60 C18 40 36 26 54 28 C74 30 86 46 80 62 C74 78 30 80 22 60 Z",

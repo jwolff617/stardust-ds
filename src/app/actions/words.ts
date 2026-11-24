@@ -10,7 +10,6 @@ export type WordType =
   | "noun"
   | "org"
   | "idea"
-  | "job"
   | "resource"
   | "person"
   | "notes"
@@ -83,7 +82,6 @@ export async function createWord(d: WordDraft): Promise<Made> {
       }
       return { open: "view", id: id as string, name: word, displayKind: "journal", belongs: "personal" };
     }
-    case "job":
     case "resource":
     case "person": {
       const kind = d.type as EntryKind;

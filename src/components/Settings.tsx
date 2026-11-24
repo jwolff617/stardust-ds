@@ -48,6 +48,11 @@ export function Settings({
       const next = { ...(p.hotkeys ?? {}) };
       const merged: Hotkey = { ...next[n], ...change, meaning: change.meaning ?? next[n]?.meaning ?? "" };
       delete merged.dictionaryId;
+      // A new name in Settings: it no longer points at the noun picked on the home screen.
+      if (change.meaning !== undefined && change.meaning !== next[n]?.meaning) {
+        delete merged.kind;
+        delete merged.id;
+      }
       if (!merged.meaning.trim()) delete next[n];
       else next[n] = merged;
       return { ...p, hotkeys: next };

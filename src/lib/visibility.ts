@@ -9,7 +9,6 @@ export const VISIBILITY_OF: Record<string, "public" | "members" | "private"> = {
   resource: "public",
   profile: "public",
   person: "public",
-  job: "public",
   noun: "public",
   verb: "public",
   word: "public",

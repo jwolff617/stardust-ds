@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { confirmAdult, deleteEntry, isAdult, myEntries, pauseEntry, saveEntry, type EntryInput } from "@/app/actions/profile";
-import { detailsLine, ENTRY_KINDS, KIND_LABELS, SIDE_LABELS, type EntryKind, type ProfileEntry } from "@/lib/profile-entries";
+import { detailsLine, ENTRY_KINDS, JOB_SIDES, KIND_LABELS, SIDE_LABELS, type EntryKind, type ProfileEntry } from "@/lib/profile-entries";
 import { input, link, primary, quiet } from "./ui";
 
 const BLANK = (kind: EntryKind): EntryInput => ({
@@ -82,7 +82,7 @@ export function ProfileView({ reloadKey = 0, section }: { reloadKey?: number; se
                 <li key={e.id} className="rounded-md p-3 ring-1 ring-neutral-200">
                   <div className="flex flex-wrap items-baseline gap-2 text-sm">
                     <span className="font-medium">{e.word}</span>
-                    <span className="text-xs text-neutral-500">{SIDE_LABELS[e.kind][e.side]}</span>
+                    <span className="text-xs text-neutral-500">{(e.details.what === "job" ? JOB_SIDES : SIDE_LABELS[e.kind])[e.side]}</span>
                     {detailsLine(e) && <span className="text-xs text-neutral-500">· {detailsLine(e)}</span>}
                     {e.visibility === "private" && <span className="text-xs text-neutral-500">· private (from before)</span>}
                     {e.paused && <span className="text-xs text-amber-700">· paused</span>}
@@ -149,7 +149,7 @@ function EntryForm({ start, isNew, onSave, onCancel }: { start: EntryInput; isNe
 
   const set = (k: keyof EntryInput) => (e: { target: { value: string } }) => setF((x) => ({ ...x, [k]: e.target.value }));
   const setD = (k: string) => (e: { target: { value: string } }) => setF((x) => ({ ...x, details: { ...x.details, [k]: e.target.value } }));
-  const sides = SIDE_LABELS[f.kind];
+  const sides = f.details.what === "job" ? JOB_SIDES : SIDE_LABELS[f.kind];
 
   return (
     <form
@@ -184,16 +184,22 @@ function EntryForm({ start, isNew, onSave, onCancel }: { start: EntryInput; isNe
         <input value={f.people} onChange={set("people")} maxLength={300} placeholder="People" aria-label="People" className={`${input} min-w-0 flex-1`} />
       </div>
 
-      {f.kind === "job" && <input value={f.details.pay ?? ""} onChange={setD("pay")} maxLength={60} placeholder="Pay: $25/hr, volunteer..." aria-label="Pay" className={input} />}
       {f.kind === "resource" && (
         <div className="flex flex-wrap gap-2">
+          <select value={f.details.what ?? ""} onChange={setD("what")} aria-label="A job or a thing" className={input}>
+            <option value="">A thing</option>
+            <option value="job">A job</option>
+          </select>
+          {f.details.what === "job" && <input value={f.details.pay ?? ""} onChange={setD("pay")} maxLength={60} placeholder="Pay: $25/hr, volunteer..." aria-label="Pay" className={input} />}
+          {f.details.what !== "job" && (
           <select value={f.details.deal ?? ""} onChange={setD("deal")} aria-label="Free or for sale" className={input}>
             <option value="">Free, sale, or trade?</option>
             <option value="free">Free</option>
             <option value="sale">For sale</option>
             <option value="trade">Trade</option>
           </select>
-          {f.details.deal === "sale" && <input value={f.details.price ?? ""} onChange={setD("price")} maxLength={60} placeholder="Price" aria-label="Price" className={input} />}
+          )}
+          {f.details.what !== "job" && f.details.deal === "sale" && <input value={f.details.price ?? ""} onChange={setD("price")} maxLength={60} placeholder="Price" aria-label="Price" className={input} />}
         </div>
       )}
 

@@ -30,13 +30,20 @@ export type Preferences = {
   // Hotkeys 1 to 9: a number Sage reads as a noun. "4. new entry ..."
   // writes to whatever 4 points at.
   hotkeys?: Record<string, Hotkey>;
+  // The home grid: how many cards show (1, 4, 6, 8, 9, 12, 15, 20).
+  home?: { cards?: number };
 };
+
+export const CARD_COUNTS = [1, 4, 6, 8, 9, 12, 15, 20] as const;
 
 export type Hotkey = {
   // What the number means, in the spark's own words ("Playbound City journal").
   meaning: string;
   // The dictionary it points at, when it's one of theirs.
   dictionaryId?: string;
+  // The noun it opens, picked in My List (kind and id, as /api/word takes them).
+  kind?: string;
+  id?: string;
 };
 
 // 1 to 9 are each spark's own. Past 9, the # box takes tickers.
@@ -50,7 +57,9 @@ function cleanHotkeys(raw: unknown): Record<string, Hotkey> | undefined {
     if (!h || typeof h !== "object") continue;
     const meaning = typeof h.meaning === "string" ? h.meaning.trim().slice(0, 120) : "";
     const dictionaryId = typeof h.dictionaryId === "string" && /^[0-9a-f-]{36}$/i.test(h.dictionaryId) ? h.dictionaryId : undefined;
-    if (meaning || dictionaryId) out[n] = { meaning, dictionaryId };
+    const kind = typeof h.kind === "string" && /^[a-z]{1,20}$/.test(h.kind) ? h.kind : undefined;
+    const id = kind && typeof h.id === "string" && /^[0-9a-f-]{36}$/i.test(h.id) ? h.id : undefined;
+    if (meaning || dictionaryId) out[n] = { meaning, dictionaryId, ...(kind && id ? { kind, id } : {}) };
   }
   return out;
 }
@@ -88,7 +97,13 @@ export function cleanPreferences(raw: unknown): Preferences {
     module1: { storeHidden: flag(m1.storeHidden), collapsed: flag(m1.collapsed) },
     module3: { collapsed: flag(m3.collapsed) },
     hotkeys: cleanHotkeys((r as Record<string, unknown>).hotkeys),
+    home: cleanHome((r as Record<string, unknown>).home),
   };
+}
+
+function cleanHome(raw: unknown): Preferences["home"] {
+  const cards = raw && typeof raw === "object" ? Number((raw as Record<string, unknown>).cards) : NaN;
+  return (CARD_COUNTS as readonly number[]).includes(cards) ? { cards } : undefined;
 }
 
 export function loadBrowserPreferences(): Preferences {
