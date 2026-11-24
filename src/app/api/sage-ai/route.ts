@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   const [resolved, { data: isModerator }] = await Promise.all([resolveHotkeys(supabase, user.id, hotkeys, copies), supabase.rpc("is_moderator")]);
   const hotkeyLines = resolved.map((h) => h.line);
   // "4", "go to 4", "open #4": straight there, no guessing.
-  const jump = prompt.match(/^\s*(?:go\s+to|goto|open|view|show|take\s+me\s+to)?\s*#?(\d{1,3})\s*[.!]?\s*$/i);
+  const jump = prompt.match(/^\s*(?:go\s+to|goto|open|view|show|take\s+me\s+to)?\s*#?([1-9])\s*[.!]?\s*$/i);
   // "#j", "#pi", "#md": a built-in letter or a ticker.
   const codeJump = jump ? null : prompt.match(/^\s*#([a-z][a-z0-9]{0,4})\s*$/i);
   const jumpTo = jump ? resolved.find((h) => h.n === jump[1]) : undefined;

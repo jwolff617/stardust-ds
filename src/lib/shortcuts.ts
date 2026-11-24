@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FoundWord, UiDirective } from "@/lib/sage-ui";
 
-// The shortcut box. Numbers 1 to 50 are each spark's own hotkeys (resolved
+// The shortcut box. Numbers 1 to 9 are each spark's own hotkeys (resolved
 // in the Sage AI route). Letters are built in. Longer codes are tickers a
 // moderator assigns to an organization (0055).
 

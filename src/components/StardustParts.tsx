@@ -270,7 +270,7 @@ export function MicIcon() {
   );
 }
 
-// The # box: type a hotkey number (1 to 50) and Enter goes straight there.
+// The # box: a hotkey number (1 to 9), a letter, or a ticker; Enter goes straight there.
 export function HotkeyBox({ onGo }: { onGo: (n: string) => void }) {
   const [n, setN] = useState("");
   return (
