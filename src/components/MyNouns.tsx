@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MyNoun } from "@/lib/shortcuts";
 import { Panel } from "./StardustParts";
+import { visibilityOf } from "@/lib/visibility";
 
 type Tab = "recent" | "top" | "starred";
 
@@ -41,7 +42,11 @@ function Row({ n, onOpen, onStar, showThing = true }: { n: MyNoun; onOpen: (n: M
           {n.word}
           {n.hotkey && <span className="ml-1 text-xs text-[var(--muted)]">({n.hotkey})</span>}
         </span>
-        {showThing && <span className="shrink-0 text-xs text-[var(--muted)]">{n.thing}</span>}
+        {showThing && (
+          <span className="shrink-0 text-xs text-[var(--muted)]">
+            {n.thing} · {visibilityOf(n.kind === "mine" ? "mine" : n.thing)}
+          </span>
+        )}
       </button>
     </li>
   );
