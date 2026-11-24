@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { MyNoun } from "@/lib/shortcuts";
 import { Panel } from "./StardustParts";
+import { ToolIcon } from "./ToolIcon";
 import { visibilityOf } from "@/lib/visibility";
 
 type Tab = "recent" | "top" | "starred";
@@ -38,8 +39,9 @@ function Row({ n, onOpen, onStar, showThing = true }: { n: MyNoun; onOpen: (n: M
     <li className="flex items-center gap-1 border-b border-[var(--line)] last:border-b-0">
       <Star on={n.favorite} onToggle={() => onStar(n)} />
       <button type="button" onClick={() => onOpen(n)} className="flex min-w-0 flex-1 items-center justify-between gap-2 py-1.5 pr-1 text-left hover:underline">
-        <span className="truncate text-sm">
-          {n.word}
+        <span className="flex min-w-0 items-center gap-1.5 truncate text-sm">
+          <ToolIcon tool={n.thing} size={14} className="text-[var(--muted)]" />
+          <span className="truncate">{n.word}</span>
           {n.hotkey && <span className="ml-1 text-xs text-[var(--muted)]">({n.hotkey})</span>}
         </span>
         {showThing && (

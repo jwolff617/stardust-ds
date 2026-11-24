@@ -1,5 +1,7 @@
 "use client";
 
+import { ToolIcon } from "./ToolIcon";
+
 import { useState } from "react";
 import type { WordType } from "@/app/actions/words";
 
@@ -137,7 +139,8 @@ export function Things({ onThing }: { onThing: (thing: string) => void }) {
         {THINGS.map((g) => (
           <div key={g.who} title={g.who} className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-[var(--line)] px-3 py-1.5 last:border-b-0 sm:grid-cols-3 lg:grid-cols-2">
             {g.words.map((w) => (
-              <button key={w} type="button" onClick={() => onThing(w)} title={`${w} · ${g.who.toLowerCase()}`} className={ITEM}>
+              <button key={w} type="button" onClick={() => onThing(w)} title={`${w} · ${g.who.toLowerCase()}`} className={`${ITEM} flex items-center gap-1.5`}>
+                <ToolIcon tool={w} size={14} className="text-[var(--muted)]" />
                 {w}
               </button>
             ))}
