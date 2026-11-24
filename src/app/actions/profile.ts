@@ -47,7 +47,7 @@ export async function saveEntry(id: string | null, input: EntryInput) {
     body: input.body.slice(0, 5000),
     place: input.place.trim().slice(0, 120),
     people: input.people.trim().slice(0, 300),
-    visibility: input.visibility === "private" ? "private" : "public",
+    visibility: "public", // profile is always public; pause hides one
     details: cleanDetails(input.kind, input.details),
   };
   if (!row.word) throw new Error("Give it a word: a short title.");
