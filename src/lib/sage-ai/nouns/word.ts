@@ -2,13 +2,13 @@ import type { NounDef, VerbResult } from "../engine";
 
 // Word: a noun of the user's own, a word and what it means to them (0050).
 const fail = (error: string): VerbResult => ({ ok: false, error });
-const COLUMNS = "id, word, body, place, people, visibility";
+const COLUMNS = "id, word, body, place, people";
 
 export const wordNoun: NounDef = {
   name: "Word",
   dictionary: "core",
   alwaysOn: true,
-  description: "A noun of the user's own: a word and what it means to them, with place, people, and visibility (private by default). After Add or Edit, show it with kind \"mine\" and its id.",
+  description: "A noun of the user's own: a word and what it means to them, with place and people. Always private. After Add or Edit, show it with kind \"mine\" and its id.",
   verbs: {
     Add: {
       params: [
@@ -16,12 +16,11 @@ export const wordNoun: NounDef = {
         { name: "body", type: "text", max: 20000 },
         { name: "place", type: "text", max: 120 },
         { name: "people", type: "text", max: 300 },
-        { name: "visibility", type: "enum", options: ["private", "public"] },
       ],
       run: async ({ ctx, values }) => {
         const { data, error } = await ctx.supabase
           .from("my_words")
-          .insert({ owner_user_id: ctx.userId, word: values.word, body: values.body ?? "", place: values.place ?? "", people: values.people ?? "", visibility: values.visibility ?? "private" })
+          .insert({ owner_user_id: ctx.userId, word: values.word, body: values.body ?? "", place: values.place ?? "", people: values.people ?? "" })
           .select(COLUMNS)
           .single();
         if (error) return fail(error.message);
@@ -35,7 +34,6 @@ export const wordNoun: NounDef = {
         { name: "body", type: "text", max: 20000 },
         { name: "place", type: "text", max: 120 },
         { name: "people", type: "text", max: 300 },
-        { name: "visibility", type: "enum", options: ["private", "public"] },
       ],
       run: async ({ ctx, target, values }) => {
         const update = Object.fromEntries(Object.entries(values).filter(([, v]) => v !== undefined));
@@ -52,7 +50,7 @@ export const wordNoun: NounDef = {
         if (values.query) q = q.ilike("word", `%${String(values.query)}%`);
         const { data, error } = await q;
         if (error) return fail(error.message);
-        return { ok: true, message: `${data?.length ?? 0} words.`, data: (data ?? []).map((w) => `${w.id} · ${w.word} · ${w.visibility}`) };
+        return { ok: true, message: `${data?.length ?? 0} words.`, data: (data ?? []).map((w) => `${w.id} · ${w.word}`) };
       },
     },
     Delete: {

@@ -16,7 +16,6 @@ const ENTRY_FIELDS: Field[] = [
   { name: "body", type: "text", max: 5000, description: "What they wrote about it." },
   { name: "place", type: "text", max: 120 },
   { name: "people", type: "text", max: 300 },
-  { name: "visibility", type: "enum", options: ["public", "private"], description: "Default public." },
   { name: "relationship", type: "enum", options: RELATIONSHIPS, description: "person only." },
   { name: "age", type: "integer", min: 18, max: 120, description: "romance only." },
   { name: "iam", type: "enum", options: ["woman", "man", "nonbinary"], description: "romance only." },
@@ -63,7 +62,7 @@ export const profileEntryNoun: NounDef = {
             body: values.body ?? "",
             place: values.place ?? "",
             people: values.people ?? "",
-            visibility: values.visibility ?? "public",
+            visibility: "public",
             details,
           })
           .select(ENTRY_COLUMNS)
@@ -80,7 +79,7 @@ export const profileEntryNoun: NounDef = {
         const { data: old } = await ctx.supabase.from("profile_entries").select(ENTRY_COLUMNS).eq("id", target!).eq("owner_user_id", ctx.userId).maybeSingle();
         if (!old) return fail("That's not one of your entries.");
         const update: Record<string, unknown> = {};
-        for (const k of ["side", "word", "body", "place", "people", "visibility"]) if (values[k] !== undefined) update[k] = values[k];
+        for (const k of ["side", "word", "body", "place", "people"]) if (values[k] !== undefined) update[k] = values[k];
         if (DETAIL_KEYS.some((k) => values[k] !== undefined)) {
           update.details = cleanDetails(old.kind as EntryKind, { ...(old.details ?? {}), ...values });
         }
@@ -109,14 +108,6 @@ export const profileEntryNoun: NounDef = {
         const { error, count } = await ctx.supabase.from("profile_entries").delete({ count: "exact" }).eq("id", target!).eq("owner_user_id", ctx.userId);
         if (error) return fail(error.message);
         return count ? { ok: true, message: "Deleted." } : fail("That's not one of your entries.");
-      },
-    },
-    Share: {
-      target: TARGET,
-      params: [{ name: "visibility", type: "enum", options: ["public", "private"], required: true }],
-      run: async ({ ctx, target, values }) => {
-        const { error } = await ctx.supabase.from("profile_entries").update({ visibility: values.visibility }).eq("id", target!).eq("owner_user_id", ctx.userId);
-        return error ? fail(error.message) : { ok: true, message: `Now ${values.visibility}.` };
       },
     },
   },
@@ -245,7 +236,6 @@ const ORG_FIELDS: Field[] = [
   { name: "body", type: "text", max: 5000, description: "Its definition: mission, announcements, contact, whatever they write." },
   { name: "place", type: "text", max: 60 },
   { name: "people", type: "text", max: 300 },
-  { name: "visibility", type: "enum", options: ["public", "private"] },
   { name: "website", type: "text", max: 200 },
 ];
 
@@ -266,7 +256,7 @@ export const organizationNoun: NounDef = {
           p_about: values.body ?? "",
           p_place: values.place ?? "",
           p_people: values.people ?? "",
-          p_visibility: values.visibility ?? "public",
+          p_visibility: "public",
         });
         return error ? fail(error.message) : { ok: true, message: `Made ${values.name}.`, data: { id: data } };
       },
@@ -285,7 +275,7 @@ export const organizationNoun: NounDef = {
           p_about: values.body ?? org.about,
           p_place: values.place ?? null,
           p_people: values.people ?? null,
-          p_visibility: values.visibility ?? null,
+          p_visibility: null,
         });
         return error ? fail(error.message) : { ok: true, message: "Saved." };
       },

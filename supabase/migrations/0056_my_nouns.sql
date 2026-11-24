@@ -34,3 +34,11 @@ returns void language sql security invoker set search_path = public as $$
   on conflict (user_id, kind, ref_id) do update set favorite = p_on;
 $$;
 grant execute on function star_noun(text, uuid, boolean) to authenticated;
+
+-- Your nouns are always private (the thing decides visibility, never the word).
+update my_words set visibility = 'private' where visibility <> 'private';
+alter table my_words drop constraint if exists my_words_always_private;
+alter table my_words add constraint my_words_always_private check (visibility = 'private');
+drop policy if exists "sparks read words" on my_words;
+create policy "sparks read words" on my_words for select to authenticated
+  using (owner_user_id = auth.uid());

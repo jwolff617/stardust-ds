@@ -62,7 +62,7 @@ export function ProfileView({ reloadKey = 0, section }: { reloadKey?: number; se
         ))}
       </div>
       <p className="text-sm text-neutral-600">
-        What you offer and what you seek. Public: this is how sparks find and match you.
+        What you offer and what you seek. Always public: this is how sparks find and match you. Pause one to hide it.
       </p>
       {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -84,7 +84,7 @@ export function ProfileView({ reloadKey = 0, section }: { reloadKey?: number; se
                     <span className="font-medium">{e.word}</span>
                     <span className="text-xs text-neutral-500">{SIDE_LABELS[e.kind][e.side]}</span>
                     {detailsLine(e) && <span className="text-xs text-neutral-500">· {detailsLine(e)}</span>}
-                    <span className="text-xs text-neutral-500">· {e.visibility}</span>
+                    {e.visibility === "private" && <span className="text-xs text-neutral-500">· private (from before)</span>}
                     {e.paused && <span className="text-xs text-amber-700">· paused</span>}
                     {e.hidden && <span className="text-xs text-red-700">· hidden after reports</span>}
                   </div>
@@ -176,10 +176,6 @@ function EntryForm({ start, isNew, onSave, onCancel }: { start: EntryInput; isNe
             <option value="romance">Romance (18+)</option>
           </select>
         )}
-        <select value={f.visibility} onChange={set("visibility")} aria-label="Visibility" className={input}>
-          <option value="public">Public</option>
-          <option value="private">Private</option>
-        </select>
       </div>
       <input autoFocus value={f.word} onChange={set("word")} maxLength={120} placeholder="Word: a short title" aria-label="Word" className={input} />
       <textarea value={f.body} onChange={set("body")} maxLength={5000} rows={4} placeholder="Say it in your own words." aria-label="Body" className={`${input} resize-y`} />
