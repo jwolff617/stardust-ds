@@ -69,6 +69,14 @@ function belongsOf(scope: string): Belongs {
   return scope === "personal" ? "personal" : scope === "group" ? "group" : "public";
 }
 
+// Literal classes so Tailwind keeps them.
+const GRID: Record<string, string> = {
+  "22fr_58fr_20fr": "lg:grid-cols-[22fr_58fr_20fr]",
+  "58fr_20fr": "lg:grid-cols-[58fr_20fr]",
+  "22fr_58fr": "lg:grid-cols-[22fr_58fr]",
+  "58fr": "lg:grid-cols-1",
+};
+
 export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userName: string | null; isModerator?: boolean }) {
   const [word, setWord] = useState("");
   const [body, setBody] = useState("");
@@ -79,6 +87,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const [privateProfileId, setPrivateProfileId] = useState<string | null>(null);
   const publicProfile = dictionaries.find((d) => d.displayKind === "profile") ?? null;
   const [reloadKey, setReloadKey] = useState(0);
+  // Wide screens: hide either side menu (l, r in the # box) so the display grows.
+  const [hideLeft, setHideLeft] = useState(false);
+  const [hideRight, setHideRight] = useState(false);
+  const cols = `${hideLeft ? "" : "22fr_"}58fr${hideRight ? "" : "_20fr"}`;
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
   const [nouns, setNouns] = useState<MyNoun[]>([]);
   const [wordList, setWordList] = useState<{ exists: boolean; words: ListWord[] }>({ exists: false, words: [] });
@@ -666,10 +678,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         </div>
       </header>
 
-      <div className="mt-6 grid flex-1 grid-cols-1 gap-6 lg:grid-cols-[22fr_58fr_20fr] lg:gap-5">
+      <div className={`mt-6 grid flex-1 grid-cols-1 gap-6 lg:gap-5 ${GRID[cols]}`}>
         {/* Left: Today's Word List, then Verbs and Things. On phones the list
             comes first and Verbs and Things drop below the tags. */}
-        <aside className="flex min-w-0 flex-col gap-6">
+        <aside className={`flex min-w-0 flex-col gap-6 ${hideLeft ? "lg:hidden" : ""}`}>
           <WordListPanel isLoggedIn={isLoggedIn} list={wordList} onOpen={openListWord} />
           <div className="hidden lg:block">
             <Things onThing={pickThing} />
@@ -766,6 +778,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           )}
           {/* The body */}
           <section className="relative flex min-h-[45vh] flex-1 flex-col rounded-lg border border-[var(--line)] p-4 sm:p-5">
+            <button type="button" onClick={() => setHideLeft((h) => !h)} aria-label={hideLeft ? "Show left menu (l)" : "Hide left menu (l)"} title={hideLeft ? "Show left menu (l)" : "Hide left menu (l)"} className="absolute left-0 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--line)] bg-[var(--background)] px-1 text-xs text-[var(--muted)] hover:text-[var(--foreground)] lg:block">
+              {hideLeft ? "›" : "‹"}
+            </button>
+            <button type="button" onClick={() => setHideRight((h) => !h)} aria-label={hideRight ? "Show right menu (r)" : "Hide right menu (r)"} title={hideRight ? "Show right menu (r)" : "Hide right menu (r)"} className="absolute right-0 top-1/2 hidden -translate-y-1/2 translate-x-1/2 rounded-full border border-[var(--line)] bg-[var(--background)] px-1 text-xs text-[var(--muted)] hover:text-[var(--foreground)] lg:block">
+              {hideRight ? "‹" : "›"}
+            </button>
             {box.mode !== "spark" && box.mode !== "search" && (
               <button
                 type="button"
@@ -834,7 +852,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         </section>
 
         {/* Right: Tags */}
-        <aside className="min-w-0">
+        <aside className={`min-w-0 ${hideRight ? "lg:hidden" : ""}`}>
           <Panel title="Tags">
             <div className="flex flex-col gap-3">
               {FIELD_NAMES.filter(({ key }) => key !== "visibility").map(({ key, label }) => (
@@ -893,7 +911,15 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           }}
           className="flex items-center gap-2 rounded-lg border border-[var(--line)] p-1.5 focus-within:border-[var(--foreground)]"
         >
-          {isLoggedIn && <HotkeyBox onGo={(n) => send(n)} />}
+          {isLoggedIn && (
+            <HotkeyBox
+              onGo={(n) => {
+                if (n === "#l") return setHideLeft((h) => !h);
+                if (n === "#r") return setHideRight((h) => !h);
+                send(n);
+              }}
+            />
+          )}
           {hasSpeech && (
             <button
               type="button"

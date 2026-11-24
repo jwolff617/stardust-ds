@@ -44,7 +44,7 @@ function kindLabel(t: string): { head: string; sub: string } {
   if (type === "search") return { head: "SEARCH", sub: "results" };
   if (type === "reports") return { head: "REPORTS", sub: "" };
   const thing = THING_OF[type];
-  return thing ? { head: "THING", sub: thing } : { head: type.toUpperCase(), sub: "" };
+  return thing ? { head: "TOOL", sub: thing } : { head: type.toUpperCase(), sub: "" };
 }
 
 export function WordKind({ type }: { type: string }) {
@@ -132,7 +132,7 @@ export function Verbs({ onVerb }: { onVerb: (text: string) => void }) {
 
 export function Things({ onThing }: { onThing: (thing: string) => void }) {
   return (
-    <Panel title="Things">
+    <Panel title="Tools">
       <div className="-mx-3 flex flex-col">
         {THINGS.map((g) => (
           <div key={g.who} title={g.who} className="grid grid-cols-2 gap-x-2 gap-y-0.5 border-b border-[var(--line)] px-3 py-1.5 last:border-b-0 sm:grid-cols-3 lg:grid-cols-2">

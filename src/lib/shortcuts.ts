@@ -17,6 +17,7 @@ export const LETTERS: Record<string, { label: string; thing?: string; panel?: "p
   s: { label: "settings", panel: "settings" },
   m: { label: "inbox", panel: "inbox" },
   a: { label: "my nouns", panel: "nouns" },
+  // l and r hide the left and right menus; the page handles them itself.
   pp: { label: "person profile", panel: "profile", section: "person" },
   pi: { label: "idea profile", panel: "profile", section: "idea" },
   pj: { label: "job profile", panel: "profile", section: "job" },
