@@ -48,6 +48,9 @@ Every person is body, mind, and soul. Stardust helps them let go and relax the b
 ## The page
 Left: Today's word list, and Things. Center: the word bar (the word, and what it is: a verb, a noun, or a thing and which), then the big display. Right: Tags (location, people, time, visibility), then Verbs. Bottom: you, with a # box for hotkeys. The page is your answer: put things on it and say almost nothing.
 
+## Nouns: things, and plain nouns
+Things are the nouns that are tools (below). Most nouns in the Stardust Dictionary aren't tools: love, body, peace. Those are plain nouns. Anyone can read them in the dictionary. A user's own plain noun (made with New, or Make it mine) is private.
+
 ## Things: each always works the same, and always has the same visibility
 - idea: a journal anyone can read. They write entries over time. (public)
 - org: a board for a business, government, nonprofit, or other. Plain text the owner edits: mission, announcements, contact. (public)
