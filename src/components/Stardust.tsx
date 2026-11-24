@@ -489,6 +489,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       return true;
     }
     showWord({ word: d.word, body: d.body ?? "", kind: d.kind, id: d.id, place: d.place, people: d.people, time: d.time, visibility: d.visibility });
+    linkSlot(d.word, d.kind, d.id);
     setOrgInfo(d.org ?? null);
     return true;
   }
@@ -569,6 +570,45 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       return { ...p, hotkeys: next };
     });
     setCardsOverride(null);
+  }
+
+  // What a typed name means: the freshest list of your nouns, the cards on
+  // the grid, then anything search can find by that exact name.
+  async function resolveSlot(text: string): Promise<Slot> {
+    const norm = (t: string) => t.toLowerCase().replace(/^the\s+/, "").replace(/['’]s\b/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+    const want = norm(text);
+    const fresh: MyNoun[] = await fetch("/api/my-nouns")
+      .then((r) => r.json())
+      .then((d) => {
+        setNouns(d.nouns ?? []);
+        return d.nouns ?? [];
+      })
+      .catch(() => nouns);
+    const pool: Slot[] = [
+      ...cards.filter((c): c is Slot => Boolean(c?.kind && c?.id)),
+      ...fresh.map((x) => ({ meaning: x.word, kind: x.kind, id: x.id })),
+    ];
+    const exact = pool.find((c) => norm(c.meaning) === want);
+    if (exact) return { meaning: exact.meaning, kind: exact.kind, id: exact.id };
+    const starts = pool.filter((c) => norm(c.meaning).startsWith(want));
+    if (want.length >= 3 && starts.length === 1) return { ...starts[0] };
+    try {
+      const d = await fetch(`/api/search?${new URLSearchParams({ word: text })}`).then((r) => r.json());
+      const hit = ((d.items ?? []) as FoundWord[]).find((i) => i.id && norm(i.word) === want);
+      if (hit) return { meaning: hit.word, kind: hit.kind, id: hit.id };
+    } catch {}
+    return { meaning: text };
+  }
+
+  // Opening a noun links any list slot of the same name that isn't linked yet.
+  function linkSlot(name: string, kind: string, id: string) {
+    if (!isLoggedIn || !name) return;
+    const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const n = HOTKEY_NUMBERS.find((k) => {
+      const s = prefs.hotkeys?.[k];
+      return s?.meaning && !s.id && norm(s.meaning) === norm(name);
+    });
+    if (n) setSlot(n, { meaning: prefs.hotkeys![n]!.meaning, kind, id });
   }
 
   // Open a list slot: straight to its noun when we know it, else Sage reads the name.
@@ -782,7 +822,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         ) : (
           <aside className="flex min-w-0 flex-col gap-4">
             {isLoggedIn ? (
-              <NavPanel slots={slots} nouns={nouns} onOpenSlot={openSlot} onSetSlot={setSlot} onOpenNoun={(n) => openWord(n.kind, n.id)} onHide={() => setHideLeft(true)} />
+              <NavPanel resolve={resolveSlot} slots={slots} nouns={nouns} onOpenSlot={openSlot} onSetSlot={setSlot} onOpenNoun={(n) => openWord(n.kind, n.id)} onHide={() => setHideLeft(true)} />
             ) : (
               <Panel title="My List">
                 <p className="text-sm text-[var(--muted)]">Log in to keep your list.</p>

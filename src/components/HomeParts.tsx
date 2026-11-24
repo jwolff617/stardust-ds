@@ -38,6 +38,7 @@ export function NavPanel({
   onSetSlot,
   onOpenNoun,
   onHide,
+  resolve,
 }: {
   slots: (Hotkey | undefined)[];
   nouns: MyNoun[];
@@ -45,6 +46,8 @@ export function NavPanel({
   onSetSlot: (n: string, slot: Slot | null) => void;
   onOpenNoun: (n: MyNoun) => void;
   onHide: () => void;
+  // Finds the noun a typed name means: yours, a card on the grid, or anything findable.
+  resolve: (text: string) => Promise<Slot>;
 }) {
   const [tab, setTab] = useState<"list" | "recent">("list");
   const [editing, setEditing] = useState<string | null>(null);
@@ -54,13 +57,14 @@ export function NavPanel({
     .sort((a, b) => b.lastOpened!.localeCompare(a.lastOpened!))
     .slice(0, 9);
 
-  function commit(n: string) {
+  async function commit(n: string) {
     const text = draft.trim();
     setEditing(null);
     setDraft("");
     if (!text) return;
-    const hit = nouns.find((x) => x.word.toLowerCase() === text.toLowerCase());
-    onSetSlot(n, hit ? { meaning: hit.word, kind: hit.kind, id: hit.id } : { meaning: text });
+    // Show it right away; link it to its noun once found.
+    onSetSlot(n, { meaning: text });
+    onSetSlot(n, await resolve(text));
   }
 
   return (
@@ -100,8 +104,8 @@ export function NavPanel({
                     </>
                   ) : s?.meaning ? (
                     <>
-                      <button type="button" onClick={() => onOpenSlot(n)} className={ROW} title={s.meaning}>
-                        <span className="truncate">{s.meaning}</span>
+                      <button type="button" onClick={() => onOpenSlot(n)} className={ROW} title={s.id ? s.meaning : `${s.meaning}: not linked yet. Open it once and it links.`}>
+                        <span className={`truncate ${s.id ? "" : "italic text-[var(--muted)]"}`}>{s.meaning}</span>
                       </button>
                       <button type="button" onClick={() => onSetSlot(n, null)} aria-label={`Clear ${n}`} className="px-0.5 text-xs text-[var(--muted)] opacity-0 hover:text-[var(--foreground)] group-hover:opacity-100 focus:opacity-100">
                         ×
