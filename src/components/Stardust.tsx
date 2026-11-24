@@ -9,6 +9,8 @@ import { OrgPosts } from "./OrgPosts";
 import { visibilityOf } from "@/lib/visibility";
 import { HotkeyBox, MicIcon, PANEL_TITLES, Panel, Things, TypePicker, Verbs, WordKind, WordListPanel, type ListWord } from "./StardustParts";
 import { StardustDisplay, type Box } from "./StardustDisplay";
+import { MyNounsBox } from "./MyNouns";
+import type { MyNoun } from "@/lib/shortcuts";
 import { splitStream, type FoundWord, type UiDirective, type WordFields } from "@/lib/sage-ui";
 
 type Fields = Required<WordFields>;
@@ -78,6 +80,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const publicProfile = dictionaries.find((d) => d.displayKind === "profile") ?? null;
   const [reloadKey, setReloadKey] = useState(0);
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
+  const [nouns, setNouns] = useState<MyNoun[]>([]);
   const [wordList, setWordList] = useState<{ exists: boolean; words: ListWord[] }>({ exists: false, words: [] });
 
   const [input, setInput] = useState("");
@@ -135,6 +138,36 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     const data = await res.json();
     setWordList({ exists: Boolean(data.exists), words: data.words ?? [] });
   }, [isLoggedIn]);
+
+  const loadNouns = useCallback(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/my-nouns")
+      .then((r) => r.json())
+      .then((d) => setNouns(d.nouns ?? []))
+      .catch(() => {});
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    fetch("/api/my-nouns")
+      .then((r) => r.json())
+      .then((d) => setNouns(d.nouns ?? []))
+      .catch(() => {});
+  }, [isLoggedIn, reloadKey]);
+
+  // Opening one of your nouns counts it (Recent and Top 10).
+  function countOpen(kind: string, id: string) {
+    if (!isLoggedIn) return;
+    const mine = nouns.some((n) => n.kind === kind && n.id === id) || ["notebook", "organization", "resource", "mine"].includes(kind);
+    if (!mine) return;
+    setNouns((list) => list.map((n) => (n.kind === kind && n.id === id ? { ...n, opens: n.opens + 1, lastOpened: new Date().toISOString() } : n)));
+    fetch("/api/my-nouns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, id }) }).catch(() => {});
+  }
+
+  function starNoun(n: MyNoun) {
+    setNouns((list) => list.map((x) => (x.kind === n.kind && x.id === n.id ? { ...x, favorite: !n.favorite } : x)));
+    fetch("/api/my-nouns", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind: n.kind, id: n.id, favorite: !n.favorite }) }).catch(() => {});
+  }
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -377,6 +410,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           await openWord(made.kind, made.id);
         }
         setReloadKey((k) => k + 1);
+        loadNouns();
       })
       .catch((err) => setReply((err as Error).message))
       .finally(() => setSending(false));
@@ -384,6 +418,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
 
   // Opens one word by what it is and its id. (Also reached from Sage, via the ref.)
   async function openWord(kind: string, id: string) {
+    countOpen(kind, id);
     const res = await fetch(`/api/word?kind=${encodeURIComponent(kind)}&id=${id}`);
     if (!res.ok) return false;
     const d = await res.json();
@@ -485,6 +520,10 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   function pickThing(thing: string) {
     if (thing === "profile" || thing === "inbox" || thing === "settings") {
       applyDirective({ type: "panel", panel: thing });
+      return;
+    }
+    if (thing === "my nouns") {
+      applyDirective({ type: "panel", panel: "nouns" });
       return;
     }
     const t = (thing === "note" ? "notes" : thing) as WordType;
@@ -628,6 +667,16 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
           <div className="hidden lg:block">
             <Things onThing={pickThing} />
           </div>
+          {isLoggedIn && (
+            <div className="hidden lg:block">
+              <MyNounsBox
+                nouns={nouns}
+                onOpen={(n) => openWord(n.kind, n.id)}
+                onStar={starNoun}
+                onViewAll={() => applyDirective({ type: "panel", panel: "nouns" })}
+              />
+            </div>
+          )}
         </aside>
 
         {/* Center: the word, its type, and its body */}
@@ -741,6 +790,9 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
                 loadDictionaries().catch(() => {});
               }}
               onClose={clearToSearch}
+              nouns={nouns}
+              onOpenNoun={(n) => openWord(n.kind, n.id)}
+              onStarNoun={starNoun}
             />
             {box.mode === "word" && ref?.kind === "organization" && <OrgPosts orgId={ref.id} />}
           </section>
@@ -808,6 +860,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
         <div className="flex flex-col gap-6 lg:hidden">
           <Verbs onVerb={toBar} />
           <Things onThing={pickThing} />
+          {isLoggedIn && (
+            <MyNounsBox
+              nouns={nouns}
+              onOpen={(n) => openWord(n.kind, n.id)}
+              onStar={starNoun}
+              onViewAll={() => applyDirective({ type: "panel", panel: "nouns" })}
+            />
+          )}
         </div>
       </div>
 

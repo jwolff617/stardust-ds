@@ -11,6 +11,8 @@ import { ReportsQueue } from "./ReportsQueue";
 import { TypePill } from "./StardustParts";
 import { OfficialQueue, Organizations } from "./Organizations";
 import type { FoundWord, WordFields } from "@/lib/sage-ui";
+import type { MyNoun } from "@/lib/shortcuts";
+import { MyNounsView } from "./MyNouns";
 
 // What the rectangle holds right now.
 export type Box =
@@ -19,7 +21,7 @@ export type Box =
   | { mode: "word" }
   | { mode: "results"; items: FoundWord[]; title?: string }
   | { mode: "view"; dictionary: MyDictionary }
-  | { mode: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile"; section?: string };
+  | { mode: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile" | "nouns"; section?: string };
 
 // The big display: the body, search results, or a thing working (a
 // notebook, profile, inbox, settings...).
@@ -35,6 +37,9 @@ export function StardustDisplay({
   onOpen,
   onChanged,
   onClose,
+  nouns = [],
+  onOpenNoun = () => {},
+  onStarNoun = () => {},
 }: {
   box: Box;
   body: string;
@@ -47,6 +52,10 @@ export function StardustDisplay({
   onOpen: (w: { word: string; body: string; kind?: string; id?: string } & WordFields) => void;
   onChanged: () => void;
   onClose: () => void;
+  // My Nouns: everything of yours.
+  nouns?: MyNoun[];
+  onOpenNoun?: (n: MyNoun) => void;
+  onStarNoun?: (n: MyNoun) => void;
 }) {
   switch (box.mode) {
     case "spark":
@@ -105,6 +114,8 @@ export function StardustDisplay({
           return <Settings isLoggedIn={isLoggedIn} privateProfileId={privateProfileId} />;
         case "inbox":
           return <InboxView reloadKey={reloadKey} />;
+        case "nouns":
+          return <MyNounsView nouns={nouns} onOpen={onOpenNoun} onStar={onStarNoun} />;
         case "profile":
           return (
             <div className="light-card -m-2 flex flex-col gap-8 rounded p-2 pr-8">

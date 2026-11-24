@@ -31,7 +31,7 @@ export type UiDirective =
   | ({ type: "word"; word: string; body: string; kind?: string; id?: string } & WordFields)
   // A dictionary's own view, or one of the app's panels, in the rectangle.
   | { type: "view"; id: string; name: string }
-  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile"; section?: string }
+  | { type: "panel"; panel: "settings" | "organizations" | "new-notebook" | "reports" | "inbox" | "profile" | "nouns"; section?: string }
   // Search results, listed in the rectangle.
   // A list: search results, or "your journals" from a shortcut (title, and
   // the thing so Create makes one of them).

@@ -111,7 +111,7 @@ const VERBS = ["new", "edit", "search", "view", "match", "contact", "share", "de
 const THINGS: { who: string; words: string[] }[] = [
   { who: "Public", words: ["idea", "org", "profile", "resource"] },
   { who: "Shared", words: ["group", "inbox", "settings"] },
-  { who: "Private", words: ["note", "journal"] },
+  { who: "Private", words: ["note", "journal", "my nouns"] },
 ];
 
 const ITEM = "px-1.5 py-0.5 text-left text-sm hover:bg-[var(--soft)] hover:underline";
@@ -155,6 +155,7 @@ export const PANEL_TITLES: Record<string, string> = {
   "new-notebook": "New notebook",
   inbox: "Inbox",
   profile: "Profile",
+  nouns: "My nouns",
 };
 
 // The types a new word can be. The type decides its card: a noun, org,
