@@ -40,6 +40,8 @@ export function StardustDisplay({
   nouns = [],
   onOpenNoun = () => {},
   onStarNoun = () => {},
+  onOpenGroup,
+  onConnect,
 }: {
   box: Box;
   body: string;
@@ -56,6 +58,10 @@ export function StardustDisplay({
   nouns?: MyNoun[];
   onOpenNoun?: (n: MyNoun) => void;
   onStarNoun?: (n: MyNoun) => void;
+  // A group or event by id (from the inbox).
+  onOpenGroup?: (id: string) => void;
+  // Contact a match: makes your two-person group.
+  onConnect?: (entryId: string) => void;
 }) {
   switch (box.mode) {
     case "spark":
@@ -98,6 +104,11 @@ export function StardustDisplay({
                   <span className="text-xs opacity-70">Shares: {item.shared.slice(0, 8).join(", ")}</span>
                 )}
               </button>
+              {onConnect && item.shared && ["person", "idea", "resource"].includes(item.kind) && (
+                <button type="button" onClick={() => onConnect(item.id)} className="mb-3 rounded-full border border-[var(--line)] px-3 py-0.5 text-xs hover:border-[var(--foreground)]">
+                  Connect: start a journal together
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -113,7 +124,7 @@ export function StardustDisplay({
         case "settings":
           return <Settings isLoggedIn={isLoggedIn} privateProfileId={privateProfileId} />;
         case "inbox":
-          return <InboxView reloadKey={reloadKey} />;
+          return <InboxView reloadKey={reloadKey} onOpenGroup={(id) => onOpenGroup?.(id)} />;
         case "nouns":
           return <MyNounsView nouns={nouns} onOpen={onOpenNoun} onStar={onStarNoun} />;
         case "profile":

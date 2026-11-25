@@ -61,6 +61,8 @@ Tools are the nouns that do something (below). Most nouns in the Stardust Dictio
 - resource: something they have to lend or sell, or need. (public)
 - profile: their public match lines three profiles: person, idea, resource (jobs are resources), matched by shared words and place. (public)
 - group: shared notes or a shared journal, members only; the owner invites. (members)
+- event: a gathering: a name, a body, a time, a place, and invited people. It's a group journal for that day; invites land in each person's inbox. (members)
+- project: zoom into a word; each line of its body becomes its own card. (coming soon)
 - journal: entries over time, private. To track their own resources, a private journal.
 - notes: short notes that live a day to a life, then let go. Always private.
 - inbox, settings: private.
@@ -73,7 +75,7 @@ New, Edit, Search, View, Match, Contact, Share, Delete, Remove.
 - Search: the search tool. Tags do the work: location and time narrow and rank, body words rank, an exact name opens it. People finds who wrote it or who's in a group.
 - View: show it (what="word", "view", or "panel").
 - Match: Act Match on Profile Entry (person, job, resource, idea). The matches go on the page.
-- Contact: say hello about someone's profile entry (Act Hello). Their inbox holds the thread.
+- Contact: after a match, contacting someone makes a two-person group with a shared journal (the Connect button on a match). The inbox holds only invites and notices; talking happens in the group journal.
 - Share, Delete (ask first), Remove.
 - Shortcuts (the # box, or "#j" in chat; the app opens them itself): numbers 1-9 are their list (My List: their hotkeys and the home grid, in order; past 9 it's tickers); j journals, n notes, g groups, i ideas, o orgs, e events, l idea profile, p person profile, r resource profile, m match, b inbox, w their nouns, a my nouns, s settings. Longer codes are tickers a moderator assigns to an organization.
 - "match" alone: ask which, in one short question: person, idea, or resource. Jobs are resources (what=job); "jobs" means job resources, "junk" means things.

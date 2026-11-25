@@ -14,7 +14,8 @@ export type WordType =
   | "person"
   | "notes"
   | "journal"
-  | "group";
+  | "group"
+  | "event";
 
 export type WordDraft = {
   type: WordType;
@@ -104,6 +105,19 @@ export async function createWord(d: WordDraft): Promise<Made> {
         .single();
       if (error) throw new Error(error.message);
       return { open: "word", kind, id: data.id };
+    }
+    case "event": {
+      // An event: a shared journal with a time and place; People are invited.
+      const when = d.details.when ? new Date(d.details.when) : null;
+      const { data: id, error } = await supabase.rpc("create_event", {
+        p_name: word,
+        p_body: d.body,
+        p_starts: when && !isNaN(when.getTime()) ? when.toISOString() : null,
+        p_place: d.place,
+        p_people: d.people,
+      });
+      if (error) throw new Error(/create_event/.test(error.message) ? "Events need migration 0060." : error.message);
+      return { open: "view", id: id as string, name: word, displayKind: "journal", belongs: "group" };
     }
     case "notes":
     case "journal":
@@ -280,4 +294,65 @@ export async function deleteOrgPost(id: string) {
   const { supabase } = await signedIn();
   const { error } = await supabase.from("organization_posts").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+// --- Notices: invites and news (0060) ------------------------------------------
+
+export type Notice = {
+  id: string;
+  kind: "invite" | "connect" | "notice";
+  fromName: string;
+  dictionaryId: string | null;
+  title: string;
+  body: string;
+  answer: "yes" | "no" | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export async function myNotices(): Promise<Notice[]> {
+  const { supabase } = await signedIn();
+  const { data, error } = await supabase
+    .from("notices")
+    .select("id, kind, from_name, dictionary_id, title, body, answer, read_at, created_at")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return [];
+  return (data ?? []).map((n) => ({
+    id: n.id,
+    kind: n.kind,
+    fromName: n.from_name,
+    dictionaryId: n.dictionary_id,
+    title: n.title,
+    body: n.body,
+    answer: n.answer,
+    read: Boolean(n.read_at),
+    createdAt: n.created_at,
+  }));
+}
+
+export async function answerNotice(id: string, yes: boolean): Promise<string | null> {
+  const { supabase } = await signedIn();
+  const { data, error } = await supabase.rpc("answer_notice", { p_notice: id, p_yes: yes });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}
+
+export async function markNoticeRead(id: string) {
+  const { supabase } = await signedIn();
+  await supabase.from("notices").update({ read_at: new Date().toISOString() }).eq("id", id).is("read_at", null);
+}
+
+export async function clearNotice(id: string) {
+  const { supabase } = await signedIn();
+  await supabase.from("notices").delete().eq("id", id);
+}
+
+// Contact a match: makes (or reopens) your two-person group with them.
+export async function connectMatch(entryId: string, note = ""): Promise<{ id: string; name: string }> {
+  const { supabase } = await signedIn();
+  const { data: id, error } = await supabase.rpc("connect_match", { p_entry: entryId, p_note: note });
+  if (error) throw new Error(/connect_match/.test(error.message) ? "Connecting needs migration 0060." : error.message);
+  const { data: d } = await supabase.from("dictionaries").select("name").eq("id", id).maybeSingle();
+  return { id: id as string, name: d?.name ?? "Your group" };
 }

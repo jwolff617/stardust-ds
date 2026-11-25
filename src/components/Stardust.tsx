@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { DictionaryPopup } from "./DictionaryPopup";
 import type { Belongs, MyDictionary } from "./DictionaryView";
 import { signOut } from "@/app/login/actions";
-import { createWord, saveWord as saveWordAction, type WordType } from "@/app/actions/words";
+import { connectMatch, createWord, saveWord as saveWordAction, type WordType } from "@/app/actions/words";
 import { OrgPosts } from "./OrgPosts";
 import { visibilityOf } from "@/lib/visibility";
 import { HotkeyBox, MicIcon, PANEL_TITLES, Panel, TypePicker, WordKind } from "./StardustParts";
@@ -686,8 +686,8 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   function pickTool(key: string) {
     showDisplay();
     if (key === "m") return send("match");
-    if (key === "e" || key === "k") {
-      setReply(key === "e" ? "Events are coming next." : "Project is coming soon: open a word and zoom in.");
+    if (key === "k") {
+      setReply("Project is coming soon: open a word and zoom in.");
       return;
     }
     send(`#${key}`);
@@ -987,6 +987,14 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
               nouns={nouns}
               onOpenNoun={(n) => openWord(n.kind, n.id)}
               onStarNoun={starNoun}
+              onOpenGroup={(id) => openWord("notebook", id)}
+              onConnect={(entryId) => {
+                setSending(true);
+                connectMatch(entryId)
+                  .then((g) => openWord("notebook", g.id))
+                  .catch((err) => setReply((err as Error).message))
+                  .finally(() => setSending(false));
+              }}
             />
             {box.mode === "word" && ref?.kind === "organization" && <OrgPosts orgId={ref.id} />}
           </section>

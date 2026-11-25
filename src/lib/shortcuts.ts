@@ -11,6 +11,7 @@ export const LETTERS: Record<string, { label: string; thing?: string; panel?: "p
   i: { label: "ideas", thing: "idea" },
   o: { label: "orgs", thing: "org" },
   g: { label: "groups", thing: "group" },
+  e: { label: "events", thing: "event" },
   r: { label: "resource profile", panel: "profile", section: "resource" },
   l: { label: "idea profile", panel: "profile", section: "idea" },
   b: { label: "inbox", panel: "inbox" },
@@ -28,7 +29,7 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: 
 
 // Everything of one thing the user has, newest first, as results to click.
 export async function listMine(supabase: SupabaseClient, userId: string, thing: string): Promise<FoundWord[]> {
-  if (thing === "journal" || thing === "notes" || thing === "idea" || thing === "group") {
+  if (thing === "journal" || thing === "notes" || thing === "idea" || thing === "group" || thing === "event") {
     let q = supabase
       .from("user_dictionaries")
       .select("dictionary:dictionaries!inner(id, name, address, scope, display_kind, status, created_at)")
@@ -36,7 +37,8 @@ export async function listMine(supabase: SupabaseClient, userId: string, thing: 
       .eq("opted_in", true)
       .eq("dictionaries.status", "approved");
     if (thing === "idea") q = q.like("dictionaries.address", "idea-%");
-    else if (thing === "group") q = q.eq("dictionaries.scope", "group");
+    else if (thing === "event") q = q.like("dictionaries.address", "event-%");
+    else if (thing === "group") q = q.eq("dictionaries.scope", "group").not("dictionaries.address", "like", "event-%");
     else {
       q = q
         .eq("dictionaries.display_kind", thing === "notes" ? "notes_list" : "journal")

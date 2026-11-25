@@ -13,6 +13,7 @@ export const VISIBILITY_OF: Record<string, "public" | "members" | "private"> = {
   verb: "public",
   word: "public",
   group: "members",
+  event: "members",
   journal: "private",
   notes: "private",
   note: "private",

@@ -1,12 +1,98 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { inboxThreads, sendHello, threadMessages, type Message, type Thread } from "@/app/actions/words";
+import { answerNotice, clearNotice, inboxThreads, markNoticeRead, myNotices, sendHello, threadMessages, type Message, type Notice, type Thread } from "@/app/actions/words";
 import { getSwap, offerContact, withdrawContact } from "@/app/actions/swaps";
 
-// Inbox: private hellos about profile entries. Each thread is you and one
-// other spark about one entry. Swap phone numbers when you're both ready.
-export function InboxView({ reloadKey = 0 }: { reloadKey?: number }) {
+// Inbox: invites and notices. Talking happens in group journals; older
+// hello threads stay below so nothing is lost.
+export function InboxView({ reloadKey = 0, onOpenGroup }: { reloadKey?: number; onOpenGroup?: (id: string) => void }) {
+  const [notices, setNotices] = useState<Notice[] | null>(null);
+  const [nToken, setNToken] = useState(0);
+  useEffect(() => {
+    myNotices().then(setNotices).catch(() => setNotices([]));
+  }, [reloadKey, nToken]);
+
+  return (
+    <div className="flex flex-col gap-6 pr-6">
+      <section className="flex flex-col gap-2">
+        {notices === null ? (
+          <p className="text-sm opacity-50">Opening your inbox...</p>
+        ) : notices.length === 0 ? (
+          <p className="text-sm opacity-60">No invites or notices. Event invites and people who connect with your matches land here.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-[var(--line)]">
+            {notices.map((n) => (
+              <NoticeRow
+                key={n.id}
+                n={n}
+                onOpen={(id) => {
+                  markNoticeRead(n.id).catch(() => {});
+                  onOpenGroup?.(id);
+                }}
+                onChanged={() => setNToken((t) => t + 1)}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
+      <OldThreads reloadKey={reloadKey} />
+    </div>
+  );
+}
+
+function NoticeRow({ n, onOpen, onChanged }: { n: Notice; onOpen: (id: string) => void; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const label = n.kind === "invite" ? "invited you to" : n.kind === "connect" ? "wants to connect about" : "";
+  async function answer(yes: boolean) {
+    setBusy(true);
+    setError(null);
+    try {
+      const id = await answerNotice(n.id, yes);
+      onChanged();
+      if (yes && id) onOpen(id);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <li className="flex flex-col gap-1 py-3">
+      <span className="flex flex-wrap items-baseline gap-x-2 text-sm">
+        <span className={n.read ? "" : "font-semibold"}>{n.fromName || "A spark"}</span>
+        {label && <span className="opacity-60">{label}</span>}
+        <span className="font-medium">{n.title}</span>
+      </span>
+      {n.body && <span className="text-sm opacity-70">{n.body}</span>}
+      <span className="flex flex-wrap gap-3 text-xs">
+        {(n.kind === "invite" || n.kind === "connect") && !n.answer && (
+          <>
+            <button type="button" disabled={busy} onClick={() => answer(true)} className="underline">
+              {n.kind === "invite" ? "Yes, I'll come" : "Yes, open our journal"}
+            </button>
+            <button type="button" disabled={busy} onClick={() => answer(false)} className="underline opacity-60">
+              No, thank you
+            </button>
+          </>
+        )}
+        {n.answer && <span className="opacity-60">You said {n.answer}.</span>}
+        {n.dictionaryId && (n.answer === "yes" || n.kind === "notice") && (
+          <button type="button" onClick={() => onOpen(n.dictionaryId!)} className="underline">
+            Open
+          </button>
+        )}
+        <button type="button" onClick={() => clearNotice(n.id).then(onChanged)} className="opacity-50 hover:opacity-100">
+          Clear
+        </button>
+      </span>
+      {error && <span className="text-xs text-red-600">{error}</span>}
+    </li>
+  );
+}
+
+function OldThreads({ reloadKey }: { reloadKey: number }) {
   const [threads, setThreads] = useState<Thread[] | null>(null);
   const [open, setOpen] = useState<Thread | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,12 +105,13 @@ export function InboxView({ reloadKey = 0 }: { reloadKey?: number }) {
   }, [reloadKey, token]);
 
   if (open) return <ThreadView thread={open} onBack={() => { setOpen(null); setToken((t) => t + 1); }} />;
-  if (!threads) return <p className="text-sm opacity-50">{error ?? "Opening your inbox..."}</p>;
-  if (threads.length === 0)
-    return <p className="text-sm opacity-60">No messages yet. When you say hello about someone&rsquo;s idea, job, resource, or person entry, the thread lands here.</p>;
+  if (!threads) return error ? <p className="text-sm opacity-50">{error}</p> : null;
+  if (threads.length === 0) return null;
 
   return (
-    <ul className="flex flex-col divide-y divide-[var(--line)] pr-6">
+    <section className="flex flex-col gap-1">
+    <p className="text-xs opacity-50">Earlier messages</p>
+    <ul className="flex flex-col divide-y divide-[var(--line)]">
       {threads.map((t) => (
         <li key={`${t.entryId}:${t.askerId}`}>
           <button type="button" onClick={() => setOpen(t)} className="flex w-full flex-col gap-0.5 py-3 text-left hover:opacity-70">
@@ -38,6 +125,7 @@ export function InboxView({ reloadKey = 0 }: { reloadKey?: number }) {
         </li>
       ))}
     </ul>
+    </section>
   );
 }
 

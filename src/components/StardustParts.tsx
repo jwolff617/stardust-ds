@@ -173,6 +173,7 @@ export const WORD_TYPES: { type: WordType; label: string; about: string }[] = [
   { type: "notes", label: "notes", about: "Short notes that live a day to a life. Private." },
   { type: "journal", label: "journal", about: "Entries over time. Private." },
   { type: "group", label: "group", about: "A shared notebook. Put members' emails in People." },
+  { type: "event", label: "event", about: "A gathering: name, when, where. Put people (emails or names) in People; they get an invite." },
 ];
 
 export function TypePicker({
@@ -251,6 +252,9 @@ export function TypePicker({
             </select>}
             {details.what !== "job" && details.deal === "sale" && <input value={details.price ?? ""} onChange={set("price")} placeholder="Price" aria-label="Price" className={sel} />}
           </>
+        )}
+        {type === "event" && (
+          <input type="datetime-local" value={details.when ?? ""} onChange={set("when")} aria-label="When" className={sel} />
         )}
         {type === "group" && (
           <select value={details.style ?? "night"} onChange={set("style")} aria-label="Group writes" className={sel}>
