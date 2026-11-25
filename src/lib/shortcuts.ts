@@ -75,6 +75,19 @@ export async function listMine(supabase: SupabaseClient, userId: string, thing: 
 // What a letter code or ticker opens. Null when it's neither.
 export async function resolveCode(supabase: SupabaseClient, userId: string, code: string): Promise<{ go: UiDirective; label: string } | { missing: string } | null> {
   const c = code.toLowerCase();
+  // Search shortcuts: everyone's public orgs, everyone's public idea journals.
+  if (c === "so" || c === "si") {
+    const rows =
+      c === "so"
+        ? ((await supabase.from("organizations").select("id, name, about, kind, created_at").eq("visibility", "public").order("created_at", { ascending: false }).limit(100)).data ?? []).map(
+            (o) => ({ kind: "organization", id: o.id, word: o.name, body: o.about ?? "", details: o.kind, time: fmt(o.created_at), createdAt: o.created_at }),
+          )
+        : ((await supabase.from("dictionaries").select("id, name, created_at").like("address", "idea-%").eq("status", "approved").order("created_at", { ascending: false }).limit(100)).data ?? []).map(
+            (d) => ({ kind: "notebook", id: d.id, word: d.name, body: "", details: "idea", time: fmt(d.created_at), createdAt: d.created_at }),
+          );
+    const title = c === "so" ? "Orgs" : "Ideas: public journals";
+    return { go: { type: "results", query: { word: "" }, items: rows, title }, label: title };
+  }
   const letter = LETTERS[c];
   if (letter) {
     if (letter.panel) return { go: { type: "panel", panel: letter.panel, ...(letter.section ? { section: letter.section } : {}) }, label: letter.label };

@@ -47,7 +47,7 @@ export function NavPanel({
   onOpenNoun: (n: MyNoun) => void;
   onHide: () => void;
   // Finds the noun a typed name means: yours, a card on the grid, or anything findable.
-  resolve: (text: string) => Promise<Slot>;
+  resolve: (text: string, n: string) => Promise<Slot>;
 }) {
   const [tab, setTab] = useState<"list" | "recent">("list");
   const [editing, setEditing] = useState<string | null>(null);
@@ -64,7 +64,7 @@ export function NavPanel({
     if (!text) return;
     // Show it right away; link it to its noun once found.
     onSetSlot(n, { meaning: text });
-    onSetSlot(n, await resolve(text));
+    onSetSlot(n, await resolve(text, n));
   }
 
   return (
@@ -159,6 +159,7 @@ export const TOOLS: { key: string; label: string; icon: string }[] = [
   { key: "r", label: "resource profile", icon: "resource" },
   { key: "m", label: "match", icon: "match" },
   { key: "b", label: "inbox", icon: "inbox" },
+  { key: "k", label: "project", icon: "project" },
 ];
 
 export function ToolsPanel({ onTool }: { onTool: (key: string) => void }) {
@@ -182,8 +183,8 @@ export function ToolsPanel({ onTool }: { onTool: (key: string) => void }) {
 
 // Search shortcuts: what people come to find.
 const SEARCHES: { head: string; items: { label: string; ask: string }[] }[] = [
-  { head: "Ideas", items: [{ label: "orgs", ask: "search orgs" }, { label: "profiles", ask: "match my idea profile" }] },
-  { head: "People", items: [{ label: "dates", ask: "match my person profile for romance" }, { label: "friends", ask: "match my person profile for friendship" }] },
+  { head: "Ideas", items: [{ label: "orgs", ask: "#so" }, { label: "ideas", ask: "#si" }] },
+  { head: "People", items: [{ label: "dates", ask: "match my person profile for romance" }, { label: "friends", ask: "match my person profile for friendship" }, { label: "ideas", ask: "match my idea profile" }] },
   { head: "Resources", items: [{ label: "jobs", ask: "match my resource profile for jobs" }, { label: "junk", ask: "match my resource profile for things" }] },
 ];
 

@@ -101,8 +101,11 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   const [view, setView] = useState<"grid" | "card">(isLoggedIn ? "grid" : "card");
   const [cardsOverride, setCardsOverride] = useState<(Slot | null)[] | null>(null);
   const activeCard = useRef<number | null>(null);
-  const filledSlots = slots.filter((x): x is Hotkey => Boolean(x?.meaning)).map((x) => ({ meaning: x.meaning, kind: x.kind, id: x.id }));
-  const defaultCards: (Slot | null)[] = Array.from({ length: cardCount }, (_, i) => filledSlots[i] ?? null);
+  // Card 1 is slot 1, card 2 is slot 2...: left to right, top to bottom, same order as My List.
+  const defaultCards: (Slot | null)[] = Array.from({ length: cardCount }, (_, i) => {
+    const x = slots[i];
+    return x?.meaning ? { meaning: x.meaning, kind: x.kind, id: x.id } : null;
+  });
   const cards = cardsOverride && cardsOverride.length === cardCount ? cardsOverride : defaultCards;
   const [previews, setPreviews] = useState<Record<string, Preview>>({});
   const [popup, setPopup] = useState<"closed" | "open" | "minimized">("closed");
@@ -584,9 +587,13 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     }
   }
 
-  async function resolveSlot(text: string): Promise<Slot> {
+  // A slot waiting for its pick: the next noun opened from the page fills it.
+  const pendingSlot = useRef<{ n: string; meaning: string } | null>(null);
+
+  async function resolveSlot(text: string, n?: string): Promise<Slot> {
     const { exact, items } = await findNoun(text);
-    if (exact) return { meaning: exact.word, kind: exact.kind, id: exact.id };
+    if (exact) return { meaning: text, kind: exact.kind, id: exact.id };
+    if (n) pendingSlot.current = { n, meaning: text };
     // Not found exactly: put the close ones on the page. Opening one links the slot.
     applyDirective({ type: "results", query: { word: text }, items, title: items.length ? `Which "${text}"? Open one and it goes in your list.` : `Nothing named "${text}" yet. Write it and press Create.` });
     return { meaning: text };
@@ -595,6 +602,12 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   // Opening a noun links any list slot of the same name that isn't linked yet.
   function linkSlot(name: string, kind: string, id: string) {
     if (!isLoggedIn || !name) return;
+    const waiting = pendingSlot.current;
+    if (waiting) {
+      pendingSlot.current = null;
+      setSlot(waiting.n, { meaning: waiting.meaning, kind, id });
+      return;
+    }
     const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const n = HOTKEY_NUMBERS.find((k) => {
       const s = prefs.hotkeys?.[k];
@@ -609,7 +622,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
     if (!slot?.meaning) return;
     if (slot.kind && slot.id) {
       openWord(slot.kind, slot.id).then((ok) => {
-        if (!ok) resolveSlot(slot.meaning).then((r) => {
+        if (!ok) resolveSlot(slot.meaning, n).then((r) => {
           if (r.id) {
             setSlot(n, r);
             openWord(r.kind!, r.id);
@@ -618,7 +631,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       });
       return;
     }
-    resolveSlot(slot.meaning).then((r) => {
+    resolveSlot(slot.meaning, n).then((r) => {
       if (r.id) {
         setSlot(n, r);
         openWord(r.kind!, r.id);
@@ -646,7 +659,7 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
       return;
     }
     if (c?.meaning) {
-      resolveSlot(c.meaning).then((r) => {
+      resolveSlot(c.meaning, i < 9 ? String(i + 1) : undefined).then((r) => {
         if (r.id) openWord(r.kind!, r.id);
       });
       return;
@@ -673,8 +686,8 @@ export function Stardust({ isLoggedIn, userName }: { isLoggedIn: boolean; userNa
   function pickTool(key: string) {
     showDisplay();
     if (key === "m") return send("match");
-    if (key === "e") {
-      setReply("Events are coming next.");
+    if (key === "e" || key === "k") {
+      setReply(key === "e" ? "Events are coming next." : "Project is coming soon: open a word and zoom in.");
       return;
     }
     send(`#${key}`);
